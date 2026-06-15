@@ -897,9 +897,15 @@ function buildPsicromiaGallery() {
     card.style.gridRow = row;
 
     if (item.type === 'video') {
-      card.innerHTML = `<video src="${item.url}" autoplay loop muted playsinline class="mosaic-media" onerror="this.style.display='none';"></video>`;
+      card.innerHTML = `
+        <div class="mosaic-card__blur-bg" style="background-image: url('${project.image}');"></div>
+        <video src="${item.url}" autoplay loop muted playsinline class="mosaic-media" onerror="this.style.display='none';"></video>
+      `;
     } else {
-      card.innerHTML = `<img src="${item.url}" alt="${project.title.pt}" class="mosaic-media" onerror="this.style.display='none';">`;
+      card.innerHTML = `
+        <div class="mosaic-card__blur-bg" style="background-image: url('${item.url}');"></div>
+        <img src="${item.url}" alt="${project.title.pt}" class="mosaic-media" onerror="this.style.display='none';">
+      `;
     }
 
     track.appendChild(card);

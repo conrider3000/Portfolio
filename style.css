@@ -475,14 +475,24 @@ a, button {
 
 /* Morph-card blurred background to support mismatched aspect ratios (Portrait/Landscape) */
 .morph-card__blur-bg {
-  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(25px) brightness(0.4);
+  transform: scale(1.15);
+  z-index: 1;
+  display: block !important;
 }
 
 .morph-card img {
   position: relative;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   z-index: 2;
   transition: transform 0.6s ease;
 }
@@ -567,7 +577,7 @@ a, button {
 /* Bento Mosaic Cards */
 .mosaic-card {
   position: relative;
-  background-color: var(--card-bg, rgba(255, 255, 255, 0.04));
+  background-color: #0b0b0c;
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
   border-radius: 16px;
   overflow: hidden;
@@ -585,11 +595,28 @@ a, button {
   border-color: var(--accent-color);
 }
 
-.mosaic-card img, .mosaic-card video {
+.mosaic-card__blur-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  background-size: cover;
+  background-position: center;
+  filter: blur(25px) brightness(0.4);
+  transform: scale(1.15);
+  z-index: 1;
+  pointer-events: none;
   display: block;
+}
+
+.mosaic-card img, .mosaic-card video {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  z-index: 2;
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -719,7 +746,7 @@ a, button {
   position: relative;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   pointer-events: none;
   z-index: 2;
   transition: transform 0.6s ease;
