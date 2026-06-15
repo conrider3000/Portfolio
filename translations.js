@@ -70,7 +70,7 @@ const translations = {
     "contact.success": "Mensagem enviada com sucesso!",
     
     // Miscellaneous
-    "misc.viewProject": "Ver Projeto",
+    "misc.viewProject": "Saber mais",
     "misc.all": "Todos",
     "misc.back": "Voltar",
     "misc.close": "Fechar"
@@ -146,7 +146,7 @@ const translations = {
     "contact.success": "Message sent successfully!",
     
     // Miscellaneous
-    "misc.viewProject": "View Project",
+    "misc.viewProject": "Learn more",
     "misc.all": "All",
     "misc.back": "Back",
     "misc.close": "Close"
@@ -222,7 +222,7 @@ const translations = {
     "contact.success": "¡Mensaje enviado con éxito!",
     
     // Miscellaneous
-    "misc.viewProject": "Ver Proyecto",
+    "misc.viewProject": "Saber más",
     "misc.all": "Todos",
     "misc.back": "Volver",
     "misc.close": "Cerrar"
@@ -298,7 +298,7 @@ const translations = {
     "contact.success": "Message envoyé avec succès !",
     
     // Miscellaneous
-    "misc.viewProject": "Voir le Projet",
+    "misc.viewProject": "En savoir plus",
     "misc.all": "Tous",
     "misc.back": "Retour",
     "misc.close": "Fermer"

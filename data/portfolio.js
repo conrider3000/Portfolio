@@ -24,7 +24,7 @@ const portfolioData = [
       "es": "Identidad visual completa y piezas promocionales para Sarau Aurora, integrando expresiones de arte urbano, música y poesía.",
       "fr": "Identité visuelle complète et supports promotionnels développés pour le Sarau Aurora, mêlant art urbain, musique et poésie."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/318bd1ac-a8ce-4fd4-98cb-7e97ebc40638_rwc_120x1247x1662x332x1662.jpg?h=a53abe5c36431bb817a0fec40995b243",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/d1e009ff-64a3-44f6-b291-ae802d8de5be_rw_1920.png?h=b374bb158ee08de8b2fa6c11d08c6c97",
     "media": [
       {
         "type": "image",
@@ -81,7 +81,7 @@ const portfolioData = [
       "es": "Diseño de producto e identidad visual para un juego de ajedrez conceptual de alta precisión y estética contemporánea.",
       "fr": "Design produit et identité visuelle pour un jeu d'échecs conceptuel de haute précision à l'esthétique contemporaine."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/cdd365fb-1a55-43ac-aa50-28f3506a2205_rwc_0x645x3840x768x3840.jpg?h=d58ecfdc33b07236be176f1e725b9ea1",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/902b16a0-df3e-4e76-a818-f62be67bbfde_rw_3840.jpg?h=26a18079c8723b64b76de693beddc0c0",
     "media": [
       {
         "type": "image",
@@ -174,7 +174,7 @@ const portfolioData = [
       "es": "Identidad visual vibrante, pósteres y dirección de arte para Vinil Attack, conectando la cultura del vinilo y mezclas analógicas.",
       "fr": "Identité visuelle dynamique, affiches et direction artistique pour Vinil Attack, reliant la culture du vinyle au mixage analogique."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/49c446ac-16ff-4105-b550-e4f41badc782_rwc_142x2020x2415x483x2415.jpg?h=e02e6c81aca4679ceccdbba9a4739f83",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/278e708b-5267-404c-991d-d5ad6127efe8.jpg?h=aefd246a722afb9f0d8c88d88cf5baa5",
     "media": [
       {
         "type": "image",
@@ -255,7 +255,7 @@ const portfolioData = [
       "es": "Proyecto de dos años con investigación estratégica, branding completo, empaques, sitio web, productos, comunicación, animación stop motion, modelo de suscripción y franquicias.",
       "fr": "Projet de deux ans comprenant recherche stratégique, branding complet, emballages, site web, produits, communication, animation stop motion, modèle d'abonnement et franchises."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/2488873f-f2bd-4ea2-9d90-47240271025c_rwc_0x432x1080x216x1080.jpg?h=3c41864323bd0cf2b6dd42c906cea79c",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/d0df6a23-cf1d-4d7a-a436-9f05ec16b4af_rw_1920.gif?h=5b307b12dea6b7ddfc56098a06f8b793",
     "media": [
       {
         "type": "image",
@@ -428,7 +428,7 @@ const portfolioData = [
       "es": "Sistema modular de mobiliario basado en recombinación, fabricación distribuida, autonomía productiva y producción local. 30+ productos, incubado en Techspace.",
       "fr": "Système de mobilier modulaire basé sur la recombinaison, la fabrication distribuée, l'autonomie de production et la production locale. Plus de 30 produits, incubé chez Fabtech."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/017778a5-5bb7-4be3-8c69-d8dc8c3cfa72_rwc_0x104x1920x384x1920.jpg?h=de5e355cf73356d6e15669fcd486df3e",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/afa7c2ed-efbc-452a-a66e-9d6546a3000b_rw_600.png?h=1362492e6552a55ddbc5ab11c1c27a84",
     "media": [
       {
         "type": "image",
@@ -585,7 +585,7 @@ const portfolioData = [
       "es": "Estudio de viabilidad, branding y diseño industrial para el procesamiento de plásticos reciclados en mobiliario y utensilios sostenibles.",
       "fr": "Étude de faisabilité, branding et design industriel pour la transformation de plastiques recyclés en mobilier et objets durables."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/3315548c-34af-440d-98be-12898db952bb_rwc_459x709x2889x577x2889.jpg?h=30c32bfeccbdd4f3cfaae591fe6f16d7",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/00403c78-9c1f-4478-94fc-a5ffdf5016f4_rw_1920.jpg?h=5d23c4a16b6c81bd1bdaa80b04d668ae",
     "media": [
       {
         "type": "image",
@@ -906,7 +906,7 @@ const portfolioData = [
       "es": "Campañas de diseño gráfico interno, comunicación corporativa estratégica y materiales institucionales para una gran marca de salud animal.",
       "fr": "Campagnes de design graphique interne, communication d'entreprise stratégique et supports pour une grande marque de santé animale."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/cca489e0-4c21-4d48-a58c-ac6332074a59_rwc_666x432x2570x514x2570.jpg?h=292341ef97e82d729195571c51db5467",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/d1a8b884-f970-4019-a0b9-053508b14422_rw_3840.jpg?h=f75db20d2def51c3973c89a4f8f3e5ab",
     "media": [
       {
         "type": "image",
@@ -995,7 +995,7 @@ const portfolioData = [
       "es": "Estrategia de marca, logotipo e identidad corporativa elegante para Palais Reformas, uniendo precisión técnica y sofisticación.",
       "fr": "Stratégie de marque, logo et identité visuelle élégante pour Palais Reformas, alliant précision technique et raffinement."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/8d791116-0f4c-4237-a3d8-bcd117eb6748_rwc_0x308x1739x347x1739.jpg?h=e2712b10b4588c329e5b23afca362ada",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/a5f77ba9-643f-4d34-96f1-ce61e73f2310_rw_1920.jpg?h=643078a855df12858480cf4a403ae1d2",
     "media": [
       {
         "type": "image",
@@ -1108,7 +1108,7 @@ const portfolioData = [
       "es": "Investigación estratégica de futuros alternativos, desarrollo de escenarios y talleres de co-creación para la innovación social.",
       "fr": "Recherche stratégique sur les futurs alternatifs, développement de scénarios et ateliers de co-création pour l'innovation sociale."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/50761dea-ad4e-462b-98f3-d697729c643b_rwc_89x0x898x179x898.jpg?h=2fbca8c9fd3bbe216aa681459e2b6759",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/4fcc4e02-d927-4968-ae3f-6bb58873e415_rw_1200.jpg?h=290bfe27d7c5f6686e6286097719552d",
     "media": [
       {
         "type": "image",
@@ -1221,7 +1221,7 @@ const portfolioData = [
       "es": "Rebranding completo, arquitectura de marca, nomenclatura de productos, UX, pruebas de usabilidad, sitio web, materiales institucionales, uniformes y pitch para inversión.",
       "fr": "Rebranding complet, architecture de marque, nomenclature des produits, UX, tests d'utilisabilité, site web, supports institutionnels, uniformes et pitch pour investissement."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/21075bbf-f7ff-465c-b145-6141161d9cd8_rwc_566x688x2075x415x2075.jpg?h=d28cca7eede8754cac4cd7545a725ad5",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/e4427f4b-4f41-4152-8817-000271941917_rw_1200.jpg?h=a8460e190f91a93919979ce5e59fb6dd",
     "media": [
       {
         "type": "image",
@@ -1578,7 +1578,7 @@ const portfolioData = [
       "es": "Branding delicado e identidad orgánica para Floar Ateliê, inspirada en formas naturales y botánica contemporánea.",
       "fr": "Branding délicat et identité organique conçus pour Floar Ateliê, inspirés des formes naturelles et de la botanique contemporaine."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/60bc5947-1803-436b-8aee-aca21fa58666_rwc_88x875x1384x276x1384.jpg?h=b51dad3af79988f38d7a44987e1e7afd",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/bb3e13d0-5f4d-40aa-96b1-9078f8b6299f_rw_1200.jpg?h=095679dfd225f77ca9e87e5eb660b32c",
     "media": [
       {
         "type": "image",
@@ -1691,7 +1691,7 @@ const portfolioData = [
       "es": "Identidad visual llamativa inspirada en el símbolo de la piña de Curitiba, diseñada para conectar creadores independientes locales.",
       "fr": "Identité visuelle forte inspirée de la pomme de pin de Curitiba, conçue pour connecter les créateurs locaux indépendants."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/8c1ad729-e4cd-4e2b-bbcf-5bccf8cc48ff_rwc_142x182x638x127x638.jpeg?h=b03110e802b0c023e58d1ca7b5677f0c",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/d0546b47-51e3-4c5d-88e9-99f86e9f4a48_rw_1200.jpeg?h=ed19754d3f61112faf308a26b0382803",
     "media": [
       {
         "type": "image",
@@ -1780,7 +1780,7 @@ const portfolioData = [
       "es": "Identidad visual tipográfica inspirada en la improvisación musical y la clásica atmósfera íntima de los clubes de jazz.",
       "fr": "Identité visuelle typographique inspirée de l'improvisation musicale et de l'atmosphère intime des clubs de jazz."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/675a6164-7ec0-4d3a-969c-ca4eb7577163_rwc_0x545x1598x319x1598.jpg?h=86e81a22b81cb1d0109942d3c66aec3f",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/353ffc3f-ec1f-4ed7-a528-94ed5b22c196_rw_1920.jpg?h=ebb53db66c4e6aaf75cc77725174c43c",
     "media": [
       {
         "type": "image",
@@ -1837,7 +1837,7 @@ const portfolioData = [
       "es": "Branding completo y etiquetas ilustradas para la línea de cervezas Jeremias, mezclando cultura popular e historia regional.",
       "fr": "Branding complet et étiquettes illustrées pour la brasserie artisanale Jeremias, mêlant culture populaire et histoire régionale."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/ae6413d4-b456-4002-b1c9-a4bbf6967759_rwc_0x314x1920x384x1920.jpg?h=7a72d8871e6230cce5f735b310b32312",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/864d7ba4-36bd-44c6-95ab-93f4d9e0bb3c.jpg?h=1d7d4e580ce371a5bcab77921d318695",
     "media": [
       {
         "type": "image",
@@ -1986,7 +1986,7 @@ const portfolioData = [
       "es": "Identidad visual limpia y diseño de etiquetas vibrantes para Komba Kombucha, con enfoque en actitud saludable y contemporánea.",
       "fr": "Identité visuelle épurée et étiquettes dynamiques pour Komba Kombucha, axées sur la santé et un ton contemporain."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/bf4640f4-658b-49e5-a8a3-3e6dbca051c8_rwc_0x242x2804x560x2804.jpg?h=f283fc4eb9158eca502631530817f7e6",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/e38c88b7-99cf-459c-b9ca-3ecb4f6825cb_rw_1920.jpg?h=38b9a4c9e0000b4e9d3671d8a5cd757d",
     "media": [
       {
         "type": "image",
@@ -2128,7 +2128,7 @@ const portfolioData = [
       "es": "Branding estratégico, empaques y comunicación para Cogu Go, startup de hongos comestibles y superalimentos.",
       "fr": "Branding stratégique, emballages et communication pour Cogu Go, une startup de champignons comestibles et superaliments."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/9afc8459-9c37-4a30-885a-aa4ec7db1589_rwc_333x722x1528x305x1528.JPG?h=118efa75854f29dce41776a988c72695",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/d78945d5-34b5-4e37-822c-772314bdf0a6_rw_1920.PNG?h=7742f297de62054f614323637e030fb7",
     "media": [
       {
         "type": "image",
@@ -2221,7 +2221,7 @@ const portfolioData = [
       "es": "Estrategia e identidad visual refinada para Boreal Amazônia, marca premium que valora ingredientes nativos de la selva amazónica.",
       "fr": "Stratégie et identité visuelle raffinée pour Boreal Amazônia, marque premium valorisant les ingrédients natifs de la forêt amazonienne."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/983f80d6-0907-4c4d-88cf-b249f2935852_rwc_0x340x1920x384x1920.jpg?h=c5626493db92530cfe0710f1aad6c5ed",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/4be48a1e-d1b0-4076-a867-c6853e5e8f5d_rw_1920.jpg?h=e9e961109f3dd1db279772d554921dcf",
     "media": [
       {
         "type": "image",
@@ -2358,7 +2358,7 @@ const portfolioData = [
       "es": "Desarrollo de marca, diseño de interfaz y flujos para Van Hack Academy, impulsando programadores en el mercado internacional.",
       "fr": "Développement de marque, UI design et parcours utilisateur pour Van Hack Academy, propulsant les développeurs sur le marché international."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/b1d31fde-a2e3-438d-83b5-6b7dc1d08579_rwc_0x693x1241x248x1241.jpg?h=072fc543a75611e6781763284a578327",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/bb6d6594-ec6d-40a7-8843-8aba077785b2_rw_1200.jpg?h=98332a823b66ae952283a2f94207e799",
     "media": [
       {
         "type": "image",
@@ -2491,7 +2491,7 @@ const portfolioData = [
       "es": "Dirección de arte y señalización corporativa de lujo para Globusiness Center, un espacio de negocios y networking corporativo.",
       "fr": "Direction artistique et signalétique d'affaires haut de gamme pour Globusiness Center, un hub de réseautage d'entreprise."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/576e57c5-cb6f-4532-b564-d5bc7c2ade3a_rwc_239x1588x3297x659x3297.png?h=dfaafe45d5ae21c9da3d4a0ed7a67cd0",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/823c5080-e07d-48af-acd3-61ce8d1104f5_rw_3840.png?h=f3365ebfe74d5151c7608299cbeec63d",
     "media": [
       {
         "type": "image",
@@ -2536,7 +2536,7 @@ const portfolioData = [
       "es": "Identidad visual fluida diseñada para Somei, facilitando la comunicación entre profesionales autónomos y cooperativas locales.",
       "fr": "Identité visuelle dynamique pour Somei, facilitant la communication entre professionnels indépendants et coopératives locales."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/96e27776-e966-4b48-9e24-bf55cf762824_rwc_58x0x1167x233x1167.jpg?h=503fcbc120015d965c2444404dab8dc1",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/10d37abd-250c-45db-a54a-a90fa1aad7b3_rw_600.png?h=d2103c5c9cfa9d34377f536a16a7ca33",
     "media": [
       {
         "type": "image",
@@ -2645,7 +2645,7 @@ const portfolioData = [
       "es": "Estrategia de comunicación e identidad visual para Rede Aoba, integrando rutas de turismo sostenible y base comunitaria.",
       "fr": "Stratégie de communication et identité visuelle pour Rede Aoba, intégrant des circuits de tourisme solidaire et communautaire."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/cbacf497-5c68-44ce-9cb4-e3382828a64a_rwc_0x423x1826x365x1826.png?h=8aab67da45b9d41464a236ddd7550fc8",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/da92430d-960d-428a-8269-de652e262496_rw_1200.png?h=798477f7dcf7cdbcc881fd72f041b48c",
     "media": [
       {
         "type": "image",
@@ -2786,7 +2786,7 @@ const portfolioData = [
       "es": "Evolución de marca y materiales para Central Copasol, fortaleciendo la agricultura familiar y economía solidaria.",
       "fr": "Évolution de marque et supports pour Central Copasol, renforçant l'agriculture familiale et l'économie solidaire."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/e34239be-4b65-4775-ad61-e9efe163b030_rwc_64x1207x1782x356x1782.jpg?h=8133ef68016ee492af2d31c9b6554003",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/f373b05d-cbd9-4af1-81a3-6d11c509c6d2_rw_1920.jpg?h=050a2e8f5cecfb591f55ef1586e334ab",
     "media": [
       {
         "type": "image",
@@ -2915,7 +2915,7 @@ const portfolioData = [
       "es": "Caso de estudio conceptual de interfaz de control en Apple Developer Academy, enfocado en accesibilidad y ergonomía gamer.",
       "fr": "Étude de cas conceptuelle d'interface de manette développée à l'Apple Developer Academy, axée sur l'ergonomie et l'accessibilité."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/73d17c16-03b9-48d5-bf0b-c86bef95a59b_rwc_0x340x1920x384x1920.png?h=2b52c3a7c21343c4864af0dd8a118fb5",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/0d6b1f66-5f16-448e-93de-ce5b38c9a48d_rw_1920.jpg?h=799d9a94392f7d1d5044775ff4a0683e",
     "media": [
       {
         "type": "image",
@@ -2964,7 +2964,7 @@ const portfolioData = [
       "es": "Diseño de producto y marca premium para máscaras protectoras, combinando tecnología de filtrado y comodidad ergonómica.",
       "fr": "Design produit et branding de masques de protection haut de gamme, combinant technologie de filtration et confort ergonomique."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/aa3ad805-ea0b-46b3-8962-24cb7a3650c7_rwc_0x831x3000x600x3000.png?h=ab220005cc7adf1c07258d78f2696eda",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/6b868601-6a04-4f6b-ad6b-0729f107f42e_rw_1920.png?h=1ec88157a1ac91d5a77264b3a90d13f2",
     "media": [
       {
         "type": "image",
@@ -3033,7 +3033,7 @@ const portfolioData = [
       "es": "Logotipo e identidad corporativa sofisticada para Taborda Lima, transmitiendo solidez y prestigio en el sector jurídico.",
       "fr": "Logo et identité visuelle sophistiquée pour Taborda Lima, transmettant sérieux e prestige dans le secteur juridique."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/93706d44-098b-426a-b7f5-ca7615d5b545_rwc_0x409x5000x1000x5000.jpg?h=ed4c912c661a46703b08d99c147e1b01",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/24140b7c-8d75-4447-bd53-8ddf9c2818e0.jpg?h=f180f4b46c07eaa575cfc4bbccd248d5",
     "media": [
       {
         "type": "image",
@@ -3070,7 +3070,7 @@ const portfolioData = [
       "es": "Diseño de producto físico y fabricación digital de luminaria modular inspirada en geometrías naturales, usando fresadora CNC.",
       "fr": "Design produit et fabrication numérique d'un luminaire modulaire inspiré des géométries naturelles, usiné par CNC."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/fe878bf3-1983-4392-b20d-1ca36ce88b99_rwc_0x463x1096x219x1096.png?h=bf27faa5b2f6644842f631107579e682",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/6bdf3c1a-c4e7-4528-9bb4-f3e8ea5ad938_rw_1920.png?h=fdb98bbc754647163dcfce84e25ec98c",
     "media": [
       {
         "type": "image",
@@ -3123,7 +3123,7 @@ const portfolioData = [
       "es": "Diseño de silla modular desmontable en contrachapado marino, desarrollada para el nomadismo urbano y ensamblaje sin herramientas.",
       "fr": "Chaise démontable à emboîtements en contreplaqué marine, conçue pour le nomadisme urbain et un montage sans outils."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/739484ee-8d0b-4c83-b9be-cd6e19da7468_rwc_0x375x3935x787x3935.png?h=eee25937009244869e51c6ef623c327c",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/e552f5f7-f8ac-4b1d-ad34-fb84731ed8f2.png?h=3b46b1f990b2e1cf671a53363d759f77",
     "media": [
       {
         "type": "image",
@@ -3172,7 +3172,7 @@ const portfolioData = [
       "es": "Dirección de arte e interfaz digital para plataforma de contratación rápida de proveedores de servicios residenciales.",
       "fr": "Direction artistique et interface numérique pour une plateforme de réservation rapide de services résidentiels."
     },
-    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/a13d2d3a-4fea-46a9-9a02-153f8aaf27b4_rwc_0x349x1920x384x1920.jpg?h=85cb2fe8e563dcee0a7115b5847da2b6",
+    "image": "https://cdn.myportfolio.com/85794f9fd65062bff314698e24c2d0f3/7720c661-2d67-49ce-bb9f-d67b9fec6fed_rw_1920.jpg?h=e7eb11c34a7bc646955841147a2d807e",
     "media": [
       {
         "type": "image",

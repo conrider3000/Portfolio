@@ -8,12 +8,25 @@ let activeView = 'orbit'; // 'orbit', 'cascade', or 'psicromia'
 // Morphing Transition State Variable
 let transitionProgress = { value: 0 }; 
 
-// Custom Cursor & Magnifier Lens tracking
-const cursor = document.getElementById('cursor');
-const lens = document.getElementById('lens');
+// Load portfolio data from localStorage if available, otherwise use default portfolioData
+let projectsDb = [];
+try {
+  const localData = localStorage.getItem('portfolio_projects');
+  if (localData) {
+    projectsDb = JSON.parse(localData);
+  } else {
+    // portfolioData comes from data/portfolio.js loaded in index.html
+    projectsDb = [...portfolioData];
+    localStorage.setItem('portfolio_projects', JSON.stringify(projectsDb));
+  }
+} catch (e) {
+  console.error("Error loading portfolio projects", e);
+  projectsDb = typeof portfolioData !== 'undefined' ? [...portfolioData] : [];
+}
+
+// Mouse tracking
 let mouseX = 0, mouseY = 0;
-let activeHoveredCard = null; 
-let isLensActive = false; // Toggle state for left-click zoom lens activation
+let activeHoveredCard = null;
 
 // Hover scaling values for Orbit cards (smooth integration in render loop)
 let hoverScales = [];
@@ -31,8 +44,18 @@ let currentOrbitSpeed = 0.0012;
 let isHoveringCard = false; // Tracks card hover for Cascade slow motion
 let isDraggingOrbit = false;
 let startDragX = 0;
+let startDragY = 0; // Added for vertical tilt drag tracking
 const orbitRadiusX = 620; // Increased to spread cards horizontally
-const orbitRadiusY = 220; // Increased to spread cards vertically
+
+// Vertical orbit tilt states
+let targetOrbitRadiusY = 220;
+let currentOrbitRadiusY = 220;
+
+// Drag momentum (wheel of fortune) states
+let lastDragTime = 0;
+let dragVelocity = 0;
+let isSpinningMomentum = false;
+
 let isSpinningEasterEgg = false;
 let isDraggingOrbitRight = false;
 let rightDragAccumulated = 0;
@@ -45,14 +68,16 @@ let isProjectInfoPanelVisible = false; // Flag to track typographic panel visibi
 let smoothCascadeIndex = 0; // Floating point variable for smooth LERP card transitions
 let isDraggingCascade = false;
 let startCascadeDragX = 0;
+let isCascadeFocused = false; // Flag for paused and focused card state in Cascade
+let focusScaleProgress = 0; // LERPed scale boost factor for focused card
 
 // Unified media items (scraped projects only, no fake/placeholder items)
-const combinedMediaItems = [...portfolioData];
+let combinedMediaItems = [...projectsDb];
 let morphCards = [];
 
 // Particle background variables
-const canvas = document.getElementById('particles-canvas');
-const ctx = canvas.getContext('2d');
+let canvas = null;
+let ctx = null;
 let particlesArray = [];
 const numberOfParticles = 35;
 
@@ -68,6 +93,15 @@ function getWrappedOffset(index, center, M) {
   let diff = index - c;
   diff = mod(diff + M / 2, M) - M / 2;
   return diff;
+}
+
+function getLocalizedValue(field, fallback = '') {
+  if (!field) return fallback;
+  if (typeof field === 'string') return field;
+  if (typeof field === 'object') {
+    return field[currentLanguage] || field['pt'] || field['en'] || fallback;
+  }
+  return fallback;
 }
 
 function startLogoAlternator() {
@@ -103,36 +137,20 @@ window.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
-    
-    // Position custom cursor instantly (0 delay/lag)
-    cursor.style.left = `${mouseX}px`;
-    cursor.style.top = `${mouseY}px`;
 
-    // Position Magnifier Lens instantly (0 delay/lag)
-    lens.style.left = `${mouseX}px`;
-    lens.style.top = `${mouseY}px`;
-
-    // If lens is active, calculate relative percentage offsets to hovered card
-    if (activeHoveredCard) {
-      const rect = activeHoveredCard.getBoundingClientRect();
-      const relX = mouseX - rect.left;
-      const relY = mouseY - rect.top;
-      const pctX = (relX / rect.width) * 100;
-      const pctY = (relY / rect.height) * 100;
-      lens.style.backgroundPosition = `${pctX}% ${pctY}%`;
+    // Tilt the central planet slightly toward the cursor (only in Orbit view)
+    if (activeView === 'orbit') {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const tiltX = (e.clientX - centerX) / centerX * 15;
+      const tiltY = (e.clientY - centerY) / centerY * -15;
+      gsap.to('#orbit-center-text', {
+        rotationY: tiltX,
+        rotationX: tiltY,
+        duration: 0.5,
+        ease: "power2.out"
+      });
     }
-
-    // Tilt the central planet slightly toward the cursor
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-    const tiltX = (e.clientX - centerX) / centerX * 15;
-    const tiltY = (e.clientY - centerY) / centerY * -15;
-    gsap.to('#orbit-center-text', {
-      rotationY: tiltX,
-      rotationX: tiltY,
-      duration: 0.5,
-      ease: "power2.out"
-    });
   });
 
   // Prevent context menu on card items, in Orbit view, or during right-drag to ensure premium feel and allow Easter Egg
@@ -151,9 +169,66 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateUnifiedLoop();
   bindSceneDrag();
-  addCursorInteractions();
   runLoader();
   startLogoAlternator();
+
+  // Live Cover Preview & Local Upload
+  const coverInput = document.getElementById('form-project-cover');
+  if (coverInput) {
+    coverInput.addEventListener('input', () => {
+      updateCoverPreview(coverInput.value);
+    });
+  }
+
+  const coverFileInput = document.getElementById('form-cover-file');
+  if (coverFileInput) {
+    coverFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        try {
+          if (coverInput) {
+            coverInput.value = "Comprimindo imagem...";
+            coverInput.disabled = true;
+          }
+          const compressedBase64 = await compressImage(file, 1600, 0.75);
+          if (coverInput) {
+            coverInput.value = compressedBase64;
+            coverInput.disabled = false;
+            updateCoverPreview(compressedBase64);
+          }
+        } catch (error) {
+          console.error("Erro ao comprimir capa:", error);
+          alert("Falha ao processar e comprimir imagem.");
+          if (coverInput) {
+            coverInput.value = "";
+            coverInput.disabled = false;
+          }
+        }
+      }
+    });
+  }
+
+  // Auto-Translation blur listeners
+  const titlePtInput = document.getElementById('form-title-pt');
+  if (titlePtInput) {
+    titlePtInput.addEventListener('blur', () => {
+      triggerAutoTranslation('form-title-pt', 'title');
+    });
+  }
+
+  const subtitlePtInput = document.getElementById('form-subtitle-pt');
+  if (subtitlePtInput) {
+    subtitlePtInput.addEventListener('blur', () => {
+      triggerAutoTranslation('form-subtitle-pt', 'subtitle');
+    });
+  }
+
+  const descPtInput = document.getElementById('form-desc-pt');
+  if (descPtInput) {
+    descPtInput.addEventListener('blur', () => {
+      triggerAutoTranslation('form-desc-pt', 'desc');
+    });
+  }
 
   window.addEventListener('wheel', (e) => {
     if (activeView === 'cascade') {
@@ -163,10 +238,9 @@ window.addEventListener('DOMContentLoaded', () => {
         navigateCascade(-1);
       }
     } else if (activeView === 'psicromia') {
-      if (e.deltaY > 0) {
-        navigatePsicromia(1);
-      } else {
-        navigatePsicromia(-1);
+      const space = document.querySelector('.psicromia-space');
+      if (space) {
+        space.scrollLeft += e.deltaY;
       }
     }
   });
@@ -244,6 +318,7 @@ function buildMorphingCards() {
   const container = document.getElementById('projects-container');
   container.innerHTML = '';
   morphCards = [];
+  combinedMediaItems = [...projectsDb]; // Re-initialize in case data was updated in the admin panel
   hoverScales = Array(combinedMediaItems.length).fill(1);
 
   combinedMediaItems.forEach((item, index) => {
@@ -252,8 +327,8 @@ function buildMorphingCards() {
     card.setAttribute('data-id', item.id);
     card.setAttribute('data-index', index);
     
-    const title = item.title[currentLanguage] || item.title['pt'] || item.title;
-    const desc = item.description[currentLanguage] || item.description['pt'] || item.description;
+    const title = getLocalizedValue(item.title);
+    const desc = getLocalizedValue(item.description);
 
     // Ensure the card never remains without an image
     const fallbackImage = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80";
@@ -263,7 +338,6 @@ function buildMorphingCards() {
     }
 
     card.innerHTML = `
-      <div class="morph-card__blur-bg" style="background-image: url('${imgUrl}');"></div>
       <img src="${imgUrl}" alt="${title}" onerror="this.src='${fallbackImage}';">
       <div class="morph-card__info">
         <h3 class="morph-card__title">${title}</h3>
@@ -275,25 +349,17 @@ function buildMorphingCards() {
 
 
 
-    // Magnifier Lens Hover Events
+    // Hover Events
     card.addEventListener('mouseenter', () => {
+      // Ignore hover interactions during active spins so "ESTOU COM SORTE." text is preserved
+      if (isSpinningMomentum || isSpinningEasterEgg) return;
+
       isHoveringCard = true;
       targetOrbitSpeed = 0.0002; // Slow motion speed on hover
-      
       activeHoveredCard = card;
-      lens.style.backgroundImage = `url(${imgUrl})`;
-      
-      // Keep magnifying glass cursor visible on hover, zoom lens is off initially
-      if (isLensActive) {
-        lens.style.display = 'block';
-        cursor.style.opacity = '0';
-      } else {
-        lens.style.display = 'none';
-        cursor.style.opacity = '1';
-      }
 
       if (activeView === 'orbit') {
-        const title = item.title[currentLanguage] || item.title['pt'] || item.title;
+        const title = getLocalizedValue(item.title);
         setCenterText(title);
 
         gsap.to(hoverScales, {
@@ -301,19 +367,17 @@ function buildMorphingCards() {
           duration: 0.3,
           ease: "power2.out"
         });
-        gsap.to(card, { borderColor: '#c8a882', duration: 0.4, ease: "power2.out" });
+        gsap.to(card, { borderColor: 'var(--accent-color)', duration: 0.4, ease: "power2.out" });
       }
     });
 
     card.addEventListener('mouseleave', () => {
+      // Ignore mouseleave logic if the hover was ignored during a spin
+      if (isSpinningMomentum || isSpinningEasterEgg) return;
+
       isHoveringCard = false;
       targetOrbitSpeed = 0.0012; // Restore faster speed
-      
       activeHoveredCard = null;
-      lens.style.display = 'none';
-      cursor.style.opacity = '1';
-
-      isLensActive = false;
 
       if (activeView === 'orbit') {
         setCenterText("CONRADO.");
@@ -323,7 +387,7 @@ function buildMorphingCards() {
           duration: 0.3,
           ease: "power2.out"
         });
-        gsap.to(card, { borderColor: 'rgba(255,255,255,0.65)', duration: 0.4, ease: "power2.out" });
+        gsap.to(card, { borderColor: 'var(--glass-border)', duration: 0.4, ease: "power2.out" });
       }
     });
 
@@ -337,60 +401,37 @@ function buildMorphingCards() {
         return;
       }
 
-      const matchIdx = portfolioData.findIndex(p => p.id === item.id);
+      // Stop propagation to prevent background click from resetting focus
+      e.stopPropagation();
+
+      const matchIdx = projectsDb.findIndex(p => p.id === item.id);
       if (activeView === 'orbit') {
         if (matchIdx !== -1) {
           activeCascadeIndex = matchIdx;
           switchView('cascade');
+          isCascadeFocused = false; // Começa no tamanho normal e em rotação contínua
         }
       } else if (activeView === 'cascade') {
         if (matchIdx !== -1) {
-          const M = portfolioData.length;
+          const M = projectsDb.length;
           const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
-          if (wrappedActiveIndex === matchIdx) {
-            // Clicked on the already active card in Cascade view -> Open project detail gallery view
+          if (wrappedActiveIndex === matchIdx && isCascadeFocused) {
+            // Clicked on the already centered and focused card -> Open project detail gallery view
+            isCascadeFocused = false;
             hideProjectInfoPanel();
             switchView('psicromia');
           } else {
             // Focus on the clicked background card in Cascade using the shortest wrapped path
             const diff = getWrappedOffset(matchIdx, activeCascadeIndex, M);
             activeCascadeIndex += diff;
-            hideProjectInfoPanel();
+            isCascadeFocused = true;
+            showProjectInfoPanel();
           }
         }
       }
     });
 
     // Right-click (contextmenu) event listener for zoom lens
-    card.addEventListener('contextmenu', (e) => {
-      e.preventDefault(); // Block default browser dropdown
-      
-      if (activeView === 'cascade') {
-        const matchIdx = portfolioData.findIndex(p => p.id === item.id);
-        const M = portfolioData.length;
-        const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
-        if (matchIdx !== -1 && wrappedActiveIndex === matchIdx) {
-          // Toggle zoom lens active state on right-click!
-          isLensActive = !isLensActive;
-          if (isLensActive) {
-            lens.style.display = 'block';
-            cursor.style.opacity = '0';
-            lens.style.backgroundImage = `url(${item.image})`;
-            
-            // Calculate background position relative to cursor instantly
-            const rect = card.getBoundingClientRect();
-            const relX = mouseX - rect.left;
-            const relY = mouseY - rect.top;
-            const pctX = (relX / rect.width) * 100;
-            const pctY = (relY / rect.height) * 100;
-            lens.style.backgroundPosition = `${pctX}% ${pctY}%`;
-          } else {
-            lens.style.display = 'none';
-            cursor.style.opacity = '1';
-          }
-        }
-      }
-    });
   });
 }
 
@@ -398,56 +439,65 @@ function buildMorphingCards() {
 // UNIFIED MORPHING RENDER LOOP
 // ==========================================================================
 function updateUnifiedLoop() {
-  if (!isDraggingOrbit && !isDraggingOrbitRight && !isSpinningEasterEgg) {
+  // Smoothly LERP the vertical radius of the orbit (pitch tilt)
+  currentOrbitRadiusY += (targetOrbitRadiusY - currentOrbitRadiusY) * 0.15;
+
+  if (!isDraggingOrbit && !isDraggingOrbitRight && !isSpinningEasterEgg && !isSpinningMomentum) {
     currentOrbitSpeed += (targetOrbitSpeed - currentOrbitSpeed) * 0.1;
     orbitAngle += currentOrbitSpeed;
   }
 
+  const N = morphCards.length;
+
   // LERP smoothCascadeIndex towards activeCascadeIndex for smooth transitions
   if (activeView === 'cascade') {
-    if (!isDraggingCascade) {
-      // Slowly auto-scroll Cascade view. Slows down in hover / active panel mode, but doesn't stop
+    if (!isDraggingCascade && !isCascadeFocused) {
+      // Slowly auto-scroll Cascade view if not focused
       if (isHoveringCard || isProjectInfoPanelVisible) {
         activeCascadeIndex += 0.0006; // Slow motion speed
       } else {
         activeCascadeIndex += 0.003;  // Slightly faster normal speed
       }
     }
+    
+    // LERP the focus scale factor boost
+    focusScaleProgress += ((isCascadeFocused ? 1 : 0) - focusScaleProgress) * 0.08;
+
     smoothCascadeIndex += (activeCascadeIndex - smoothCascadeIndex) * 0.08;
     if (Math.abs(activeCascadeIndex - smoothCascadeIndex) < 0.005) {
       smoothCascadeIndex = activeCascadeIndex;
     }
     
     // Prevent float overflow by shifting index by multiples of M
-    const M = portfolioData.length;
-    if (Math.abs(activeCascadeIndex) > M * 10) {
+    const M = projectsDb.length;
+    if (M > 0 && Math.abs(activeCascadeIndex) > M * 10) {
       const shift = Math.round(activeCascadeIndex / M) * M;
       activeCascadeIndex -= shift;
       smoothCascadeIndex -= shift;
     }
   } else {
     smoothCascadeIndex = activeCascadeIndex;
+    focusScaleProgress += (0 - focusScaleProgress) * 0.08;
   }
 
-  const N = morphCards.length;
   const p = transitionProgress.value; 
 
   morphCards.forEach((card, index) => {
     // ORBIT STATE
     const theta = (index / N) * 2 * Math.PI + orbitAngle;
     const ox = Math.cos(theta) * orbitRadiusX;
-    const oy = Math.sin(theta) * orbitRadiusY;
+    const oy = Math.sin(theta) * currentOrbitRadiusY; // Uses the dynamic pitch tilt radius
     const oz = Math.sin(theta); 
-    const oScale = gsap.utils.mapRange(-1, 1, 0.28, 0.58, oz); // Decreased base scale range to prevent crowd overlapping
-    const oOpacity = gsap.utils.mapRange(-1, 1, 0.25, 1.0, oz);
+    const oScale = gsap.utils.mapRange(-1, 1, 0.42, 0.58, oz); // Aumentada escala mínima para preencher o espaço atrás
+    const oOpacity = 1.0;
     const oZIndex = Math.floor(gsap.utils.mapRange(-1, 1, 110, 200, oz));
     const oRotateY = 0;
 
     // CASCADE STATE
     let cx, cy, cz, cScale, cOpacity, cRotateY, cZIndex;
     
-    if (index < portfolioData.length) {
-      const M = portfolioData.length;
+    if (index < projectsDb.length) {
+      const M = projectsDb.length;
       const offset = getWrappedOffset(index, smoothCascadeIndex, M);
       const absOffset = Math.abs(offset);
       const activeWeight = Math.max(0, 1 - absOffset);
@@ -459,16 +509,27 @@ function updateUnifiedLoop() {
 
       // Diagonal Cascade: narrow in top-right background (to avoid menu), wide in bottom-left foreground
       const factorX = offset >= 0 ? (window.innerWidth * 0.07) : (window.innerWidth * 0.15);
-      cx = offset * factorX + swayX;
+      
+      // Shift left when focused to leave room for the right info panel
+      const focusShift = focusScaleProgress * -150;
+      cx = offset * factorX + swayX + focusShift;
       cy = -offset * (window.innerHeight * 0.24) - 30 + swayY;
-      cz = -offset * 100 + activeWeight * 100 + swayZ;
-      cScale = 1.3 - offset * 0.07;
+      
+      // Depth sorting should be symmetric
+      cz = -absOffset * 80 + activeWeight * 80 + swayZ;
+      
+      // Uniform background scales, active centered card has scale 1.2
+      const baseScale = 1.2 - absOffset * 0.02;
+      cScale = baseScale;
       
       // Keep opacity fully solid at 1.0 (no fading in the horizon) as requested
       cOpacity = 1.0;
 
-      cRotateY = offset * -30;
-      cZIndex = Math.floor(200 - offset * 30);
+      // Restaura a rotação 3D de Y para manter o visual tridimensional
+      cRotateY = offset * -32;
+      
+      // Symmetrically layout z-index
+      cZIndex = Math.floor(200 - absOffset * 20);
 
       const roundedOffset = Math.round(offset);
       if (roundedOffset === 0) {
@@ -478,7 +539,7 @@ function updateUnifiedLoop() {
       }
     } else {
       cx = Math.cos(theta) * orbitRadiusX * 1.8;
-      cy = Math.sin(theta) * orbitRadiusY * 1.8;
+      cy = Math.sin(theta) * currentOrbitRadiusY * 1.8;
       cz = -800;
       cScale = 0.15;
       cOpacity = 0.0;
@@ -490,7 +551,7 @@ function updateUnifiedLoop() {
     // LERP COORDINATES INTERPOLATION
     const finalX = ox + (cx - ox) * p;
     const finalY = oy + (cy - oy) * p;
-    const finalZ = (oz * 100) + (cz - (oz * 100)) * p;
+    const finalZ = (oz * 100 + 120) + (cz - (oz * 100 + 120)) * p;
     const finalScale = (oScale + (cScale - oScale) * p) * (hoverScales[index] || 1);
     const finalOpacity = oOpacity + (cOpacity - oOpacity) * p;
     const finalRotateY = oRotateY + (cRotateY - oRotateY) * p;
@@ -510,16 +571,17 @@ function updateUnifiedLoop() {
 function updateProjectInfoPanel() {
   if (activeView !== 'cascade') return;
 
-  const M = portfolioData.length;
+  const M = projectsDb.length;
+  if (M === 0) return;
   const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
-  const item = portfolioData[wrappedActiveIndex];
+  const item = projectsDb[wrappedActiveIndex];
   if (!item) return;
 
   const year = item.year || '';
   const tags = (item.tags || []).join(' / ');
-  const title = item.title[currentLanguage] || item.title['pt'] || item.title;
-  const subtitle = item.subtitle[currentLanguage] || item.subtitle['pt'] || item.subtitle || '';
-  const desc = item.description[currentLanguage] || item.description['pt'] || item.description;
+  const title = getLocalizedValue(item.title);
+  const subtitle = getLocalizedValue(item.subtitle);
+  const desc = getLocalizedValue(item.description);
 
   const yearEl = document.getElementById('info-panel-year');
   const tagsEl = document.getElementById('info-panel-tags');
@@ -527,13 +589,15 @@ function updateProjectInfoPanel() {
   const subtitleEl = document.getElementById('info-panel-subtitle');
   const descEl = document.getElementById('info-panel-desc');
 
-  yearEl.innerText = year;
-  tagsEl.innerText = tags;
-  titleEl.innerText = title;
-  subtitleEl.innerText = subtitle;
-  descEl.innerText = desc;
+  if (yearEl) yearEl.innerText = year;
+  if (tagsEl) tagsEl.innerText = tags;
+  if (titleEl) titleEl.innerText = title;
+  if (subtitleEl) {
+    subtitleEl.innerText = subtitle;
+    subtitleEl.style.display = subtitle ? 'block' : 'none';
+  }
+  if (descEl) descEl.innerText = desc;
   
-  subtitleEl.style.display = subtitle ? 'block' : 'none';
   lastDisplayedCascadeIndex = wrappedActiveIndex;
 }
 
@@ -542,6 +606,7 @@ function showProjectInfoPanel() {
   const panel = document.getElementById('project-info-panel');
   gsap.to(panel, {
     opacity: 1,
+    yPercent: -50,
     y: 0,
     duration: 0.5,
     ease: "power2.out",
@@ -554,7 +619,8 @@ function hideProjectInfoPanel() {
   const panel = document.getElementById('project-info-panel');
   gsap.to(panel, {
     opacity: 0,
-    y: 10,
+    yPercent: -50,
+    y: 15,
     duration: 0.3,
     ease: "power2.in",
     pointerEvents: 'none'
@@ -577,7 +643,7 @@ function bindSceneDrag() {
     
     // Right-click drag Easter Egg in Orbit view
     if (activeView === 'orbit' && e.button === 2) {
-      if (isSpinningEasterEgg) {
+      if (isSpinningEasterEgg || isSpinningMomentum) {
         e.preventDefault();
         return;
       }
@@ -595,7 +661,7 @@ function bindSceneDrag() {
 
     if (e.button !== 0) return; // Only allow left-clicks for other dragging
 
-    if (activeView === 'orbit' && isSpinningEasterEgg) {
+    if (activeView === 'orbit' && (isSpinningEasterEgg || isSpinningMomentum)) {
       // Disable left-drag interaction during spin animation
       return;
     }
@@ -608,6 +674,9 @@ function bindSceneDrag() {
     if (activeView === 'orbit') {
       isDraggingOrbit = true;
       startDragX = e.clientX;
+      startDragY = e.clientY;
+      lastDragTime = Date.now();
+      dragVelocity = 0;
     } else if (activeView === 'cascade') {
       isDraggingCascade = true;
       startCascadeDragX = e.clientX;
@@ -616,6 +685,14 @@ function bindSceneDrag() {
   };
 
   container.addEventListener('mousedown', onMouseDown);
+  container.addEventListener('click', (e) => {
+    if (activeView === 'cascade' && isCascadeFocused) {
+      if (dragDistance <= 6) {
+        isCascadeFocused = false;
+        hideProjectInfoPanel();
+      }
+    }
+  });
   if (psicromiaContainer) {
     psicromiaContainer.addEventListener('mousedown', onMouseDown);
   }
@@ -626,18 +703,32 @@ function bindSceneDrag() {
       const dy = e.clientY - startMouseY;
       dragDistance = Math.sqrt(dx * dx + dy * dy);
 
-      // If we are active-dragging, show native grabbing cursor and hide custom magnifier cursor
+      // If we are active-dragging, show native grabbing cursor
       if (dragDistance > 3 && (isDraggingOrbit || isDraggingOrbitRight || isDraggingCascade || isDraggingPsicromia)) {
         document.body.style.cursor = 'grabbing';
-        if (cursor) cursor.style.opacity = '0';
-        if (lens) lens.style.display = 'none'; // Keep lens hidden when dragging
       }
     }
 
     if (isDraggingOrbit && activeView === 'orbit') {
+      const now = Date.now();
+      const dt = Math.max(1, now - lastDragTime);
       const deltaX = e.clientX - startDragX;
-      orbitAngle -= deltaX * 0.005;
+      const deltaY = e.clientY - startDragY; // Vertical shift
+
+      // Calculate angular movement delta
+      const deltaAngle = -deltaX * 0.005;
+      const instantVelocity = deltaAngle / dt;
+      // Exponential moving average filter for velocity smoothing
+      dragVelocity = dragVelocity * 0.35 + instantVelocity * 0.65;
+
+      orbitAngle += deltaAngle;
+
+      // Adjust orbit vertical tilt (pitch) based on vertical drag delta
+      targetOrbitRadiusY = Math.max(60, Math.min(380, targetOrbitRadiusY - deltaY * 0.8));
+
       startDragX = e.clientX;
+      startDragY = e.clientY;
+      lastDragTime = now;
     } else if (isDraggingOrbitRight && activeView === 'orbit') {
       const deltaX = e.clientX - startDragX;
       orbitAngle -= deltaX * 0.005;
@@ -654,10 +745,17 @@ function bindSceneDrag() {
   });
 
   document.addEventListener('mouseup', () => {
+    const wasDraggingOrbit = isDraggingOrbit;
+
     isMouseDown = false;
     isDraggingOrbit = false;
     isDraggingCascade = false;
     isDraggingPsicromia = false;
+
+    // Return the orbit vertical tilt/pitch to its initial default (220) on release
+    if (activeView === 'orbit') {
+      targetOrbitRadiusY = 220;
+    }
 
     if (isDraggingOrbitRight && activeView === 'orbit') {
       isDraggingOrbitRight = false;
@@ -667,20 +765,85 @@ function bindSceneDrag() {
     }
     isDraggingOrbitRight = false;
 
-    // Restore custom cursor
-    document.body.style.cursor = 'none';
-    if (cursor) cursor.style.opacity = '1';
+    // Restore default cursor
+    document.body.style.cursor = 'default';
+
+    // Trigger Momentum Spin (Wheel of Fortune physics) on release if flicked fast enough
+    if (activeView === 'orbit' && wasDraggingOrbit && Math.abs(dragVelocity) > 0.001) {
+      triggerMomentumSpin(dragVelocity);
+    }
   });
 }
 
 function navigateCascade(dir) {
   activeCascadeIndex += dir;
+  isCascadeFocused = false; // Reset focus state on manual navigation
   hideProjectInfoPanel();
 }
 
+function triggerMomentumSpin(velocity) {
+  if (projectsDb.length === 0 || isSpinningEasterEgg || isSpinningMomentum) return;
+
+  const N = combinedMediaItems.length;
+  // Estimate final projected angle based on velocity.
+  // Spin duration: proportional to velocity, e.g. from 2.0 to 4.5s.
+  const duration = Math.min(4.5, Math.max(2.0, Math.abs(velocity) * 1200));
+  
+  // Total angle rotation estimate: velocity * duration * 800
+  const spinDistance = velocity * duration * 800;
+  const projectedAngle = orbitAngle + spinDistance;
+  
+  // Snap index calculation (frontmost index at end of spin)
+  const targetIdx = mod(Math.round(((Math.PI / 2 - projectedAngle) / (2 * Math.PI)) * N), N);
+  const snapAngle = Math.PI / 2 - (targetIdx / N) * 2 * Math.PI;
+  
+  // Align snap angle to the spin direction
+  let diff = (snapAngle - projectedAngle) % (2 * Math.PI);
+  if (diff > Math.PI) diff -= 2 * Math.PI;
+  if (diff < -Math.PI) diff += 2 * Math.PI;
+  
+  let finalTargetAngle = projectedAngle + diff;
+  
+  // Ensure it rotates in the correct direction of the flick speed
+  if (velocity > 0 && finalTargetAngle < orbitAngle) {
+    finalTargetAngle += 2 * Math.PI;
+  } else if (velocity < 0 && finalTargetAngle > orbitAngle) {
+    finalTargetAngle -= 2 * Math.PI;
+  }
+
+  // Change center text to "ESTOU COM SORTE." while the wheel of fortune is spinning
+  setCenterText("ESTOU COM SORTE.");
+
+  isSpinningMomentum = true;
+  let spinObj = { angle: orbitAngle };
+
+  gsap.to(spinObj, {
+    angle: finalTargetAngle,
+    duration: duration,
+    ease: "power4.out",
+    onUpdate: () => {
+      orbitAngle = spinObj.angle;
+    },
+    onComplete: () => {
+      isSpinningMomentum = false;
+      dragVelocity = 0;
+
+      // Select the snapped project
+      activeCascadeIndex = targetIdx;
+      
+      // Auto transition to Cascade view
+      switchView('cascade');
+      
+      // Open the card focused and show the project info panel immediately
+      isCascadeFocused = true;
+      showProjectInfoPanel();
+    }
+  });
+}
+
 function triggerEasterEggSpin() {
-  if (portfolioData.length === 0) return;
-  const randomIdx = Math.floor(Math.random() * portfolioData.length);
+  if (projectsDb.length === 0) return;
+  const randomIdx = Math.floor(Math.random() * projectsDb.length);
   const N = combinedMediaItems.length;
   const targetAngle = Math.PI / 2 - (randomIdx / N) * 2 * Math.PI;
 
@@ -712,6 +875,7 @@ function triggerEasterEggSpin() {
       // Select the project and switch view
       activeCascadeIndex = randomIdx;
       switchView('cascade');
+      isCascadeFocused = true;
       
       // Wait a tiny bit and show the typographic project panel
       setTimeout(() => {
@@ -734,6 +898,10 @@ function animateOrbitEntry() {
 function switchView(viewName) {
   if (activeView === viewName) return;
   activeView = viewName;
+
+  if (viewName !== 'cascade') {
+    isCascadeFocused = false;
+  }
 
   const cascadeBackBtn = document.getElementById('cascade-back-btn');
   if (cascadeBackBtn) {
@@ -759,6 +927,7 @@ function switchView(viewName) {
     // Hide typographic panel
     gsap.to('#project-info-panel', {
       opacity: 0,
+      yPercent: -50,
       y: 20,
       duration: 0.5,
       ease: "power2.in",
@@ -783,6 +952,7 @@ function switchView(viewName) {
     if (btn) btn.classList.add('active');
 
     if (viewName === 'cascade') {
+      isCascadeFocused = false; // reset when entered via switchView
       gsap.to(transitionProgress, {
         value: 1,
         duration: 1.2,
@@ -800,6 +970,7 @@ function switchView(viewName) {
       updateProjectInfoPanel(true);
       gsap.to('#project-info-panel', {
         opacity: 0,
+        yPercent: -50,
         y: 10,
         duration: 0.3,
         pointerEvents: 'none'
@@ -825,6 +996,7 @@ function switchView(viewName) {
       // Hide typographic panel
       gsap.to('#project-info-panel', {
         opacity: 0,
+        yPercent: -50,
         y: 20,
         duration: 0.5,
         ease: "power2.in",
@@ -837,34 +1009,23 @@ function switchView(viewName) {
 // ==========================================================================
 // PSICROMIA PHOTO GALLERY (VIEW 3)
 // ==========================================================================
-// Bento grid layout patterns for grid-column and grid-row spans
-const bentoPatterns = [
-  { col: "span 8", row: "span 2" }, // Large horizontal hero
-  { col: "span 4", row: "span 2" }, // Tall vertical
-  { col: "span 4", row: "span 1" }, // Small square
-  { col: "span 4", row: "span 1" }, // Small square
-  { col: "span 4", row: "span 2" }, // Tall vertical
-  { col: "span 8", row: "span 1" }, // Wide horizontal
-  { col: "span 6", row: "span 2" }, // Half-width
-  { col: "span 6", row: "span 2" }  // Half-width
-];
-
 function buildPsicromiaGallery() {
   const track = document.getElementById('psicromia-track');
   if (!track) return;
   track.innerHTML = '';
 
   // Get active project
-  const M = portfolioData.length;
+  const M = projectsDb.length;
+  if (M === 0) return;
   const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
-  const project = portfolioData[wrappedActiveIndex];
+  const project = projectsDb[wrappedActiveIndex];
   if (!project) return;
 
   // Set the project header info
   document.getElementById('detail-header-year').innerText = project.year || '';
   document.getElementById('detail-header-tags').innerText = (project.tags || []).join(' / ');
-  document.getElementById('detail-header-title').innerText = project.title[currentLanguage] || project.title['pt'] || project.title;
-  document.getElementById('detail-header-desc').innerText = project.description[currentLanguage] || project.description['pt'] || project.description || '';
+  document.getElementById('detail-header-title').innerText = getLocalizedValue(project.title);
+  document.getElementById('detail-header-desc').innerText = getLocalizedValue(project.description);
 
   const mediaItems = project.media || [];
   
@@ -874,49 +1035,20 @@ function buildPsicromiaGallery() {
   finalMedia.forEach((item, index) => {
     const card = document.createElement('div');
     card.className = 'mosaic-card';
-    
-    // Choose dynamic spans based on items count
-    let col = "span 4";
-    let row = "span 1";
-    if (finalMedia.length === 1) {
-      col = "span 12";
-      row = "span 2";
-    } else if (finalMedia.length === 2) {
-      col = "span 6";
-      row = "span 2";
-    } else if (finalMedia.length === 3) {
-      col = "span 4";
-      row = "span 2";
-    } else {
-      const pattern = bentoPatterns[index % bentoPatterns.length];
-      col = pattern.col;
-      row = pattern.row;
-    }
-    
-    card.style.gridColumn = col;
-    card.style.gridRow = row;
 
     if (item.type === 'video') {
       card.innerHTML = `
-        <div class="mosaic-card__blur-bg" style="background-image: url('${project.image}');"></div>
         <video src="${item.url}" autoplay loop muted playsinline class="mosaic-media" onerror="this.style.display='none';"></video>
       `;
     } else {
       card.innerHTML = `
-        <div class="mosaic-card__blur-bg" style="background-image: url('${item.url}');"></div>
-        <img src="${item.url}" alt="${project.title.pt}" class="mosaic-media" onerror="this.style.display='none';">
+        <img src="${item.url}" alt="${getLocalizedValue(project.title)}" class="mosaic-media" onerror="this.style.display='none';">
       `;
     }
 
     track.appendChild(card);
 
-    // Cursor hover effects on dynamic card
-    card.addEventListener('mouseenter', () => {
-      cursor.classList.add('hovered');
-    });
-    card.addEventListener('mouseleave', () => {
-      cursor.classList.remove('hovered');
-    });
+
 
     // Click to open in full screen lightbox
     card.addEventListener('click', () => {
@@ -985,7 +1117,6 @@ function openLightbox(item) {
   }
   
   overlay.classList.add('active');
-  cursor.style.opacity = '0'; // Hide cursor in lightbox mode
 }
 
 function closeLightbox() {
@@ -995,8 +1126,6 @@ function closeLightbox() {
   // Stop any playing video
   const content = overlay.querySelector('.lightbox-content');
   content.innerHTML = '';
-  
-  cursor.style.opacity = '1';
 }
 
 // ==========================================================================
@@ -1009,8 +1138,6 @@ function openPanel(panelId, event) {
   document.getElementById('panel-overlay').classList.add('active');
   const panel = document.getElementById(`panel-${panelId}`);
   panel.classList.add('active');
-
-  cursor.classList.remove('hovered');
 }
 
 function closeAllPanels() {
@@ -1045,7 +1172,8 @@ function switchLanguage(lang) {
 
 function updateLanguageUI() {
   document.querySelectorAll('.lang-btn').forEach(btn => {
-    if (btn.getAttribute('onclick').includes(currentLanguage)) {
+    const onclickAttr = btn.getAttribute('onclick');
+    if (onclickAttr && onclickAttr.includes(currentLanguage)) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
@@ -1074,35 +1202,53 @@ function initTheme() {
   const savedTheme = localStorage.getItem('theme');
   currentTheme = savedTheme ? savedTheme : 'light';
   document.body.setAttribute('data-theme', currentTheme);
-  document.getElementById('theme-toggle-btn').innerText = currentTheme === 'dark' ? '☀️' : '🌙';
+  updateThemeToggleIcon();
   
   document.getElementById('theme-toggle-btn').addEventListener('click', () => {
     currentTheme = currentTheme === 'light' ? 'dark' : 'light';
     document.body.setAttribute('data-theme', currentTheme);
     localStorage.setItem('theme', currentTheme);
-    document.getElementById('theme-toggle-btn').innerText = currentTheme === 'dark' ? '☀️' : '🌙';
+    updateThemeToggleIcon();
   });
 }
 
-// ==========================================================================
-// CUSTOM CURSOR HOVER INTERACTIONS
-// ==========================================================================
-function addCursorInteractions() {
-  document.querySelectorAll('a, button, [onclick], .lang-btn, .vis-btn, .morph-card, .psicromia-photo-card').forEach(el => {
-    el.addEventListener('mouseenter', () => {
-      cursor.classList.add('hovered');
-    });
-
-    el.addEventListener('mouseleave', () => {
-      cursor.classList.remove('hovered');
-    });
-  });
+function updateThemeToggleIcon() {
+  const btn = document.getElementById('theme-toggle-btn');
+  if (!btn) return;
+  if (currentTheme === 'dark') {
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-color); display: block;">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+    `;
+  } else {
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #4a5568; display: block;">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+    `;
+  }
 }
+
+
 
 // ==========================================================================
 // SPACE PARTICLES SYSTEM
 // ==========================================================================
 function initParticles() {
+  canvas = document.getElementById('particles-canvas');
+  if (!canvas) return;
+  ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
   
@@ -1120,8 +1266,10 @@ function initParticles() {
 }
 
 function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  if (canvas) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
 }
 
 class Particle {
@@ -1137,13 +1285,16 @@ class Particle {
     this.x += this.speedX;
     this.y += this.speedY;
     
-    if (this.x < 0) this.x = canvas.width;
-    if (this.x > canvas.width) this.x = 0;
-    if (this.y < 0) this.y = canvas.height;
-    if (this.y > canvas.height) this.y = 0;
+    if (canvas) {
+      if (this.x < 0) this.x = canvas.width;
+      if (this.x > canvas.width) this.x = 0;
+      if (this.y < 0) this.y = canvas.height;
+      if (this.y > canvas.height) this.y = 0;
+    }
   }
   
   draw() {
+    if (!ctx) return;
     ctx.fillStyle = currentTheme === 'dark' ? 'rgba(245, 243, 239, 0.35)' : 'rgba(26, 24, 20, 0.15)';
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -1152,6 +1303,7 @@ class Particle {
 }
 
 function animateParticles() {
+  if (!ctx || !canvas) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   particlesArray.forEach(p => {
     p.update();
@@ -1171,6 +1323,396 @@ function handleFormSubmit(event) {
   form.reset();
   closeAllPanels();
 }
-// Wait, there is a minor typo on line 301, let's look:
-// "navigateCascade(dir => navigateCascade(deltaX > 0 ? -1 : 1));" - double navigation, let's fix it:
-// "navigateCascade(deltaX > 0 ? -1 : 1);"
+
+// ==========================================================================
+// ADMIN PANEL FUNCTIONS
+// ==========================================================================
+function openAdminPanel() {
+  closeAllPanels();
+  const panel = document.getElementById('admin-panel');
+  if (panel) {
+    panel.classList.add('active');
+    renderAdminProjectsList();
+  }
+}
+
+function closeAdminPanel() {
+  const panel = document.getElementById('admin-panel');
+  if (panel) {
+    panel.classList.remove('active');
+  }
+  closeProjectForm();
+}
+
+function renderAdminProjectsList() {
+  const listContainer = document.getElementById('admin-projects-list');
+  if (!listContainer) return;
+  listContainer.innerHTML = '';
+
+  projectsDb.forEach((project, idx) => {
+    const item = document.createElement('div');
+    item.className = 'admin-project-item';
+    
+    const title = project.title['pt'] || project.title;
+    const imgUrl = project.image || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=120&q=80";
+
+    item.innerHTML = `
+      <img src="${imgUrl}" alt="${title}" class="admin-project-thumb">
+      <div class="admin-project-info">
+        <span class="admin-project-title">${title}</span>
+        <span class="admin-project-meta">${project.year} — ID: ${project.id}</span>
+      </div>
+      <div class="admin-project-actions">
+        <button class="admin-btn admin-btn--edit" onclick="openProjectForm('${project.id}')">Editar</button>
+        <button class="admin-btn admin-btn--delete" onclick="deleteProject('${project.id}')">Excluir</button>
+      </div>
+    `;
+    listContainer.appendChild(item);
+  });
+}
+
+let activeEditingProjectId = null;
+
+function openProjectForm(projectId = null) {
+  activeEditingProjectId = projectId;
+  const formModal = document.getElementById('admin-form-modal');
+  const modalTitle = document.getElementById('admin-form-title');
+  const form = document.getElementById('admin-project-form');
+  
+  if (!formModal || !form) return;
+
+  // Clear media container
+  const mediaContainer = document.getElementById('admin-form-media-rows');
+  if (mediaContainer) mediaContainer.innerHTML = '';
+
+  if (projectId) {
+    modalTitle.innerText = "Editar Projeto";
+    const project = projectsDb.find(p => p.id === projectId);
+    if (project) {
+      document.getElementById('form-project-id').value = project.id;
+      document.getElementById('form-project-id').disabled = true; // disable changing ID on edit
+      
+      // Multilingual fields
+      document.getElementById('form-title-pt').value = project.title['pt'] || '';
+      document.getElementById('form-title-en').value = project.title['en'] || '';
+      document.getElementById('form-title-es').value = project.title['es'] || '';
+      document.getElementById('form-title-fr').value = project.title['fr'] || '';
+
+      document.getElementById('form-subtitle-pt').value = project.subtitle ? (project.subtitle['pt'] || '') : '';
+      document.getElementById('form-subtitle-en').value = project.subtitle ? (project.subtitle['en'] || '') : '';
+      document.getElementById('form-subtitle-es').value = project.subtitle ? (project.subtitle['es'] || '') : '';
+      document.getElementById('form-subtitle-fr').value = project.subtitle ? (project.subtitle['fr'] || '') : '';
+
+      document.getElementById('form-desc-pt').value = project.description['pt'] || '';
+      document.getElementById('form-desc-en').value = project.description['en'] || '';
+      document.getElementById('form-desc-es').value = project.description['es'] || '';
+      document.getElementById('form-desc-fr').value = project.description['fr'] || '';
+
+      document.getElementById('form-project-year').value = project.year || '';
+      document.getElementById('form-project-tags').value = (project.tags || []).join(', ');
+      document.getElementById('form-project-cover').value = project.image || '';
+      updateCoverPreview(project.image || '');
+
+      // Populate media items
+      const media = project.media || [];
+      media.forEach(m => {
+        addGalleryMediaRow(m.url, m.type);
+      });
+    }
+  } else {
+    modalTitle.innerText = "Novo Projeto";
+    form.reset();
+    document.getElementById('form-project-id').value = '';
+    document.getElementById('form-project-id').disabled = false;
+    updateCoverPreview('');
+    // Add one default media row
+    addGalleryMediaRow();
+  }
+
+  formModal.classList.add('active');
+}
+
+function closeProjectForm() {
+  const formModal = document.getElementById('admin-form-modal');
+  if (formModal) {
+    formModal.classList.remove('active');
+  }
+}
+
+function addGalleryMediaRow(url = '', type = 'image') {
+  const container = document.getElementById('admin-form-media-rows');
+  if (!container) return;
+
+  const rowId = 'gallery-media-row-' + Math.random().toString(36).substr(2, 9);
+  const row = document.createElement('div');
+  row.className = 'admin-media-row';
+  row.id = rowId;
+  row.style = 'display: flex; gap: 8px; align-items: center;';
+  
+  row.innerHTML = `
+    <select class="admin-input form-media-type" style="width: 90px; padding: 4px;">
+      <option value="image" ${type === 'image' ? 'selected' : ''}>Imagem</option>
+      <option value="video" ${type === 'video' ? 'selected' : ''}>Vídeo</option>
+    </select>
+    <input type="text" class="admin-input form-media-url" placeholder="URL ou Base64" value="${url}" style="flex: 1; min-width: 0; padding: 6px;" required>
+    <label class="admin-upload-btn" title="Upload Local">
+      📁
+      <input type="file" class="form-media-file" accept="image/*,video/*" style="display: none;">
+    </label>
+    <button type="button" class="admin-btn admin-btn--delete" onclick="this.parentElement.remove()" style="padding: 0 10px; font-size: 16px;">×</button>
+  `;
+  container.appendChild(row);
+
+  // Setup upload change listener
+  const fileInput = row.querySelector('.form-media-file');
+  const urlInput = row.querySelector('.form-media-url');
+  const typeSelect = row.querySelector('.form-media-type');
+
+  if (fileInput && urlInput) {
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const isVideo = file.type.startsWith('video/');
+        typeSelect.value = isVideo ? 'video' : 'image';
+        
+        urlInput.value = "Carregando...";
+        urlInput.disabled = true;
+
+        try {
+          if (isVideo) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+              urlInput.value = reader.result;
+              urlInput.disabled = false;
+            };
+          } else {
+            const compressed = await compressImage(file, 1600, 0.75);
+            urlInput.value = compressed;
+            urlInput.disabled = false;
+          }
+        } catch (err) {
+          console.error("Erro ao carregar mídia local:", err);
+          alert("Erro ao ler arquivo local.");
+          urlInput.value = "";
+          urlInput.disabled = false;
+        }
+      }
+    });
+  }
+}
+
+function saveProject(event) {
+  event.preventDefault();
+
+  const id = document.getElementById('form-project-id').value.trim();
+  if (!id) return;
+
+  const titlePt = document.getElementById('form-title-pt').value.trim();
+  const year = document.getElementById('form-project-year').value.trim();
+  const tagsStr = document.getElementById('form-project-tags').value.trim();
+  const coverUrl = document.getElementById('form-project-cover').value.trim();
+
+  // Parse tags
+  const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
+
+  // Parse media rows
+  const mediaRows = document.querySelectorAll('.admin-media-row');
+  const media = [];
+  mediaRows.forEach(row => {
+    const type = row.querySelector('.form-media-type').value;
+    const url = row.querySelector('.form-media-url').value.trim();
+    if (url) {
+      media.push({ type, url });
+    }
+  });
+
+  const projectObject = {
+    id,
+    tags,
+    year,
+    title: {
+      pt: titlePt,
+      en: document.getElementById('form-title-en').value.trim() || titlePt,
+      es: document.getElementById('form-title-es').value.trim() || titlePt,
+      fr: document.getElementById('form-title-fr').value.trim() || titlePt
+    },
+    subtitle: {
+      pt: document.getElementById('form-subtitle-pt').value.trim(),
+      en: document.getElementById('form-subtitle-en').value.trim(),
+      es: document.getElementById('form-subtitle-es').value.trim(),
+      fr: document.getElementById('form-subtitle-fr').value.trim()
+    },
+    description: {
+      pt: document.getElementById('form-desc-pt').value.trim(),
+      en: document.getElementById('form-desc-en').value.trim() || document.getElementById('form-desc-pt').value.trim(),
+      es: document.getElementById('form-desc-es').value.trim() || document.getElementById('form-desc-pt').value.trim(),
+      fr: document.getElementById('form-desc-fr').value.trim() || document.getElementById('form-desc-pt').value.trim()
+    },
+    image: coverUrl,
+    media: media
+  };
+
+  if (activeEditingProjectId) {
+    // Edit mode
+    const idx = projectsDb.findIndex(p => p.id === activeEditingProjectId);
+    if (idx !== -1) {
+      projectsDb[idx] = projectObject;
+    }
+  } else {
+    // New project mode
+    // Check duplication
+    if (projectsDb.some(p => p.id === id)) {
+      alert("Erro: Já existe um projeto com este ID!");
+      return;
+    }
+    projectsDb.push(projectObject);
+  }
+
+  // Save and rebuild
+  localStorage.setItem('portfolio_projects', JSON.stringify(projectsDb));
+  buildMorphingCards();
+  renderAdminProjectsList();
+  closeProjectForm();
+}
+
+function deleteProject(projectId) {
+  if (!confirm(`Tem certeza que deseja excluir o projeto "${projectId}"?`)) return;
+
+  projectsDb = projectsDb.filter(p => p.id !== projectId);
+  localStorage.setItem('portfolio_projects', JSON.stringify(projectsDb));
+  
+  buildMorphingCards();
+  renderAdminProjectsList();
+}
+
+function exportPortfolioData() {
+  const headerText = `// Copy and replace this content in data/portfolio.js to save permanently\nconst portfolioData = `;
+  const dataString = JSON.stringify(projectsDb, null, 2);
+  const fullContent = headerText + dataString + ";\n";
+
+  const blob = new Blob([fullContent], { type: 'text/javascript' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'portfolio.js';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Request Admin access prompting for password
+function requestAdminAccess() {
+  const password = prompt("Digite a senha de administrador:");
+  if (password === 'Jc11286400*') {
+    openAdminPanel();
+  } else if (password !== null) {
+    alert("Senha incorreta.");
+  }
+}
+
+// Update the live cover image preview inside the project form
+function updateCoverPreview(url) {
+  const previewImg = document.getElementById('form-cover-preview');
+  const placeholder = document.getElementById('form-cover-placeholder');
+  if (previewImg && placeholder) {
+    if (url && url.trim() !== '') {
+      previewImg.src = url;
+      previewImg.style.display = 'block';
+      placeholder.style.display = 'none';
+    } else {
+      previewImg.src = '';
+      previewImg.style.display = 'none';
+      placeholder.style.display = 'block';
+    }
+  }
+}
+
+// Translate text using free MyMemory Translation API
+async function translateText(text, targetLang) {
+  if (!text || text.trim() === '') return '';
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=pt|${targetLang}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Translation request failed");
+    const data = await response.json();
+    if (data.responseData && data.responseData.translatedText) {
+      return data.responseData.translatedText;
+    }
+    return text;
+  } catch (error) {
+    console.error("Translation error:", error);
+    return text;
+  }
+}
+
+// Trigger automatic translation for all non-PT fields based on PT field value
+async function triggerAutoTranslation(sourceFieldId, fieldType) {
+  const sourceInput = document.getElementById(sourceFieldId);
+  if (!sourceInput) return;
+  const text = sourceInput.value.trim();
+  if (!text) return;
+
+  const targetLangs = ['en', 'es', 'fr'];
+  
+  // Set placeholders/values to "Traduzindo..." to show status
+  targetLangs.forEach(lang => {
+    const targetInput = document.getElementById(`form-${fieldType}-${lang}`);
+    if (targetInput) {
+      targetInput.value = "Traduzindo...";
+      targetInput.disabled = true;
+    }
+  });
+
+  // Fetch translations and update inputs
+  for (const lang of targetLangs) {
+    const targetInput = document.getElementById(`form-${fieldType}-${lang}`);
+    if (targetInput) {
+      const translated = await translateText(text, lang);
+      targetInput.value = translated;
+      targetInput.disabled = false;
+    }
+  }
+}
+
+// Compress image client-side using Canvas API
+function compressImage(file, maxDimension = 1600, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        // Resize if it exceeds max dimension
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert to base64 jpeg
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedDataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+}
