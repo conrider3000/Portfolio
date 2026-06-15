@@ -76,16 +76,7 @@ a, button {
    GRID BACKGROUND & CANVAS
    ========================================================================== */
 .grid-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  opacity: 0.03;
+  display: none;
 }
 .grid-line {
   border-right: 1px solid var(--text-color);
@@ -715,17 +706,15 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
    ========================================================================== */
 .project-info-panel {
   position: fixed;
-  right: 3rem;
+  left: 75%;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   width: 380px;
   z-index: 850;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  text-align: right;
-  align-items: flex-end;
 }
 
 .info-panel-more-btn {
@@ -759,7 +748,6 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  justify-content: flex-end;
 }
 
 .project-info-panel__year {
