@@ -1319,7 +1319,19 @@ function animateParticles() {
 function handleFormSubmit(event) {
   event.preventDefault();
   const form = event.target;
-  const successMsg = translations[currentLanguage]["contact.success"] || "Message sent!";
+  const name = form.querySelector('input[type="text"]')?.value || '';
+  const email = form.querySelector('input[type="email"]')?.value || '';
+  const message = form.querySelector('textarea')?.value || '';
+  const lang = translations[currentLanguage] || translations['pt'];
+
+  const subject = encodeURIComponent(`Contato do Portfólio — ${name}`);
+  const body = encodeURIComponent(
+    `Nome: ${name}\nE-mail: ${email}\n\nMensagem:\n${message}`
+  );
+
+  window.open(`mailto:falaconrado@gmail.com?subject=${subject}&body=${body}`, '_blank');
+
+  const successMsg = lang["contact.success"] || "Message sent!";
   alert(successMsg);
   form.reset();
   closeAllPanels();
