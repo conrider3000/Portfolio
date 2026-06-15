@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>João Conrado — Strategic Designer | UX & Product Design</title>
+  
+  <!-- SEO Meta -->
+  <meta name="description" content="Portfólio interativo de João Conrado. Designer Estratégico, UX Researcher e Fabricante Digital.">
+  <meta name="keywords" content="design, ux, product design, cnc, figma, apple academy, curitiba">
+  <meta name="author" content="João Conrado">
+  
+  <!-- Styling -->
+  <link rel="stylesheet" href="style.css?v=1.0.17">
+  
+  <!-- GSAP Core for 3D animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+
+  <!-- Background grid overlays -->
+  <div class="grid-bg">
+    <div class="grid-line"></div>
+    <div class="grid-line"></div>
+    <div class="grid-line"></div>
+    <div class="grid-line"></div>
+  </div>
+
+  <!-- Space particles canvas -->
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- snappy Custom cursor (1:1 mouse position) -->
+  <div class="custom-cursor" id="cursor"></div>
+
+  <!-- Zoom Magnifier Lens (Active over images) -->
+  <div class="magnifier-lens" id="lens"></div>
+
+  <!-- Site Intro Loader -->
+  <div class="site-loader" id="loader">
+    <div class="site-loader__content">
+      <span>Conrado</span>
+      <div class="site-loader__word" id="loader-word">design.</div>
+    </div>
+    <div class="site-loader__progress">
+      <span class="site-loader__percent" id="loader-percent">0%</span>
+      <div class="site-loader__bar">
+        <div class="site-loader__bar-fill" id="loader-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header navigation -->
+  <header class="header">
+    <a href="#" class="logo" id="logo-text" onclick="resetToHome(event)">CONRADO</a>
+    
+    <nav class="nav">
+      <ul class="nav__list">
+        <li><a href="#" class="nav__link" onclick="openPanel('sobre', event)" data-i18n="nav.about">Sobre</a></li>
+        <li><a href="#" class="nav__link" onclick="openPanel('contato', event)" data-i18n="nav.contact">Contato</a></li>
+      </ul>
+      
+      <!-- Translations -->
+      <div class="lang-switcher">
+        <button class="lang-btn active" onclick="switchLanguage('pt')">PT</button>
+        <button class="lang-btn" onclick="switchLanguage('en')">EN</button>
+        <button class="lang-btn" onclick="switchLanguage('es')">ES</button>
+        <button class="lang-btn" onclick="switchLanguage('fr')">FR</button>
+      </div>
+
+      <!-- Theme Switcher -->
+      <button class="theme-toggle" id="theme-toggle-btn" aria-label="Toggle Dark Mode">🌙</button>
+    </nav>
+  </header>
+
+  <!-- VIEWPORTS (Unified dashboard screen) -->
+  <main class="main-viewport">
+    
+    <!-- Unified 3D scene (Morphing layout space) -->
+    <div class="view-container active" id="projects-scene">
+      <div class="orbit-space">
+        <!-- Central Planet Text -->
+        <div class="orbit-center" id="orbit-center-text">CONRADO.</div>
+        
+        <!-- Staggered Card deck container -->
+        <div class="orbit-ring" id="projects-container">
+          <!-- Rendered dynamically by main.js -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Psicromia 3D Photo Gallery (View 3) -->
+    <div class="view-container" id="psicromia-scene">
+      <div class="psicromia-space">
+        <div class="psicromia-track" id="psicromia-track">
+          <!-- Rendered dynamically by main.js -->
+        </div>
+      </div>
+      <button class="psicromia-back-btn" onclick="exitPsicromia()">← Voltar</button>
+    </div>
+
+    <!-- Cascade Back Button to return to Orbit view -->
+    <button class="cascade-back-btn" id="cascade-back-btn" onclick="switchView('orbit')">← 🌐 Órbita</button>
+  </main>
+
+  <!-- BOTTOM VISUALIZER SELECTIONS -->
+  <div class="visualizer-select">
+    <button class="vis-btn active" id="btn-orbit" onclick="switchView('orbit')">Orbit 3D</button>
+    <button class="vis-btn" id="btn-cascade" onclick="switchView('cascade')">Cascade 3D</button>
+  </div>
+
+  <!-- Project Info Typographic Panel (Moment 2 - Cascade 3D) -->
+  <div class="project-info-panel" id="project-info-panel" style="opacity: 0; pointer-events: none; transform: translateY(20px);">
+    <div class="project-info-panel__meta">
+      <span class="project-info-panel__year" id="info-panel-year"></span>
+      <span class="project-info-panel__tags" id="info-panel-tags"></span>
+    </div>
+    <h2 class="project-info-panel__title" id="info-panel-title"></h2>
+    <h3 class="project-info-panel__subtitle" id="info-panel-subtitle"></h3>
+    <div class="project-info-panel__divider"></div>
+    <p class="project-info-panel__desc" id="info-panel-desc"></p>
+  </div>
+
+  <!-- SLIDING OVERLAY PANELS -->
+  <div class="panel-overlay" id="panel-overlay" onclick="closeAllPanels()"></div>
+
+  <!-- Sobre / CV Panel -->
+  <div class="panel-sobre" id="panel-sobre">
+    <button class="panel-close" onclick="closeAllPanels()" data-i18n="misc.close">Fechar</button>
+    
+    <h1 style="font-family: var(--font-serif); font-size: 2.5rem; margin-bottom: 1.5rem;" data-i18n="about.title">Sobre Mim</h1>
+    <p style="font-size: 1.15rem; font-family: var(--font-serif); margin-bottom: 1.5rem; line-height: 1.7;" data-i18n="about.paragraph1"></p>
+    <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.7;" data-i18n="about.paragraph2"></p>
+
+    <!-- Idiomas -->
+    <h3 class="cv-section-title" data-i18n="stats.languages">Idiomas</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+      <div style="font-size: 0.9rem;"><strong>Português:</strong> <span style="color: var(--accent-color);">Nativo</span></div>
+      <div style="font-size: 0.9rem;"><strong>Inglês:</strong> <span style="color: var(--accent-color);">Fluente</span></div>
+      <div style="font-size: 0.9rem;"><strong>Espanhol:</strong> <span style="color: var(--accent-color);">Fluente</span></div>
+      <div style="font-size: 0.9rem;"><strong>Francês:</strong> <span style="color: var(--accent-color);">Fluente</span></div>
+    </div>
+
+    <!-- Competências -->
+    <h3 class="cv-section-title" data-i18n="skills.title">Competências</h3>
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+      <div>
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem;" data-i18n="skills.ux">UX/UI & Produto</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="skills.ux.list"></p>
+      </div>
+      <div>
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem;" data-i18n="skills.strategy">Inovação & Estratégia</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="skills.strategy.list"></p>
+      </div>
+      <div>
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem;" data-i18n="skills.physical">Produto Físico</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="skills.physical.list"></p>
+      </div>
+    </div>
+
+    <!-- Histórico CV -->
+    <h3 class="cv-section-title" data-i18n="cv.title">Trajetória</h3>
+    
+    <div class="cv-item">
+      <div class="cv-date">2017 - 2025</div>
+      <div class="cv-title">Pragmatas Serviços Criativos</div>
+      <div class="cv-subtitle" data-i18n="cv.pragmatas.role">Cofundador & Diretor de Design Estratégico</div>
+      <p class="cv-desc" data-i18n="cv.pragmatas.desc"></p>
+    </div>
+
+    <div class="cv-item">
+      <div class="cv-date">2022 - Presente</div>
+      <div class="cv-title">SURU Móveis Decoloniais</div>
+      <div class="cv-subtitle" data-i18n="cv.suru.role">Criador & Designer</div>
+      <p class="cv-desc" data-i18n="cv.suru.desc"></p>
+    </div>
+
+    <div class="cv-item">
+      <div class="cv-date">2019 - 2020</div>
+      <div class="cv-title">Apple Developer Academy</div>
+      <div class="cv-subtitle" data-i18n="cv.academy.role">Product Designer</div>
+      <p class="cv-desc" data-i18n="cv.academy.desc"></p>
+    </div>
+  </div>
+
+  <!-- Contato Panel -->
+  <div class="panel-contato" id="panel-contato">
+    <button class="panel-close" onclick="closeAllPanels()" data-i18n="misc.close">Fechar</button>
+    
+    <h2 style="font-family: var(--font-serif); font-size: 2.2rem; margin-bottom: 1rem;" data-i18n="contact.title">Vamos Conversar?</h2>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem;" data-i18n="contact.desc">Sinta-se livre para entrar em contato...</p>
+    
+    <form onsubmit="handleFormSubmit(event)">
+      <input type="text" placeholder="Nome" data-i18n-placeholder="contact.name" class="input-field" required>
+      <input type="email" placeholder="E-mail" data-i18n-placeholder="contact.email" class="input-field" required>
+      <textarea rows="4" placeholder="Mensagem" data-i18n-placeholder="contact.message" class="input-field" required style="resize:none;"></textarea>
+      <button type="submit" class="btn-submit" data-i18n="contact.send">Enviar Mensagem</button>
+    </form>
+
+    <div style="margin-top: 2rem; display: flex; gap: 1.5rem; justify-content: center; font-size: 0.9rem; font-weight: 500;">
+      <a href="mailto:falaconrado@gmail.com" class="nav__link">E-mail</a>
+      <a href="https://github.com/conrider3000" target="_blank" class="nav__link">GitHub</a>
+      <a href="https://pragmatas.org" target="_blank" class="nav__link">Pragmatas</a>
+    </div>
+  </div>
+
+  <!-- Javascript Imports -->
+  <script src="data/portfolio.js"></script>
+  <script src="translations.js"></script>
+  <script src="main.js?v=1.0.17"></script>
+</body>
+</html>

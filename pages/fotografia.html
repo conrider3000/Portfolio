@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Psicromia — Fotografia Documental & Audiovisual</title>
+  
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    /* Fullscreen editorial masonry/grid style for Psicromia gallery */
+    .gallery-container {
+      max-width: 1400px;
+      margin: 4rem auto;
+      padding: 0 var(--gutter);
+    }
+    
+    .gallery-header {
+      margin-bottom: 4rem;
+      text-align: center;
+    }
+    
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+    
+    .gallery-item {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      aspect-ratio: 1/1;
+      background-color: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--card-shadow);
+      cursor: none;
+    }
+    
+    .gallery-item:nth-child(3n+1) {
+      aspect-ratio: 3/4;
+    }
+    
+    .gallery-item:nth-child(3n+2) {
+      aspect-ratio: 4/3;
+    }
+    
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    .gallery-item:hover img {
+      transform: scale(1.06);
+    }
+    
+    .gallery-item__overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+      opacity: 0;
+      display: flex;
+      align-items: flex-end;
+      padding: 1.5rem;
+      transition: opacity 0.3s ease;
+      color: #fff;
+    }
+    
+    .gallery-item:hover .gallery-item__overlay {
+      opacity: 1;
+    }
+    
+    .gallery-item__caption {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body style="padding-top: calc(var(--header-height) + 2rem);">
+
+  <!-- Background lines -->
+  <div class="grid-bg">
+    <div class="grid-line"></div>
+    <div class="grid-line"></div>
+    <div class="grid-line"></div>
+    <div class="grid-line"></div>
+  </div>
+
+  <div class="custom-cursor" id="cursor"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <a href="../index.html" class="logo">CONRADO<span>.world</span></a>
+    
+    <nav class="nav">
+      <ul class="nav__list">
+        <li><a href="../index.html#home" class="nav__link" data-i18n="nav.home">Início</a></li>
+        <li><a href="../index.html#projetos" class="nav__link" data-i18n="nav.projects">Projetos</a></li>
+        <li><a href="sobre.html" class="nav__link" data-i18n="nav.about">Sobre</a></li>
+        <li><a href="fotografia.html" class="nav__link active" data-i18n="nav.photo">Psicromia</a></li>
+        <li><a href="../index.html#contato" class="nav__link" data-i18n="nav.contact">Contato</a></li>
+      </ul>
+      
+      <div class="lang-switcher">
+        <button class="lang-btn active" onclick="switchLanguage('pt')">PT</button>
+        <button class="lang-btn" onclick="switchLanguage('en')">EN</button>
+        <button class="lang-btn" onclick="switchLanguage('es')">ES</button>
+        <button class="lang-btn" onclick="switchLanguage('fr')">FR</button>
+      </div>
+
+      <button class="theme-toggle" id="theme-toggle-btn">🌙</button>
+    </nav>
+  </header>
+
+  <main class="gallery-container">
+    
+    <div class="gallery-header">
+      <h1 style="font-family: var(--font-serif); font-size: 3rem; margin-bottom: 1rem;" data-i18n="nav.photo">Psicromia</h1>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;" data-i18n="cv.psicromia.desc">
+        Projeto autoral de fotografia documental e audiovisual com 100+ coberturas em eventos...
+      </p>
+    </div>
+
+    <!-- Masonry grid of beautiful documentary assets -->
+    <div class="gallery-grid">
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80" alt="Concert Stage">
+        <div class="gallery-item__overlay">
+          <div class="gallery-item__caption">Festival de Inverno — Curitiba, PR</div>
+        </div>
+      </div>
+
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80" alt="Concert Stage Detail">
+        <div class="gallery-item__overlay">
+          <div class="gallery-item__caption">Show Autoral — Teatro Paiol</div>
+        </div>
+      </div>
+
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80" alt="Ibicoara Landscape">
+        <div class="gallery-item__overlay">
+          <div class="gallery-item__caption">Raízes de Ibicoara — Bahia</div>
+        </div>
+      </div>
+
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80" alt="Artisan craft maker">
+        <div class="gallery-item__overlay">
+          <div class="gallery-item__caption">SURU Making Of — Marcenaria Fabtech</div>
+        </div>
+      </div>
+
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80" alt="Live Event Microphone">
+        <div class="gallery-item__overlay">
+          <div class="gallery-item__caption">NASA Space Apps — Mentoria & Facilitação</div>
+        </div>
+      </div>
+
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1543157145-f78b636d023d?auto=format&fit=crop&w=800&q=80" alt="Etinografic Documental portrait">
+        <div class="gallery-item__overlay">
+          <div class="gallery-item__caption">Documentário Etnográfico — AIC</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="../translations.js"></script>
+  <script>
+    let currentLanguage = 'pt';
+    let currentTheme = 'light';
+
+    const cursor = document.getElementById('cursor');
+    let mouseX = 0, mouseY = 0;
+    let cursorX = 0, cursorY = 0;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      initLanguage();
+
+      document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+      animateCursor();
+      addCursorInteractions();
+    });
+
+    function initLanguage() {
+      const savedLang = localStorage.getItem('language');
+      currentLanguage = (savedLang && ['pt', 'en', 'es', 'fr'].includes(savedLang)) ? savedLang : 'pt';
+      updateLanguageUI();
+    }
+
+    function switchLanguage(lang) {
+      currentLanguage = lang;
+      localStorage.setItem('language', lang);
+      updateLanguageUI();
+    }
+
+    function updateLanguageUI() {
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        if (btn.getAttribute('onclick').includes(currentLanguage)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[currentLanguage] && translations[currentLanguage][key]) {
+          el.innerText = translations[currentLanguage][key];
+        }
+      });
+    }
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      currentTheme = savedTheme ? savedTheme : 'light';
+      document.body.setAttribute('data-theme', currentTheme);
+      document.getElementById('theme-toggle-btn').innerText = currentTheme === 'dark' ? '☀️' : '🌙';
+      
+      document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.body.setAttribute('data-theme', currentTheme);
+        localStorage.setItem('theme', currentTheme);
+        document.getElementById('theme-toggle-btn').innerText = currentTheme === 'dark' ? '☀️' : '🌙';
+      });
+    }
+
+    function animateCursor() {
+      cursorX += (mouseX - cursorX) * 0.15;
+      cursorY += (mouseY - cursorY) * 0.15;
+      cursor.style.left = `${cursorX}px`;
+      cursor.style.top = `${cursorY}px`;
+      requestAnimationFrame(animateCursor);
+    }
+
+    function addCursorInteractions() {
+      document.querySelectorAll('a, button, .gallery-item').forEach(el => {
+        el.addEventListener('mouseenter', () => {
+          if (el.classList.contains('gallery-item')) {
+            cursor.classList.add('project-hover');
+            cursor.innerText = '📷';
+          } else {
+            cursor.classList.add('hovered');
+          }
+        });
+        el.addEventListener('mouseleave', () => {
+          cursor.classList.remove('hovered');
+          cursor.classList.remove('project-hover');
+          cursor.innerText = '';
+        });
+      });
+    }
+  </script>
+</body>
+</html>
