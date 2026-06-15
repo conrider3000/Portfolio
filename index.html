@@ -11,7 +11,7 @@
   <meta name="author" content="João Conrado">
   
   <!-- Styling -->
-  <link rel="stylesheet" href="style.css?v=1.0.17">
+  <link rel="stylesheet" href="style.css?v=1.0.22">
   
   <!-- GSAP Core for 3D animations -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -88,9 +88,19 @@
       </div>
     </div>
 
-    <!-- Psicromia 3D Photo Gallery (View 3) -->
+    <!-- Project Detail Gallery View (View 3) -->
     <div class="view-container" id="psicromia-scene">
       <div class="psicromia-space">
+        <!-- Project Header -->
+        <div class="project-detail-header" id="project-detail-header">
+          <div class="project-detail-header__meta">
+            <span class="project-detail-header__year" id="detail-header-year"></span>
+            <span class="project-detail-header__tags" id="detail-header-tags"></span>
+          </div>
+          <h1 class="project-detail-header__title" id="detail-header-title"></h1>
+          <p class="project-detail-header__desc" id="detail-header-desc"></p>
+        </div>
+        
         <div class="psicromia-track" id="psicromia-track">
           <!-- Rendered dynamically by main.js -->
         </div>
@@ -203,9 +213,17 @@
     </div>
   </div>
 
+  <!-- Lightbox Overlay for Mosaic Media -->
+  <div class="lightbox-overlay" id="lightbox-overlay" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">×</button>
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+      <!-- Injected dynamically -->
+    </div>
+  </div>
+
   <!-- Javascript Imports -->
   <script src="data/portfolio.js"></script>
   <script src="translations.js"></script>
-  <script src="main.js?v=1.0.17"></script>
+  <script src="main.js?v=1.0.22"></script>
 </body>
 </html>

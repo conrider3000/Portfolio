@@ -26,8 +26,9 @@ let startMouseY = 0;
 
 // Orbit calculations
 let orbitAngle = 0;
-let targetOrbitSpeed = 0.0006;
-let currentOrbitSpeed = 0.0006;
+let targetOrbitSpeed = 0.0012; // Faster default speed
+let currentOrbitSpeed = 0.0012;
+let isHoveringCard = false; // Tracks card hover for Cascade slow motion
 let isDraggingOrbit = false;
 let startDragX = 0;
 const orbitRadiusX = 580;
@@ -45,15 +46,8 @@ let smoothCascadeIndex = 0; // Floating point variable for smooth LERP card tran
 let isDraggingCascade = false;
 let startCascadeDragX = 0;
 
-// Unified media items (6 projects + 5 photos = 11 morphing cards)
-const photoGalleryItems = [
-  { id: "photo-1", title: { pt: "Festival de Inverno", en: "Winter Festival", es: "Festival de Invierno", fr: "Festival d'Hiver" }, image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80", description: { pt: "Curitiba, PR", en: "Curitiba, PR", es: "Curitiba, PR", fr: "Curitiba, PR" }, tags: ["Fotografia"] },
-  { id: "photo-2", title: { pt: "Show Autoral Paiol", en: "Paiol Theater Concert", es: "Concierto Teatro Paiol", fr: "Concert au Théâtre Paiol" }, image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80", description: { pt: "Teatro Paiol", en: "Paiol Theater", es: "Teatro Paiol", fr: "Théâtre Paiol" }, tags: ["Fotografia"] },
-  { id: "photo-3", title: { pt: "Raízes de Ibicoara", en: "Ibicoara Roots", es: "Raíces de Ibicoara", fr: "Racines d'Ibicoara" }, image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80", description: { pt: "Ibicoara, Bahia", en: "Ibicoara, Bahia", es: "Ibicoara, Bahia", fr: "Ibicoara, Bahia" }, tags: ["Audiovisual"] },
-  { id: "photo-4", title: { pt: "SURU Marcenaria", en: "SURU Workshop", es: "SURU Taller", fr: "Atelier SURU" }, image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80", description: { pt: "Fabtech Curitiba", en: "Fabtech Curitiba", es: "Fabtech Curitiba", fr: "Fabtech Curitiba" }, tags: ["Produto Físico"] },
-  { id: "photo-5", title: { pt: "NASA Space Apps", en: "NASA Space Apps", es: "NASA Space Apps", fr: "NASA Space Apps" }, image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80", description: { pt: "Mentoria & Inovação", en: "Mentoring & Innovation", es: "Mentoring e Innovación", fr: "Mentorat & Innovation" }, tags: ["Inovação"] }
-];
-const combinedMediaItems = [...portfolioData, ...photoGalleryItems];
+// Unified media items (scraped projects only, no fake/placeholder items)
+const combinedMediaItems = [...portfolioData];
 let morphCards = [];
 
 // Particle background variables
@@ -155,6 +149,8 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }, { passive: false });
 
+  updateUnifiedLoop();
+  bindSceneDrag();
   addCursorInteractions();
   runLoader();
   startLogoAlternator();
@@ -217,6 +213,31 @@ function runLoader() {
 }
 
 // ==========================================================================
+// CENTRAL TEXT ANIMATION HELPER
+// ==========================================================================
+function setCenterText(newText) {
+  const centerText = document.getElementById('orbit-center-text');
+  if (!centerText || centerText.innerText === newText) return;
+  
+  gsap.killTweensOf(centerText);
+  gsap.to(centerText, {
+    opacity: 0,
+    scale: 0.9,
+    duration: 0.15,
+    ease: "power1.in",
+    onComplete: () => {
+      centerText.innerText = newText;
+      gsap.to(centerText, {
+        opacity: 0.95,
+        scale: 1,
+        duration: 0.25,
+        ease: "power1.out"
+      });
+    }
+  });
+}
+
+// ==========================================================================
 // BUILD UNIFIED MORPHING CARDS
 // ==========================================================================
 function buildMorphingCards() {
@@ -256,7 +277,8 @@ function buildMorphingCards() {
 
     // Magnifier Lens Hover Events
     card.addEventListener('mouseenter', () => {
-      targetOrbitSpeed = 0.00015;
+      isHoveringCard = true;
+      targetOrbitSpeed = 0.0002; // Slow motion speed on hover
       
       activeHoveredCard = card;
       lens.style.backgroundImage = `url(${imgUrl})`;
@@ -271,6 +293,9 @@ function buildMorphingCards() {
       }
 
       if (activeView === 'orbit') {
+        const title = item.title[currentLanguage] || item.title['pt'] || item.title;
+        setCenterText(title);
+
         gsap.to(hoverScales, {
           [index]: 1.08,
           duration: 0.3,
@@ -281,7 +306,8 @@ function buildMorphingCards() {
     });
 
     card.addEventListener('mouseleave', () => {
-      targetOrbitSpeed = 0.0006;
+      isHoveringCard = false;
+      targetOrbitSpeed = 0.0012; // Restore faster speed
       
       activeHoveredCard = null;
       lens.style.display = 'none';
@@ -290,6 +316,8 @@ function buildMorphingCards() {
       isLensActive = false;
 
       if (activeView === 'orbit') {
+        setCenterText("CONRADO.");
+
         gsap.to(hoverScales, {
           [index]: 1.0,
           duration: 0.3,
@@ -320,19 +348,9 @@ function buildMorphingCards() {
           const M = portfolioData.length;
           const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
           if (wrappedActiveIndex === matchIdx) {
-            // Clicked on the already active card in Cascade view
-            if (item.id === 'psicromia') {
-              // Go to Psicromia gallery
-              hideProjectInfoPanel();
-              switchView('psicromia');
-            } else {
-              // Toggle the typographic project info panel!
-              if (isProjectInfoPanelVisible) {
-                hideProjectInfoPanel();
-              } else {
-                showProjectInfoPanel();
-              }
-            }
+            // Clicked on the already active card in Cascade view -> Open project detail gallery view
+            hideProjectInfoPanel();
+            switchView('psicromia');
           } else {
             // Focus on the clicked background card in Cascade using the shortest wrapped path
             const diff = getWrappedOffset(matchIdx, activeCascadeIndex, M);
@@ -374,9 +392,6 @@ function buildMorphingCards() {
       }
     });
   });
-
-  updateUnifiedLoop();
-  bindSceneDrag();
 }
 
 // ==========================================================================
@@ -390,9 +405,13 @@ function updateUnifiedLoop() {
 
   // LERP smoothCascadeIndex towards activeCascadeIndex for smooth transitions
   if (activeView === 'cascade') {
-    if (!isDraggingCascade && !activeHoveredCard && !isProjectInfoPanelVisible) {
-      // Slowly auto-scroll Cascade view along the diagonal path (collective motion)
-      activeCascadeIndex += 0.0015;
+    if (!isDraggingCascade) {
+      // Slowly auto-scroll Cascade view. Slows down in hover / active panel mode, but doesn't stop
+      if (isHoveringCard || isProjectInfoPanelVisible) {
+        activeCascadeIndex += 0.0006; // Slow motion speed
+      } else {
+        activeCascadeIndex += 0.003;  // Slightly faster normal speed
+      }
     }
     smoothCascadeIndex += (activeCascadeIndex - smoothCascadeIndex) * 0.08;
     if (Math.abs(activeCascadeIndex - smoothCascadeIndex) < 0.005) {
@@ -421,7 +440,7 @@ function updateUnifiedLoop() {
     const oz = Math.sin(theta); 
     const oScale = gsap.utils.mapRange(-1, 1, 0.42, 0.78, oz);
     const oOpacity = gsap.utils.mapRange(-1, 1, 0.25, 1.0, oz);
-    const oZIndex = Math.floor(gsap.utils.mapRange(-1, 1, 10, 100, oz));
+    const oZIndex = Math.floor(gsap.utils.mapRange(-1, 1, 110, 200, oz));
     const oRotateY = 0;
 
     // CASCADE STATE
@@ -593,9 +612,6 @@ function bindSceneDrag() {
       isDraggingCascade = true;
       startCascadeDragX = e.clientX;
       hideProjectInfoPanel(); // Hide immediately on click/drag start!
-    } else if (activeView === 'psicromia') {
-      isDraggingPsicromia = true;
-      startPsicromiaDragX = e.clientX;
     }
   };
 
@@ -633,12 +649,6 @@ function bindSceneDrag() {
       if (Math.abs(deltaX) > 80) {
         navigateCascade(deltaX > 0 ? -1 : 1);
         startCascadeDragX = e.clientX;
-      }
-    } else if (isDraggingPsicromia && activeView === 'psicromia') {
-      const deltaX = e.clientX - startPsicromiaDragX;
-      if (Math.abs(deltaX) > 80) {
-        navigatePsicromia(deltaX > 0 ? -1 : 1);
-        startPsicromiaDragX = e.clientX;
       }
     }
   });
@@ -796,6 +806,9 @@ function switchView(viewName) {
       });
     } else {
       // viewName === 'orbit'
+      const centerText = document.getElementById('orbit-center-text');
+      if (centerText) centerText.innerText = "CONRADO.";
+
       gsap.to(transitionProgress, {
         value: 0,
         duration: 1.2,
@@ -824,149 +837,94 @@ function switchView(viewName) {
 // ==========================================================================
 // PSICROMIA PHOTO GALLERY (VIEW 3)
 // ==========================================================================
-const psicromiaPhotos = [
-  "assets/psicromia/_MG_1636.JPG",
-  "assets/psicromia/_MG_1644.JPG",
-  "assets/psicromia/_MG_5098.JPG",
-  "assets/psicromia/_MG_5101.JPG",
-  "assets/psicromia/_MG_5116.JPG",
-  "assets/psicromia/_MG_5372.JPG",
-  "assets/psicromia/_MG_5386.JPG",
-  "assets/psicromia/_MG_5431.JPG",
-  "assets/psicromia/_MG_5450.JPG",
-  "assets/psicromia/_MG_5451.JPG",
-  "assets/psicromia/_MG_5460.JPG",
-  "assets/psicromia/_MG_5464.JPG"
+// Bento grid layout patterns for grid-column and grid-row spans
+const bentoPatterns = [
+  { col: "span 8", row: "span 2" }, // Large horizontal hero
+  { col: "span 4", row: "span 2" }, // Tall vertical
+  { col: "span 4", row: "span 1" }, // Small square
+  { col: "span 4", row: "span 1" }, // Small square
+  { col: "span 4", row: "span 2" }, // Tall vertical
+  { col: "span 8", row: "span 1" }, // Wide horizontal
+  { col: "span 6", row: "span 2" }, // Half-width
+  { col: "span 6", row: "span 2" }  // Half-width
 ];
-let psicromiaCards = [];
-let activePhotoIndex = 0;
-let isDraggingPsicromia = false;
-let startPsicromiaDragX = 0;
 
 function buildPsicromiaGallery() {
   const track = document.getElementById('psicromia-track');
   if (!track) return;
   track.innerHTML = '';
-  psicromiaCards = [];
 
-  psicromiaPhotos.forEach((imgSrc, index) => {
+  // Get active project
+  const M = portfolioData.length;
+  const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
+  const project = portfolioData[wrappedActiveIndex];
+  if (!project) return;
+
+  // Set the project header info
+  document.getElementById('detail-header-year').innerText = project.year || '';
+  document.getElementById('detail-header-tags').innerText = (project.tags || []).join(' / ');
+  document.getElementById('detail-header-title').innerText = project.title[currentLanguage] || project.title['pt'] || project.title;
+  document.getElementById('detail-header-desc').innerText = project.description[currentLanguage] || project.description['pt'] || project.description || '';
+
+  const mediaItems = project.media || [];
+  
+  // If there are no media items, use the cover image as a fallback
+  const finalMedia = mediaItems.length > 0 ? mediaItems : [{ type: "image", url: project.image }];
+
+  finalMedia.forEach((item, index) => {
     const card = document.createElement('div');
-    card.className = 'psicromia-photo-card';
-    card.setAttribute('data-index', index);
+    card.className = 'mosaic-card';
     
-    card.innerHTML = `
-      <div class="psicromia-photo-card__blur" style="background-image: url('${imgSrc}');"></div>
-      <img src="${imgSrc}" alt="Psicromia Photo ${index + 1}">
-    `;
+    // Choose dynamic spans based on items count
+    let col = "span 4";
+    let row = "span 1";
+    if (finalMedia.length === 1) {
+      col = "span 12";
+      row = "span 2";
+    } else if (finalMedia.length === 2) {
+      col = "span 6";
+      row = "span 2";
+    } else if (finalMedia.length === 3) {
+      col = "span 4";
+      row = "span 2";
+    } else {
+      const pattern = bentoPatterns[index % bentoPatterns.length];
+      col = pattern.col;
+      row = pattern.row;
+    }
     
+    card.style.gridColumn = col;
+    card.style.gridRow = row;
+
+    if (item.type === 'video') {
+      card.innerHTML = `<video src="${item.url}" autoplay loop muted playsinline class="mosaic-media" onerror="this.style.display='none';"></video>`;
+    } else {
+      card.innerHTML = `<img src="${item.url}" alt="${project.title.pt}" class="mosaic-media" onerror="this.style.display='none';">`;
+    }
+
     track.appendChild(card);
-    psicromiaCards.push(card);
 
-    // Magnifier Lens Hover Events
+    // Cursor hover effects on dynamic card
     card.addEventListener('mouseenter', () => {
-      activeHoveredCard = card;
-      lens.style.backgroundImage = `url(${imgSrc})`;
-      
-      if (isLensActive) {
-        lens.style.display = 'block';
-        cursor.style.opacity = '0';
-      } else {
-        lens.style.display = 'none';
-        cursor.style.opacity = '1';
-      }
+      cursor.classList.add('hovered');
     });
-
     card.addEventListener('mouseleave', () => {
-      activeHoveredCard = null;
-      lens.style.display = 'none';
-      cursor.style.opacity = '1';
-      
-      isLensActive = false;
+      cursor.classList.remove('hovered');
     });
 
-    // Click side card to transition to it
-    card.addEventListener('click', (e) => {
-      if (e.button !== 0) return; // Only allow left-clicks
-
-      if (dragDistance > 6) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-
-      if (activePhotoIndex !== index) {
-        isLensActive = false;
-        lens.style.display = 'none';
-        cursor.style.opacity = '1';
-        activePhotoIndex = index;
-        updatePsicromiaGalleryPositions();
-      }
-    });
-
-    // Right-click (contextmenu) event listener for zoom lens in Psicromia
-    card.addEventListener('contextmenu', (e) => {
-      e.preventDefault(); // Block default browser dropdown
-      
-      if (activeView === 'psicromia' && activePhotoIndex === index) {
-        // Toggle zoom lens active state on right-click!
-        isLensActive = !isLensActive;
-        if (isLensActive) {
-          lens.style.display = 'block';
-          cursor.style.opacity = '0';
-          lens.style.backgroundImage = `url(${imgSrc})`;
-          
-          // Calculate background position relative to cursor instantly
-          const rect = card.getBoundingClientRect();
-          const relX = mouseX - rect.left;
-          const relY = mouseY - rect.top;
-          const pctX = (relX / rect.width) * 100;
-          const pctY = (relY / rect.height) * 100;
-          lens.style.backgroundPosition = `${pctX}% ${pctY}%`;
-        } else {
-          lens.style.display = 'none';
-          cursor.style.opacity = '1';
-        }
-      }
+    // Click to open in full screen lightbox
+    card.addEventListener('click', () => {
+      openLightbox(item);
     });
   });
-
-  updatePsicromiaGalleryPositions();
 }
 
 function updatePsicromiaGalleryPositions() {
-  psicromiaCards.forEach((card, index) => {
-    const offset = index - activePhotoIndex;
-    const absOffset = Math.abs(offset);
-    
-    let tx = offset * window.innerWidth * 0.82;
-    let ty = 0;
-    let tz = -absOffset * 120;
-    let rotateY = offset * -15;
-    let opacity = Math.max(0, 1.0 - absOffset * 0.75);
-    let zIndex = 100 - absOffset;
-    let scale = offset === 0 ? 1.0 : 0.95;
-
-    gsap.to(card, {
-      xPercent: -50,
-      yPercent: -50,
-      x: tx,
-      y: ty,
-      z: tz,
-      rotationY: rotateY,
-      scale: scale,
-      opacity: opacity,
-      zIndex: zIndex,
-      duration: 0.8,
-      ease: "power2.out"
-    });
-  });
+  // No-op for the new grid layout (prevents runtime call errors)
 }
 
 function navigatePsicromia(dir) {
-  activePhotoIndex += dir;
-  if (activePhotoIndex < 0) activePhotoIndex = 0;
-  if (activePhotoIndex >= psicromiaPhotos.length) activePhotoIndex = psicromiaPhotos.length - 1;
-  updatePsicromiaGalleryPositions();
+  // No-op for the new grid layout (prevents runtime call errors)
 }
 
 function exitPsicromia() {
@@ -974,30 +932,65 @@ function exitPsicromia() {
 }
 
 function animatePsicromiaEntry() {
+  const space = document.querySelector('.psicromia-space');
+  if (space) space.scrollTop = 0;
+
   gsap.fromTo('.psicromia-back-btn', { x: -20, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "power2.out" });
   
-  // Set horizontal coordinates prior to entry transition to prevent visual jump
-  psicromiaCards.forEach((card, index) => {
-    const offset = index - activePhotoIndex;
-    gsap.set(card, {
-      xPercent: -50,
-      yPercent: -50,
-      x: offset * window.innerWidth * 0.82
-    });
-  });
-
-  gsap.fromTo(psicromiaCards, 
-    { scale: 0.7, opacity: 0, z: -500 },
-    { 
-      scale: (i) => (i === activePhotoIndex ? 1.0 : 0.95),
-      opacity: (i) => Math.max(0, 1.0 - Math.abs(i - activePhotoIndex) * 0.75),
-      z: (i) => -Math.abs(i - activePhotoIndex) * 120,
-      duration: 1.2, 
-      stagger: 0.05,
-      ease: "power3.out",
-      onComplete: updatePsicromiaGalleryPositions
-    }
+  gsap.fromTo('#project-detail-header', 
+    { y: 30, opacity: 0 }, 
+    { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
   );
+
+  const cards = document.querySelectorAll('.mosaic-card');
+  if (cards.length > 0) {
+    gsap.fromTo(cards, 
+      { y: 40, opacity: 0, scale: 0.96 },
+      { 
+        y: 0, 
+        opacity: 1, 
+        scale: 1,
+        duration: 0.8, 
+        stagger: 0.03,
+        ease: "power3.out" 
+      }
+    );
+  }
+}
+
+// Lightbox controller functions
+function openLightbox(item) {
+  const overlay = document.getElementById('lightbox-overlay');
+  const content = overlay.querySelector('.lightbox-content');
+  content.innerHTML = '';
+  
+  if (item.type === 'video') {
+    const video = document.createElement('video');
+    video.src = item.url;
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    content.appendChild(video);
+  } else {
+    const img = document.createElement('img');
+    img.src = item.url;
+    img.alt = 'Zoomed project media';
+    content.appendChild(img);
+  }
+  
+  overlay.classList.add('active');
+  cursor.style.opacity = '0'; // Hide cursor in lightbox mode
+}
+
+function closeLightbox() {
+  const overlay = document.getElementById('lightbox-overlay');
+  overlay.classList.remove('active');
+  
+  // Stop any playing video
+  const content = overlay.querySelector('.lightbox-content');
+  content.innerHTML = '';
+  
+  cursor.style.opacity = '1';
 }
 
 // ==========================================================================
