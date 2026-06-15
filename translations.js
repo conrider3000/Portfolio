@@ -25,6 +25,12 @@ const translations = {
     "stats.suru.val": "30+",
     "stats.languages": "Idiomas",
     "stats.languages.val": "4",
+    "lang.pt": "Português:",
+    "lang.en": "Inglês:",
+    "lang.es": "Espanhol:",
+    "lang.fr": "Francês:",
+    "lang.native": "Nativo",
+    "lang.fluent": "Fluente",
     
     // About
     "about.title": "Sobre Mim",
@@ -95,6 +101,12 @@ const translations = {
     "stats.suru.val": "30+",
     "stats.languages": "Languages",
     "stats.languages.val": "4",
+    "lang.pt": "Portuguese:",
+    "lang.en": "English:",
+    "lang.es": "Spanish:",
+    "lang.fr": "French:",
+    "lang.native": "Native",
+    "lang.fluent": "Fluent",
     
     // About
     "about.title": "About Me",
@@ -165,6 +177,12 @@ const translations = {
     "stats.suru.val": "30+",
     "stats.languages": "Idiomas",
     "stats.languages.val": "4",
+    "lang.pt": "Portugués:",
+    "lang.en": "Inglés:",
+    "lang.es": "Español:",
+    "lang.fr": "Francés:",
+    "lang.native": "Nativo",
+    "lang.fluent": "Fluido",
     
     // About
     "about.title": "Sobre Mí",
@@ -235,6 +253,12 @@ const translations = {
     "stats.suru.val": "30+",
     "stats.languages": "Langues",
     "stats.languages.val": "4",
+    "lang.pt": "Portugais :",
+    "lang.en": "Anglais :",
+    "lang.es": "Espagnol :",
+    "lang.fr": "Français :",
+    "lang.native": "Natif",
+    "lang.fluent": "Courant",
     
     // About
     "about.title": "À Propos de Moi",
