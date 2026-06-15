@@ -607,8 +607,6 @@ function showProjectInfoPanel() {
   const panel = document.getElementById('project-info-panel');
   gsap.to(panel, {
     opacity: 1,
-    yPercent: -50,
-    y: 0,
     duration: 0.5,
     ease: "power2.out",
     pointerEvents: 'auto'
@@ -620,8 +618,6 @@ function hideProjectInfoPanel() {
   const panel = document.getElementById('project-info-panel');
   gsap.to(panel, {
     opacity: 0,
-    yPercent: -50,
-    y: 15,
     duration: 0.3,
     ease: "power2.in",
     pointerEvents: 'none'
@@ -971,8 +967,6 @@ function switchView(viewName) {
       updateProjectInfoPanel(true);
       gsap.to('#project-info-panel', {
         opacity: 0,
-        yPercent: -50,
-        y: 10,
         duration: 0.3,
         pointerEvents: 'none'
       });
@@ -997,8 +991,6 @@ function switchView(viewName) {
       // Hide typographic panel
       gsap.to('#project-info-panel', {
         opacity: 0,
-        yPercent: -50,
-        y: 20,
         duration: 0.5,
         ease: "power2.in",
         pointerEvents: 'none'
