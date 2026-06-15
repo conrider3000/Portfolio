@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/sobre", "destination": "/pages/sobre.html" },
+    { "source": "/fotografia", "destination": "/pages/fotografia.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
