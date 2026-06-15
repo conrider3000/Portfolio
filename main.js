@@ -407,9 +407,8 @@ function buildMorphingCards() {
       const matchIdx = projectsDb.findIndex(p => p.id === item.id);
       if (activeView === 'orbit') {
         if (matchIdx !== -1) {
-          activeCascadeIndex = matchIdx;
           switchView('cascade');
-          isCascadeFocused = false; // Começa no tamanho normal e em rotação contínua
+          isCascadeFocused = false;
         }
       } else if (activeView === 'cascade') {
         if (matchIdx !== -1) {
