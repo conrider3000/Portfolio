@@ -31,8 +31,8 @@ let currentOrbitSpeed = 0.0012;
 let isHoveringCard = false; // Tracks card hover for Cascade slow motion
 let isDraggingOrbit = false;
 let startDragX = 0;
-const orbitRadiusX = 580;
-const orbitRadiusY = 180;
+const orbitRadiusX = 620; // Increased to spread cards horizontally
+const orbitRadiusY = 220; // Increased to spread cards vertically
 let isSpinningEasterEgg = false;
 let isDraggingOrbitRight = false;
 let rightDragAccumulated = 0;
@@ -297,7 +297,7 @@ function buildMorphingCards() {
         setCenterText(title);
 
         gsap.to(hoverScales, {
-          [index]: 1.08,
+          [index]: 1.4, // Increased pop scale
           duration: 0.3,
           ease: "power2.out"
         });
@@ -438,7 +438,7 @@ function updateUnifiedLoop() {
     const ox = Math.cos(theta) * orbitRadiusX;
     const oy = Math.sin(theta) * orbitRadiusY;
     const oz = Math.sin(theta); 
-    const oScale = gsap.utils.mapRange(-1, 1, 0.42, 0.78, oz);
+    const oScale = gsap.utils.mapRange(-1, 1, 0.28, 0.58, oz); // Decreased base scale range to prevent crowd overlapping
     const oOpacity = gsap.utils.mapRange(-1, 1, 0.25, 1.0, oz);
     const oZIndex = Math.floor(gsap.utils.mapRange(-1, 1, 110, 200, oz));
     const oRotateY = 0;
@@ -494,7 +494,7 @@ function updateUnifiedLoop() {
     const finalScale = (oScale + (cScale - oScale) * p) * (hoverScales[index] || 1);
     const finalOpacity = oOpacity + (cOpacity - oOpacity) * p;
     const finalRotateY = oRotateY + (cRotateY - oRotateY) * p;
-    const finalZIndex = p > 0.5 ? cZIndex : oZIndex;
+    const finalZIndex = (activeHoveredCard === card) ? 999 : (p > 0.5 ? cZIndex : oZIndex); // Elevate hovered card to z-index 999 so it remains clickable
 
     card.style.transform = `translate3d(${finalX}px, ${finalY}px, ${finalZ}px) rotateY(${finalRotateY}deg) scale(${finalScale})`;
     card.style.opacity = finalOpacity;
