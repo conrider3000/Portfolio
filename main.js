@@ -518,9 +518,10 @@ function updateUnifiedLoop() {
       // Depth sorting should be symmetric
       cz = -absOffset * 80 + activeWeight * 80 + swayZ;
       
-      // Uniform background scales, active centered card has scale 1.2
+      // Uniform background scales, active centered card has scale 1.2. If focado (selected), the active card scales up to 1.38
       const baseScale = 1.2 - absOffset * 0.02;
-      cScale = baseScale;
+      const scaleBoost = activeWeight * 0.18 * focusScaleProgress;
+      cScale = baseScale + scaleBoost;
       
       // Keep opacity fully solid at 1.0 (no fading in the horizon) as requested
       cOpacity = 1.0;

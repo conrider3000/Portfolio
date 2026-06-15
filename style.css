@@ -433,7 +433,7 @@ a, button {
   padding: 140px 60px 60px 60px;
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: center; /* center items vertically */
   gap: 60px;
   box-sizing: border-box;
   scrollbar-width: thin;
@@ -459,9 +459,11 @@ a, button {
 .psicromia-track {
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: center;
   gap: 30px;
-  height: 100%;
+  height: 55vh; /* restrict height so formats are preserved at a reasonable size */
+  max-height: 480px;
+  min-height: 280px;
   width: auto;
   box-sizing: border-box;
 }
@@ -626,7 +628,7 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
 @media (max-width: 992px) {
   .project-info-panel {
     width: 320px;
-    left: calc(50% + 80px);
+    left: calc(50% + 45px);
   }
 }
 
@@ -714,15 +716,15 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
 .project-info-panel {
   position: fixed;
   top: calc(50% - 30px);
-  left: calc(50% + 80px);
+  left: calc(50% + 45px); /* moved closer to the center card */
   transform: translateY(-50%);
-  width: 360px;
-  height: 240px;
+  width: 380px; /* slightly wider */
+  height: 260px; /* slightly taller */
   background-color: var(--glass-bg);
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(30px) saturate(190%);
   -webkit-backdrop-filter: blur(30px) saturate(190%);
-  padding: 1rem 1.2rem;
+  padding: 1.1rem 1.3rem; /* adjusted padding */
   border-radius: 14px;
   box-shadow: var(--card-shadow);
   z-index: 850;
@@ -795,7 +797,7 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
 
 .project-info-panel__title {
   font-family: var(--font-serif);
-  font-size: 1.25rem;
+  font-size: 1.5rem; /* larger text size */
   font-weight: 700;
   line-height: 1.15;
   color: var(--text-color);
@@ -807,7 +809,7 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
 
 .project-info-panel__subtitle {
   font-family: var(--font-display);
-  font-size: 0.8rem;
+  font-size: 0.9rem; /* larger text size */
   font-weight: 500;
   color: var(--accent-color);
   margin: 0 0 0.2rem 0;
@@ -823,7 +825,7 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
 
 .project-info-panel__desc {
   font-family: var(--font-sans);
-  font-size: 0.78rem;
+  font-size: 0.88rem; /* larger text size */
   line-height: 1.45;
   color: var(--text-muted);
   margin: 0 0 0.4rem 0;
