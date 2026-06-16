@@ -413,16 +413,14 @@ function buildMorphingCards() {
       } else if (activeView === 'cascade') {
         if (matchIdx !== -1) {
           const M = projectsDb.length;
-          const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
+          const wrappedActiveIndex = mod(Math.round(smoothCascadeIndex), M);
           if (wrappedActiveIndex === matchIdx && isCascadeFocused) {
-            // Clicked on the already centered and focused card -> Open project detail gallery view
             isCascadeFocused = false;
             hideProjectInfoPanel();
             switchView('psicromia');
           } else {
-            // Focus on the clicked background card in Cascade using the shortest wrapped path
-            const diff = getWrappedOffset(matchIdx, activeCascadeIndex, M);
-            activeCascadeIndex += diff;
+            smoothCascadeIndex = matchIdx;
+            activeCascadeIndex = matchIdx;
             isCascadeFocused = true;
             showProjectInfoPanel();
           }
