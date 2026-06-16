@@ -518,8 +518,8 @@ function updateUnifiedLoop() {
       cOpacity = 1.0;
       cRotateY = 0;
 
-      // Bottom cards (foreground, negative offset) in front; top cards (background) behind
-      cZIndex = isActive ? 999 : Math.floor(100 - offset * 8);
+      // Top cards in front, bottom cards behind; first card above last at the seam
+      cZIndex = isActive ? 999 : Math.floor(100 + offset * 8);
 
       if (isCenter) {
         card.classList.add('active-cascade');
@@ -796,8 +796,9 @@ function triggerMomentumSpin(velocity) {
     finalTargetAngle -= 2 * Math.PI;
   }
 
-  // Change center text to "ESTOU COM SORTE." while the wheel of fortune is spinning
-  setCenterText("ESTOU COM SORTE.");
+  // Change center text while the wheel of fortune is spinning
+  const lucky = translations[currentLanguage]?.["misc.lucky"] || "ESTOU COM SORTE.";
+  setCenterText(lucky);
 
   isSpinningMomentum = true;
   let spinObj = { angle: orbitAngle };

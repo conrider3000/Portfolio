@@ -73,7 +73,8 @@ const translations = {
     "misc.viewProject": "Saber mais",
     "misc.all": "Todos",
     "misc.back": "Voltar",
-    "misc.close": "Fechar"
+    "misc.close": "Fechar",
+    "misc.lucky": "ESTOU COM SORTE."
   },
   en: {
     // Nav
@@ -149,7 +150,8 @@ const translations = {
     "misc.viewProject": "Learn more",
     "misc.all": "All",
     "misc.back": "Back",
-    "misc.close": "Close"
+    "misc.close": "Close",
+    "misc.lucky": "I'M FEELING LUCKY"
   },
   es: {
     // Nav
@@ -225,7 +227,8 @@ const translations = {
     "misc.viewProject": "Saber más",
     "misc.all": "Todos",
     "misc.back": "Volver",
-    "misc.close": "Cerrar"
+    "misc.close": "Cerrar",
+    "misc.lucky": "ESTOY CON SUERTE"
   },
   fr: {
     // Nav
@@ -301,7 +304,8 @@ const translations = {
     "misc.viewProject": "En savoir plus",
     "misc.all": "Tous",
     "misc.back": "Retour",
-    "misc.close": "Fermer"
+    "misc.close": "Fermer",
+    "misc.lucky": "J'AI DE LA CHANCE"
   }
 };
 
