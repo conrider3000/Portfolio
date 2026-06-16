@@ -688,23 +688,29 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
 
 @media (max-width: 768px) {
   .psicromia-space {
-    overflow-x: auto;
-    height: 100%;
+    flex-direction: column;
+    align-items: stretch;
     padding: 100px 16px 60px 16px;
   }
   .project-detail-header {
+    width: 100%;
     max-width: 100%;
-    margin-bottom: 1.5rem;
+    padding: 10px 0;
+    margin-bottom: 1rem;
   }
   .project-detail-header__title {
     font-size: 2rem;
   }
   .psicromia-track {
-    height: 55vh;
+    height: 40vh;
+    min-height: 200px;
     gap: 10px;
+    flex: none;
+    width: 100%;
   }
   .mosaic-card {
-    width: 200px;
+    width: auto;
+    max-width: 90vw;
   }
 }
 

@@ -1050,9 +1050,20 @@ function switchView(viewName) {
 
     animatePsicromiaEntry();
   } else {
-    // Hide psicromia scene and show projects scene
-    document.getElementById('psicromia-scene').classList.remove('active');
-    document.getElementById('projects-scene').classList.add('active');
+    // Animate gallery exit before switching scenes
+    const psicCards = document.querySelectorAll('.mosaic-card');
+    const psicHeader = document.getElementById('project-detail-header');
+    if (psicCards.length > 0) {
+      gsap.to(psicCards, { x: 60, opacity: 0, duration: 0.3, stagger: 0.02, ease: "power2.in" });
+    }
+    if (psicHeader) gsap.to(psicHeader, { x: 60, opacity: 0, duration: 0.3, ease: "power2.in" });
+    gsap.delayedCall(0.4, () => {
+      document.getElementById('psicromia-scene').classList.remove('active');
+      document.getElementById('projects-scene').classList.add('active');
+      if (psicCards.length > 0) gsap.set(psicCards, { x: 0, opacity: 0 });
+      if (psicHeader) gsap.set(psicHeader, { x: 0, opacity: 1, clearProps: "transform" });
+    });
+
     gsap.to('.visualizer-select', { opacity: 1, y: 0, duration: 0.5, pointerEvents: 'auto' });
 
     // Update active button indicators
@@ -1148,9 +1159,12 @@ function buildPsicromiaGallery() {
         <video src="${item.url}" autoplay loop muted playsinline class="mosaic-media" onerror="this.style.display='none';"></video>
       `;
     } else {
-      card.innerHTML = `
-        <img src="${item.url}" alt="${getLocalizedValue(project.title)}" class="mosaic-media" loading="lazy" onerror="this.style.display='none';">
-      `;
+      const img = document.createElement('img');
+      img.className = 'mosaic-media';
+      img.alt = getLocalizedValue(project.title);
+      img.onerror = function() { this.style.display = 'none'; };
+      img.src = item.url;
+      card.appendChild(img);
     }
 
     track.appendChild(card);
@@ -1178,10 +1192,15 @@ function animatePsicromiaEntry() {
   const track = document.getElementById('psicromia-track');
   if (track) track.scrollLeft = 0;
 
+  // Reset any transforms from previous exit animation
+  const header = document.getElementById('project-detail-header');
+  if (header) gsap.set(header, { x: 0, opacity: 1, clearProps: "transform" });
+
   gsap.fromTo('.psicromia-back-btn', { x: -20, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "power2.out" });
 
   const cards = document.querySelectorAll('.mosaic-card');
   if (cards.length > 0) {
+    gsap.set(cards, { clearProps: "transform" });
     gsap.fromTo(cards, 
       { x: -30, opacity: 0 },
       { 
