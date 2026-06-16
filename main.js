@@ -240,7 +240,7 @@ window.addEventListener('DOMContentLoaded', () => {
     } else if (activeView === 'psicromia') {
       const space = document.querySelector('.psicromia-space');
       if (space) {
-        space.scrollLeft += e.deltaY;
+        space.scrollTop += e.deltaY;
       }
     }
   });
@@ -1022,9 +1022,21 @@ function buildPsicromiaGallery() {
   // If there are no media items, use the cover image as a fallback
   const finalMedia = mediaItems.length > 0 ? mediaItems : [{ type: "image", url: project.image }];
 
+  const spans = [
+    [2, 2], [1, 1], [1, 1],
+    [1, 2], [2, 1], [1, 1],
+    [1, 1], [2, 2], [1, 1],
+    [1, 1], [1, 1], [2, 1],
+    [1, 2], [1, 1], [2, 1]
+  ];
+
   finalMedia.forEach((item, index) => {
     const card = document.createElement('div');
     card.className = 'mosaic-card';
+
+    const s = spans[index % spans.length];
+    card.style.gridColumn = `span ${s[0]}`;
+    card.style.gridRow = `span ${s[1]}`;
 
     if (item.type === 'video') {
       card.innerHTML = `
@@ -1032,13 +1044,11 @@ function buildPsicromiaGallery() {
       `;
     } else {
       card.innerHTML = `
-        <img src="${item.url}" alt="${getLocalizedValue(project.title)}" class="mosaic-media" onerror="this.style.display='none';">
+        <img src="${item.url}" alt="${getLocalizedValue(project.title)}" class="mosaic-media" loading="lazy" onerror="this.style.display='none';">
       `;
     }
 
     track.appendChild(card);
-
-
 
     // Click to open in full screen lightbox
     card.addEventListener('click', () => {

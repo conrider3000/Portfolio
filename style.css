@@ -419,21 +419,15 @@ a, button {
 .psicromia-space {
   width: 100%;
   height: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 140px 60px 60px 60px;
-  display: flex;
-  flex-direction: row;
-  align-items: center; /* center items vertically */
-  gap: 60px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 130px 60px 60px 60px;
   box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: rgba(134, 134, 139, 0.3) transparent;
 }
 
-/* Custom premium scrollbar for space container */
 .psicromia-space::-webkit-scrollbar {
-  height: 6px;
   width: 6px;
 }
 .psicromia-space::-webkit-scrollbar-track {
@@ -443,109 +437,84 @@ a, button {
   background: rgba(134, 134, 139, 0.3);
   border-radius: 4px;
 }
-.psicromia-space::-webkit-scrollbar-thumb:hover {
-  background: rgba(134, 134, 139, 0.5);
-}
 
 .psicromia-track {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 30px;
-  height: 55vh; /* restrict height so formats are preserved at a reasonable size */
-  max-height: 480px;
-  min-height: 280px;
-  width: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
   box-sizing: border-box;
 }
 
 /* Editorial Project Detail Header */
 .project-detail-header {
-  width: 380px;
-  flex-shrink: 0;
-  margin: 0;
-  padding: 20px 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  max-width: 800px;
+  margin: 0 auto 2rem auto;
+  padding: 20px 0 10px 0;
   box-sizing: border-box;
 }
 
 .project-detail-header__meta {
   display: flex;
-  gap: 15px;
-  font-size: 0.85rem;
+  gap: 12px;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--accent-color);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .project-detail-header__title {
   font-family: var(--font-serif);
-  font-size: 3.2rem;
+  font-size: 2.8rem;
   font-weight: 700;
   line-height: 1.15;
   color: var(--text-color);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .project-detail-header__desc {
-  font-size: 1.1rem;
-  line-height: 1.6;
+  font-size: 1rem;
+  line-height: 1.5;
   color: var(--text-muted);
-  max-width: 100%;
   margin: 0;
 }
 
-/* Bento Mosaic Cards */
+/* Creative Mosaic Cards */
 .mosaic-card {
   position: relative;
-  background-color: transparent;
-  border: none;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
-  height: 100%;
-  width: auto;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  line-height: 0;
 }
 
 .mosaic-card:hover {
-  transform: translateY(-6px) scale(1.02);
-}
-
-.mosaic-card__blur-bg {
-  display: none !important;
+  transform: translateY(-4px) scale(1.01);
 }
 
 .mosaic-card img, .mosaic-card video {
-  position: relative;
-  height: 100%;
-  width: auto;
-  object-fit: contain;
+  width: 100%;
+  height: auto;
   display: block;
-  z-index: 2;
   border-radius: 12px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06);
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease;
 }
 
 body[data-theme="dark"] .mosaic-card img, body[data-theme="dark"] .mosaic-card video {
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
 }
 
 .mosaic-card:hover img, .mosaic-card:hover video {
-  transform: scale(1.015);
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
 }
 
 body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-card:hover video {
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
 }
 
 
@@ -623,35 +592,28 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
   }
 }
 
+@media (max-width: 1024px) {
+  .psicromia-track {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .psicromia-space {
-    display: block;
-    overflow-x: hidden;
     overflow-y: auto;
     height: auto;
-    padding: 100px 20px 80px 20px;
+    padding: 100px 16px 80px 16px;
   }
   .project-detail-header {
-    width: 100%;
-    margin-bottom: 30px;
-    padding: 0;
-    display: block;
+    max-width: 100%;
+    margin-bottom: 1.5rem;
   }
   .project-detail-header__title {
-    font-size: 2.3rem;
+    font-size: 2rem;
   }
   .psicromia-track {
-    display: grid;
     grid-template-columns: 1fr;
-    grid-auto-rows: auto;
-    gap: 16px;
-    height: auto;
-    width: 100%;
-  }
-  .mosaic-card {
-    grid-column: span 1 !important;
-    grid-row: span 1 !important;
-    height: 280px;
+    gap: 14px;
   }
 }
 
