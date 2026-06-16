@@ -451,18 +451,18 @@ function updateUnifiedLoop() {
   // LERP smoothCascadeIndex towards activeCascadeIndex for smooth transitions
   if (activeView === 'cascade') {
     if (!isDraggingCascade && !isCascadeFocused) {
-      // Slowly auto-scroll Cascade view if not focused
+      // Slowly auto-scroll File view if not focused
       if (isHoveringCard || isProjectInfoPanelVisible) {
-        activeCascadeIndex += 0.0006; // Slow motion speed
+        activeCascadeIndex += 0.0004; // Slow motion speed
       } else {
-        activeCascadeIndex += 0.003;  // Slightly faster normal speed
+        activeCascadeIndex += 0.0015;  // File browsing speed
       }
     }
     
     // LERP the focus scale factor boost
     focusScaleProgress += ((isCascadeFocused ? 1 : 0) - focusScaleProgress) * 0.08;
 
-    smoothCascadeIndex += (activeCascadeIndex - smoothCascadeIndex) * 0.08;
+    smoothCascadeIndex += (activeCascadeIndex - smoothCascadeIndex) * 0.05;
     if (Math.abs(activeCascadeIndex - smoothCascadeIndex) < 0.005) {
       smoothCascadeIndex = activeCascadeIndex;
     }
@@ -492,47 +492,35 @@ function updateUnifiedLoop() {
     const oZIndex = Math.floor(gsap.utils.mapRange(-1, 1, 110, 200, oz));
     const oRotateY = 0;
 
-    // CASCADE STATE
+    // FILE MODE (formerly Cascade)
     let cx, cy, cz, cScale, cOpacity, cRotateY, cZIndex;
-    
+
     if (index < projectsDb.length) {
       const M = projectsDb.length;
       const offset = getWrappedOffset(index, smoothCascadeIndex, M);
       const absOffset = Math.abs(offset);
-      const activeWeight = Math.max(0, 1 - absOffset);
-
-      // Collective scrolling motion only, no individual float sway in Cascade view
-      const swayX = 0;
-      const swayY = 0;
-      const swayZ = 0;
-
-      // Diagonal Cascade: narrow in top-right background (to avoid menu), wide in bottom-left foreground
-      const factorX = offset >= 0 ? (window.innerWidth * 0.07) : (window.innerWidth * 0.15);
-      
-      // Shift left when focused to leave room for the right info panel
-      const focusShift = focusScaleProgress * -150;
-      cx = offset * factorX + swayX + focusShift;
-      cy = -offset * (window.innerHeight * 0.24) - 30 + swayY;
-      
-      // Depth sorting should be symmetric
-      cz = -absOffset * 80 + activeWeight * 80 + swayZ;
-      
-      // Uniform background scales, active centered card has scale 1.2. If focado (selected), the active card scales up to 1.38
-      const baseScale = 1.2 - absOffset * 0.02;
-      const scaleBoost = activeWeight * 0.18 * focusScaleProgress;
-      cScale = baseScale + scaleBoost;
-      
-      // Keep opacity fully solid at 1.0 (no fading in the horizon) as requested
-      cOpacity = 1.0;
-
-      // Restaura a rotação 3D de Y para manter o visual tridimensional
-      cRotateY = offset * -32;
-      
-      // Symmetrically layout z-index
-      cZIndex = Math.floor(200 - absOffset * 20);
-
       const roundedOffset = Math.round(offset);
-      if (roundedOffset === 0) {
+      const isCenter = roundedOffset === 0;
+
+      // Equal diagonal spacing like files in a folder
+      const spacingX = 110;
+      const spacingY = 130;
+      const focusShift = focusScaleProgress * -180;
+
+      cx = offset * spacingX + focusShift;
+      cy = -offset * spacingY;
+      cz = -absOffset * 40;
+
+      // Same scale for all cards; focused card gets slightly larger
+      const focusBoost = isCenter ? focusScaleProgress * 0.35 : 0;
+      cScale = 1.0 + focusBoost;
+
+      cOpacity = 1.0;
+      cRotateY = 0;
+
+      cZIndex = Math.floor(200 - absOffset * 15);
+
+      if (isCenter) {
         card.classList.add('active-cascade');
       } else {
         card.classList.remove('active-cascade');
