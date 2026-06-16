@@ -196,6 +196,13 @@ a, button {
   color: var(--accent-color);
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  pointer-events: auto;
+}
+
 .nav {
   display: flex;
   align-items: center;

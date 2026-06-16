@@ -56,14 +56,15 @@
 
   <!-- Header navigation -->
   <header class="header">
-    <a href="#" class="logo" id="logo-text" onclick="resetToHome(event)">CONRADO</a>
-    
-    <nav class="nav">
+    <div class="header-left">
+      <a href="#" class="logo" id="logo-text" onclick="resetToHome(event)">CONRADO</a>
       <ul class="nav__list">
         <li><a href="#" class="nav__link" onclick="openPanel('sobre', event)" data-i18n="nav.about">Sobre</a></li>
         <li><a href="#" class="nav__link" onclick="openPanel('contato', event)" data-i18n="nav.contact">Contato</a></li>
       </ul>
-      
+    </div>
+    
+    <nav class="nav">
       <!-- Translations -->
       <div class="lang-switcher">
         <button class="lang-btn active" onclick="switchLanguage('pt')">PT</button>
