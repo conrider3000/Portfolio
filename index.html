@@ -105,17 +105,17 @@
     <!-- Project Detail Gallery View (View 3) -->
     <div class="view-container" id="psicromia-scene">
       <div class="psicromia-space">
-        <div class="psicromia-track" id="psicromia-track">
-          <!-- Project Header -->
-          <div class="project-detail-header" id="project-detail-header">
-            <div class="project-detail-header__meta">
-              <span class="project-detail-header__year" id="detail-header-year"></span>
-              <span class="project-detail-header__tags" id="detail-header-tags"></span>
-            </div>
-            <h1 class="project-detail-header__title" id="detail-header-title"></h1>
-            <p class="project-detail-header__desc" id="detail-header-desc"></p>
+        <!-- Project Header (kept outside track so buildPsicromiaGallery doesn't wipe it) -->
+        <div class="project-detail-header" id="project-detail-header">
+          <div class="project-detail-header__meta">
+            <span class="project-detail-header__year" id="detail-header-year"></span>
+            <span class="project-detail-header__tags" id="detail-header-tags"></span>
           </div>
-          <!-- Rendered more cards dynamically by main.js -->
+          <h1 class="project-detail-header__title" id="detail-header-title"></h1>
+          <p class="project-detail-header__desc" id="detail-header-desc"></p>
+        </div>
+        <div class="psicromia-track" id="psicromia-track">
+          <!-- Rendered dynamically by main.js -->
         </div>
       </div>
       <button class="psicromia-back-btn" onclick="exitPsicromia()">← Voltar</button>
@@ -128,8 +128,6 @@
 
   <!-- BOTTOM VISUALIZER SELECTIONS -->
   <div class="visualizer-select">
-    <button class="vis-btn active" id="btn-orbit" onclick="switchView('orbit')">Planetas</button>
-    <button class="vis-btn" id="btn-cascade" onclick="switchView('cascade')">Arquivo</button>
     <button class="vis-btn" id="btn-circles" onclick="toggleCircles()">◎ Círculos</button>
   </div>
 
