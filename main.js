@@ -70,6 +70,7 @@ let isDraggingCascade = false;
 let startCascadeDragX = 0;
 let isCascadeFocused = false; // Flag for paused and focused card state in Cascade
 let focusScaleProgress = 0; // LERPed scale boost factor for focused card
+let focusAnimTimeout = null; // Timeout handle for card-to-card focus animation
 
 // Unified media items (scraped projects only, no fake/placeholder items)
 let combinedMediaItems = [...projectsDb];
@@ -420,6 +421,16 @@ function buildMorphingCards() {
             isCascadeFocused = false;
             hideProjectInfoPanel();
             switchView('psicromia');
+          } else if (isCascadeFocused) {
+            // Animate: old card shrinks, then new card grows
+            isCascadeFocused = false;
+            if (focusAnimTimeout) clearTimeout(focusAnimTimeout);
+            focusAnimTimeout = setTimeout(() => {
+              smoothCascadeIndex = matchIdx;
+              activeCascadeIndex = matchIdx;
+              isCascadeFocused = true;
+              showProjectInfoPanel();
+            }, 400);
           } else {
             smoothCascadeIndex = matchIdx;
             activeCascadeIndex = matchIdx;
@@ -763,6 +774,7 @@ function bindSceneDrag() {
 function navigateCascade(dir) {
   activeCascadeIndex += dir;
   isCascadeFocused = false; // Reset focus state on manual navigation
+  if (focusAnimTimeout) { clearTimeout(focusAnimTimeout); focusAnimTimeout = null; }
   hideProjectInfoPanel();
 }
 
@@ -910,6 +922,7 @@ function switchView(viewName) {
 
   if (viewName !== 'cascade') {
     isCascadeFocused = false;
+    if (focusAnimTimeout) { clearTimeout(focusAnimTimeout); focusAnimTimeout = null; }
   } else {
     hoverScales.fill(1);
     morphCards.forEach(card => {
