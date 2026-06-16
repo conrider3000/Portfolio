@@ -506,19 +506,19 @@ function updateUnifiedLoop() {
       const spacingX = 110;
       const spacingY = 130;
       const focusShift = focusScaleProgress * -180;
+      const isActive = isCenter && isCascadeFocused;
 
       cx = offset * spacingX + focusShift;
       cy = -offset * spacingY;
-      cz = -absOffset * 40;
+      cz = isActive ? 80 : 0;
 
-      // Same scale for all cards; focused card gets slightly larger
-      const focusBoost = isCenter ? focusScaleProgress * 0.35 : 0;
-      cScale = 1.0 + focusBoost;
+      // All cards same scale; only focused card gets larger
+      cScale = isActive ? 1.35 : 1.0;
 
       cOpacity = 1.0;
       cRotateY = 0;
 
-      cZIndex = Math.floor(200 - absOffset * 15);
+      cZIndex = isActive ? 999 : 100;
 
       if (isCenter) {
         card.classList.add('active-cascade');
@@ -543,7 +543,7 @@ function updateUnifiedLoop() {
     const finalScale = (oScale + (cScale - oScale) * p) * (hoverScales[index] || 1);
     const finalOpacity = oOpacity + (cOpacity - oOpacity) * p;
     const finalRotateY = oRotateY + (cRotateY - oRotateY) * p;
-    const finalZIndex = (activeHoveredCard === card) ? 999 : (p > 0.5 ? cZIndex : oZIndex); // Elevate hovered card to z-index 999 so it remains clickable
+    const finalZIndex = (activeHoveredCard === card && activeView !== 'cascade') ? 999 : (p > 0.5 ? cZIndex : oZIndex);
 
     card.style.transform = `translate3d(${finalX}px, ${finalY}px, ${finalZ}px) rotateY(${finalRotateY}deg) scale(${finalScale})`;
     card.style.opacity = finalOpacity;
@@ -910,6 +910,9 @@ function switchView(viewName) {
     isCascadeFocused = false;
   } else {
     hoverScales.fill(1);
+    morphCards.forEach(card => {
+      card.style.borderColor = '';
+    });
   }
 
   const cascadeBackBtn = document.getElementById('cascade-back-btn');
