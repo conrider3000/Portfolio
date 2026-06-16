@@ -2103,19 +2103,19 @@ const portfolioData = [
       },
       {
         "type": "image",
-        "url": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80"
+        "url": "https://picsum.photos/800/600?random=1"
       },
       {
         "type": "image",
-        "url": "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600&q=80"
+        "url": "https://picsum.photos/600/900?random=2"
       },
       {
         "type": "image",
-        "url": "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&q=80"
+        "url": "https://picsum.photos/700/700?random=3"
       },
       {
         "type": "image",
-        "url": "https://images.unsplash.com/photo-1470071459604-ce5621f1d1a5?w=1000&q=80"
+        "url": "https://picsum.photos/1200/400?random=4"
       }
     ]
   },

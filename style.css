@@ -486,7 +486,6 @@ body * {
   align-items: center;
   padding: 0 60px 0 60px;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 /* Editorial Project Detail Header */
@@ -559,10 +558,13 @@ body * {
   height: 100%;
   width: auto;
   max-width: 560px;
+  min-width: 100px;
   flex-shrink: 0;
   cursor: pointer;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   line-height: 0;
+  background: var(--glass-bg);
+  border-radius: 10px;
 }
 
 .mosaic-card:hover {
@@ -572,6 +574,7 @@ body * {
 .mosaic-card img, .mosaic-card video {
   height: 100%;
   width: auto;
+  min-height: 200px;
   object-fit: contain;
   display: block;
   border-radius: 10px;
