@@ -70,7 +70,9 @@ let isDraggingCascade = false;
 let startCascadeDragX = 0;
 let isCascadeFocused = false; // Flag for paused and focused card state in Cascade
 let focusScaleProgress = 0; // LERPed scale boost factor for focused card
-let focusAnimTimeout = null; // Timeout handle for card-to-card focus animation
+let cascadePanX = 0; // Global left shift of cascade stack when focused (-150)
+let isAnimatingFocus = false; // Prevents LERP from fighting GSAP during card switch
+let focusGsapTween = null; // GSAP tween handle for card-to-card focus animation
 
 // Unified media items (scraped projects only, no fake/placeholder items)
 let combinedMediaItems = [...projectsDb];
@@ -422,15 +424,31 @@ function buildMorphingCards() {
             hideProjectInfoPanel();
             switchView('psicromia');
           } else if (isCascadeFocused) {
-            // Animate: old card shrinks, then new card grows
+            // Animate: old card shrinks, cascade moves right, then slides to new card and grows
             isCascadeFocused = false;
-            if (focusAnimTimeout) clearTimeout(focusAnimTimeout);
-            focusAnimTimeout = setTimeout(() => {
-              smoothCascadeIndex = matchIdx;
-              activeCascadeIndex = matchIdx;
-              isCascadeFocused = true;
-              showProjectInfoPanel();
-            }, 400);
+            if (focusGsapTween) focusGsapTween.kill();
+            const startIdx = smoothCascadeIndex;
+            const targetIdx = matchIdx;
+            const diff = targetIdx - startIdx;
+            const dist = Math.abs(diff);
+            const dur = gsap.utils.clamp(0.2, 0.6, dist * 0.15);
+            isAnimatingFocus = true;
+            focusGsapTween = gsap.to({}, {
+              duration: dur,
+              ease: "power2.inOut",
+              onUpdate: function() {
+                const p = this.progress();
+                smoothCascadeIndex = startIdx + diff * p;
+              },
+              onComplete: () => {
+                activeCascadeIndex = targetIdx;
+                smoothCascadeIndex = targetIdx;
+                isCascadeFocused = true;
+                isAnimatingFocus = false;
+                focusGsapTween = null;
+                showProjectInfoPanel();
+              }
+            });
           } else {
             smoothCascadeIndex = matchIdx;
             activeCascadeIndex = matchIdx;
@@ -472,8 +490,14 @@ function updateUnifiedLoop() {
     
     // LERP the focus scale factor boost
     focusScaleProgress += ((isCascadeFocused ? 1 : 0) - focusScaleProgress) * 0.08;
+    cascadePanX += ((isCascadeFocused ? -150 : 0) - cascadePanX) * 0.08;
 
-    smoothCascadeIndex += (activeCascadeIndex - smoothCascadeIndex) * 0.05;
+    if (!isAnimatingFocus) {
+      smoothCascadeIndex += (activeCascadeIndex - smoothCascadeIndex) * 0.05;
+      if (Math.abs(activeCascadeIndex - smoothCascadeIndex) < 0.005) {
+        smoothCascadeIndex = activeCascadeIndex;
+      }
+    }
     if (Math.abs(activeCascadeIndex - smoothCascadeIndex) < 0.005) {
       smoothCascadeIndex = activeCascadeIndex;
     }
@@ -488,6 +512,7 @@ function updateUnifiedLoop() {
   } else {
     smoothCascadeIndex = activeCascadeIndex;
     focusScaleProgress += (0 - focusScaleProgress) * 0.08;
+    cascadePanX += (0 - cascadePanX) * 0.08;
   }
 
   const p = transitionProgress.value; 
@@ -516,10 +541,9 @@ function updateUnifiedLoop() {
       // Equal diagonal spacing like files in a folder
       const spacingX = 110;
       const spacingY = 130;
-      const focusShift = focusScaleProgress * -180;
       const isActive = isCenter && isCascadeFocused;
 
-      cx = offset * spacingX + focusShift;
+      cx = offset * spacingX + (isActive ? 0 : cascadePanX);
       cy = -offset * spacingY;
       cz = isActive ? 80 : 0;
 
@@ -772,9 +796,10 @@ function bindSceneDrag() {
 }
 
 function navigateCascade(dir) {
+  isAnimatingFocus = false;
+  if (focusGsapTween) { focusGsapTween.kill(); focusGsapTween = null; }
   activeCascadeIndex += dir;
   isCascadeFocused = false; // Reset focus state on manual navigation
-  if (focusAnimTimeout) { clearTimeout(focusAnimTimeout); focusAnimTimeout = null; }
   hideProjectInfoPanel();
 }
 
@@ -922,7 +947,8 @@ function switchView(viewName) {
 
   if (viewName !== 'cascade') {
     isCascadeFocused = false;
-    if (focusAnimTimeout) { clearTimeout(focusAnimTimeout); focusAnimTimeout = null; }
+    isAnimatingFocus = false;
+    if (focusGsapTween) { focusGsapTween.kill(); focusGsapTween = null; }
   } else {
     hoverScales.fill(1);
     morphCards.forEach(card => {
