@@ -56,16 +56,7 @@
 
   <!-- Header navigation -->
   <header class="header">
-    <div style="display:flex;align-items:center;gap:4px">
-      <a href="#" class="logo" id="logo-text" onclick="resetToHome(event)">CONRADO</a>
-      <div class="filter-wrapper">
-        <button class="filter-btn" id="filter-btn" onclick="toggleFilterMenu()" aria-expanded="false">
-          <span data-i18n="filter">Filter</span>
-          <span class="filter-arrow">▾</span>
-        </button>
-        <div class="filter-dropdown" id="filter-dropdown"></div>
-      </div>
-    </div>
+    <a href="#" class="logo" id="logo-text" onclick="resetToHome(event)">CONRADO</a>
     
     <nav class="nav">
       <ul class="nav__list">
@@ -105,17 +96,18 @@
     <!-- Project Detail Gallery View (View 3) -->
     <div class="view-container" id="psicromia-scene">
       <div class="psicromia-space">
-        <div class="psicromia-track" id="psicromia-track">
-          <!-- Project Header -->
-          <div class="project-detail-header" id="project-detail-header">
-            <div class="project-detail-header__meta">
-              <span class="project-detail-header__year" id="detail-header-year"></span>
-              <span class="project-detail-header__tags" id="detail-header-tags"></span>
-            </div>
-            <h1 class="project-detail-header__title" id="detail-header-title"></h1>
-            <p class="project-detail-header__desc" id="detail-header-desc"></p>
+        <!-- Project Header -->
+        <div class="project-detail-header" id="project-detail-header">
+          <div class="project-detail-header__meta">
+            <span class="project-detail-header__year" id="detail-header-year"></span>
+            <span class="project-detail-header__tags" id="detail-header-tags"></span>
           </div>
-          <!-- Rendered more cards dynamically by main.js -->
+          <h1 class="project-detail-header__title" id="detail-header-title"></h1>
+          <p class="project-detail-header__desc" id="detail-header-desc"></p>
+        </div>
+        
+        <div class="psicromia-track" id="psicromia-track">
+          <!-- Rendered dynamically by main.js -->
         </div>
       </div>
       <button class="psicromia-back-btn" onclick="exitPsicromia()">← Voltar</button>

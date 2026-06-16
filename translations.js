@@ -74,9 +74,7 @@ const translations = {
     "misc.all": "Todos",
     "misc.back": "Voltar",
     "misc.close": "Fechar",
-    "misc.lucky": "ESTOU COM SORTE.",
-    "filter": "Filtrar",
-    "showAll": "Mostrar Todos"
+    "misc.lucky": "ESTOU COM SORTE."
   },
   en: {
     // Nav
@@ -153,9 +151,7 @@ const translations = {
     "misc.all": "All",
     "misc.back": "Back",
     "misc.close": "Close",
-    "misc.lucky": "I'M FEELING LUCKY",
-    "filter": "Filter",
-    "showAll": "Show All"
+    "misc.lucky": "I'M FEELING LUCKY"
   },
   es: {
     // Nav
@@ -232,9 +228,7 @@ const translations = {
     "misc.all": "Todos",
     "misc.back": "Volver",
     "misc.close": "Cerrar",
-    "misc.lucky": "ESTOY CON SUERTE",
-    "filter": "Filtrar",
-    "showAll": "Mostrar Todos"
+    "misc.lucky": "ESTOY CON SUERTE"
   },
   fr: {
     // Nav
@@ -311,9 +305,7 @@ const translations = {
     "misc.all": "Tous",
     "misc.back": "Retour",
     "misc.close": "Fermer",
-    "misc.lucky": "J'AI DE LA CHANCE",
-    "filter": "Filtrer",
-    "showAll": "Afficher Tout"
+    "misc.lucky": "J'AI DE LA CHANCE"
   }
 };
 
