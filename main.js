@@ -24,6 +24,14 @@ try {
   projectsDb = typeof portfolioData !== 'undefined' ? [...portfolioData] : [];
 }
 
+// Derived filtered set for display
+let displayProjects = [...projectsDb];
+let activeFilters = [];
+function getDisplayProjects() {
+  if (activeFilters.length === 0) return [...projectsDb];
+  return projectsDb.filter(p => p.tags && p.tags.some(t => activeFilters.includes(t)));
+}
+
 // Mouse tracking
 let mouseX = 0, mouseY = 0;
 let activeHoveredCard = null;
@@ -72,7 +80,7 @@ let isCascadeFocused = false; // Flag for paused and focused card state in Casca
 let focusScaleProgress = 0; // LERPed scale boost factor for focused card
 
 // Unified media items (scraped projects only, no fake/placeholder items)
-let combinedMediaItems = [...projectsDb];
+let combinedMediaItems = [...displayProjects];
 let morphCards = [];
 
 // Particle background variables
@@ -133,6 +141,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   buildMorphingCards();
   buildPsicromiaGallery();
+  buildFilterDropdown();
 
   document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
@@ -318,7 +327,8 @@ function buildMorphingCards() {
   const container = document.getElementById('projects-container');
   container.innerHTML = '';
   morphCards = [];
-  combinedMediaItems = [...projectsDb]; // Re-initialize in case data was updated in the admin panel
+  displayProjects = getDisplayProjects();
+  combinedMediaItems = [...displayProjects]; // Re-initialize in case data was updated in the admin panel
   hoverScales = Array(combinedMediaItems.length).fill(1);
 
   combinedMediaItems.forEach((item, index) => {
@@ -404,7 +414,7 @@ function buildMorphingCards() {
       // Stop propagation to prevent background click from resetting focus
       e.stopPropagation();
 
-      const matchIdx = projectsDb.findIndex(p => p.id === item.id);
+      const matchIdx = displayProjects.findIndex(p => p.id === item.id);
       if (activeView === 'orbit') {
         if (matchIdx !== -1) {
           smoothCascadeIndex = matchIdx;
@@ -414,7 +424,7 @@ function buildMorphingCards() {
         }
       } else if (activeView === 'cascade') {
         if (matchIdx !== -1) {
-          const M = projectsDb.length;
+          const M = displayProjects.length;
           const wrappedActiveIndex = mod(Math.round(smoothCascadeIndex), M);
           if (wrappedActiveIndex === matchIdx && isCascadeFocused) {
             isCascadeFocused = false;
@@ -468,7 +478,7 @@ function updateUnifiedLoop() {
     }
     
     // Prevent float overflow by shifting index by multiples of M
-    const M = projectsDb.length;
+    const M = displayProjects.length;
     if (M > 0 && Math.abs(activeCascadeIndex) > M * 10) {
       const shift = Math.round(activeCascadeIndex / M) * M;
       activeCascadeIndex -= shift;
@@ -495,8 +505,8 @@ function updateUnifiedLoop() {
     // FILE MODE (formerly Cascade)
     let cx, cy, cz, cScale, cOpacity, cRotateY, cZIndex;
 
-    if (index < projectsDb.length) {
-      const M = projectsDb.length;
+    if (index < displayProjects.length) {
+      const M = displayProjects.length;
       const offset = getWrappedOffset(index, smoothCascadeIndex, M);
       const absOffset = Math.abs(offset);
       const roundedOffset = Math.round(offset);
@@ -560,10 +570,10 @@ function updateUnifiedLoop() {
 function updateProjectInfoPanel() {
   if (activeView !== 'cascade') return;
 
-  const M = projectsDb.length;
+  const M = displayProjects.length;
   if (M === 0) return;
   const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
-  const item = projectsDb[wrappedActiveIndex];
+  const item = displayProjects[wrappedActiveIndex];
   if (!item) return;
 
   const year = item.year || '';
@@ -828,8 +838,8 @@ function triggerMomentumSpin(velocity) {
 }
 
 function triggerEasterEggSpin() {
-  if (projectsDb.length === 0) return;
-  const randomIdx = Math.floor(Math.random() * projectsDb.length);
+  if (displayProjects.length === 0) return;
+  const randomIdx = Math.floor(Math.random() * displayProjects.length);
   const N = combinedMediaItems.length;
   const targetAngle = Math.PI / 2 - (randomIdx / N) * 2 * Math.PI;
 
@@ -1025,10 +1035,10 @@ function buildPsicromiaGallery() {
   track.innerHTML = '';
 
   // Get active project
-  const M = projectsDb.length;
+  const M = displayProjects.length;
   if (M === 0) return;
   const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
-  const project = projectsDb[wrappedActiveIndex];
+  const project = displayProjects[wrappedActiveIndex];
   if (!project) return;
 
   // Set the project header info
@@ -1179,6 +1189,8 @@ function switchLanguage(lang) {
   
   buildMorphingCards();
   updateProjectInfoPanel(true); // force update translated values instantly
+  buildFilterDropdown();
+  updateFilterButtonLabel();
 }
 
 function updateLanguageUI() {
@@ -1635,6 +1647,101 @@ function requestAdminAccess() {
     alert("Senha incorreta.");
   }
 }
+
+function getTranslation(key) {
+  return (translations[currentLanguage] && translations[currentLanguage][key]) || key;
+}
+
+// ==========================================================================
+// FILTER DROPDOWN & LOGIC
+// ==========================================================================
+function getAllUniqueTags() {
+  const tagsSet = new Set();
+  projectsDb.forEach(p => {
+    if (p.tags && Array.isArray(p.tags)) {
+      p.tags.forEach(t => tagsSet.add(t));
+    }
+  });
+  return Array.from(tagsSet).sort();
+}
+
+function buildFilterDropdown() {
+  const dropdown = document.getElementById('filter-dropdown');
+  if (!dropdown) return;
+
+  const tags = getAllUniqueTags();
+  dropdown.innerHTML = '';
+
+  const showAllItem = document.createElement('div');
+  showAllItem.className = 'filter-dropdown-item' + (activeFilters.length === 0 ? ' active' : '');
+  showAllItem.innerHTML = `<span class="filter-check"></span><span data-i18n="showAll">${getTranslation('showAll')}</span>`;
+  showAllItem.addEventListener('click', () => {
+    activeFilters = [];
+    applyFilter();
+  });
+  dropdown.appendChild(showAllItem);
+
+  const divider = document.createElement('div');
+  divider.className = 'filter-dropdown-divider';
+  dropdown.appendChild(divider);
+
+  tags.forEach(tag => {
+    const item = document.createElement('div');
+    const isActive = activeFilters.includes(tag);
+    item.className = 'filter-dropdown-item' + (isActive ? ' active' : '');
+    item.innerHTML = `<span class="filter-check"></span><span>${tag}</span>`;
+    item.addEventListener('click', () => {
+      const idx = activeFilters.indexOf(tag);
+      if (idx > -1) {
+        activeFilters.splice(idx, 1);
+      } else {
+        activeFilters.push(tag);
+      }
+      applyFilter();
+    });
+    dropdown.appendChild(item);
+  });
+}
+
+function applyFilter() {
+  displayProjects = getDisplayProjects();
+  buildMorphingCards();
+  activeCascadeIndex = 0;
+  smoothCascadeIndex = 0;
+  updateProjectInfoPanel();
+  buildFilterDropdown();
+  updateFilterButtonLabel();
+}
+
+function updateFilterButtonLabel() {
+  const btn = document.getElementById('filter-btn');
+  if (!btn) return;
+  const label = btn.querySelector('[data-i18n="filter"]');
+  if (activeFilters.length === 0) {
+    if (label) label.innerText = getTranslation('filter');
+  } else {
+    if (label) label.innerText = activeFilters.join(', ');
+  }
+}
+
+function toggleFilterMenu() {
+  const dropdown = document.getElementById('filter-dropdown');
+  const btn = document.getElementById('filter-btn');
+  if (!dropdown || !btn) return;
+  const isOpen = dropdown.classList.contains('open');
+  dropdown.classList.toggle('open');
+  btn.setAttribute('aria-expanded', !isOpen);
+}
+
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('filter-dropdown');
+  const btn = document.getElementById('filter-btn');
+  if (!dropdown || !btn) return;
+  if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+    dropdown.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+});
 
 // Update the live cover image preview inside the project form
 function updateCoverPreview(url) {
