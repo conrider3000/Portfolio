@@ -26,6 +26,7 @@ try {
 
 // Mouse tracking
 let mouseX = 0, mouseY = 0;
+let cursorX = 0, cursorY = 0;
 let activeHoveredCard = null;
 
 // Hover scaling values for Orbit cards (smooth integration in render loop)
@@ -174,6 +175,8 @@ window.addEventListener('DOMContentLoaded', () => {
   bindSceneDrag();
   runLoader();
   startLogoAlternator();
+  animateCursor();
+  addCursorInteractions();
 
   // Live Cover Preview & Local Upload
   const coverInput = document.getElementById('form-project-cover');
@@ -460,6 +463,42 @@ function buildMorphingCards() {
     });
 
     // Right-click (contextmenu) event listener for zoom lens
+  });
+}
+
+// ==========================================================================
+// CURSOR ANIMATION & INTERACTIONS
+// ==========================================================================
+const cursorEl = document.getElementById('cursor');
+
+function animateCursor() {
+  if (!cursorEl) return;
+  cursorX += (mouseX - cursorX) * 0.15;
+  cursorY += (mouseY - cursorY) * 0.15;
+  cursorEl.style.left = `${cursorX}px`;
+  cursorEl.style.top = `${cursorY}px`;
+  requestAnimationFrame(animateCursor);
+}
+
+function addCursorInteractions() {
+  document.querySelectorAll('a, button, .nav__link, .vis-btn, .morph-card, .mosaic-card, .filter-btn, .filter-dropdown-item, .info-panel-more-btn, .psicromia-back-btn, .cascade-back-btn').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      if (cursorEl) cursorEl.classList.add('hovered');
+    });
+    el.addEventListener('mouseleave', () => {
+      if (cursorEl) {
+        cursorEl.classList.remove('hovered');
+        cursorEl.classList.remove('project-hover');
+      }
+    });
+  });
+  document.querySelectorAll('.mosaic-card, .gallery-item').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      if (cursorEl) {
+        cursorEl.classList.add('project-hover');
+        cursorEl.classList.remove('hovered');
+      }
+    });
   });
 }
 
