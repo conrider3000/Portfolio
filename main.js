@@ -518,8 +518,8 @@ function updateUnifiedLoop() {
       cOpacity = 1.0;
       cRotateY = 0;
 
-      // Top cards in front, bottom cards behind; first card above last at the seam
-      cZIndex = isActive ? 999 : Math.floor(100 + offset * 8);
+      // Bottom cards overlap top cards (inverted stacking)
+      cZIndex = isActive ? 999 : Math.floor(100 - offset * 8);
 
       if (isCenter) {
         card.classList.add('active-cascade');
