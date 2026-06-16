@@ -636,7 +636,6 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
   overflow: hidden;
   transform-origin: center center;
   user-select: none;
-  transition: border-color 0.4s ease, box-shadow 0.4s ease, width 0.3s ease, height 0.3s ease, margin 0.3s ease;
   transform-style: preserve-3d;
   will-change: transform, opacity;
 }
@@ -651,10 +650,7 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
   transition: transform 0.6s ease;
 }
 
-.morph-card:hover {
-  border-color: var(--accent-color);
-  box-shadow: 0 20px 40px rgba(200, 168, 130, 0.15);
-}
+/* hover border handled by JS in Orbit mode */
 
 /* Metadata Overlay for Active Cascade Cards */
 .morph-card__info {
