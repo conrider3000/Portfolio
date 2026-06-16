@@ -419,8 +419,8 @@ a, button {
 .psicromia-space {
   width: 100%;
   height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   padding: 130px 60px 60px 60px;
   box-sizing: border-box;
   scrollbar-width: thin;
@@ -428,7 +428,7 @@ a, button {
 }
 
 .psicromia-space::-webkit-scrollbar {
-  width: 6px;
+  height: 6px;
 }
 .psicromia-space::-webkit-scrollbar-track {
   background: transparent;
@@ -439,11 +439,11 @@ a, button {
 }
 
 .psicromia-track {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  height: 65vh;
+  gap: 16px;
   box-sizing: border-box;
 }
 
@@ -485,22 +485,23 @@ a, button {
 /* Creative Mosaic Cards */
 .mosaic-card {
   position: relative;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   line-height: 0;
+  flex-shrink: 0;
 }
 
 .mosaic-card:hover {
-  transform: translateY(-4px) scale(1.01);
+  transform: scale(1.03);
 }
 
 .mosaic-card img, .mosaic-card video {
   width: 100%;
   height: auto;
   display: block;
-  border-radius: 12px;
+  border-radius: 10px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.3s ease;
 }
@@ -592,17 +593,11 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
   }
 }
 
-@media (max-width: 1024px) {
-  .psicromia-track {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
 @media (max-width: 768px) {
   .psicromia-space {
-    overflow-y: auto;
-    height: auto;
-    padding: 100px 16px 80px 16px;
+    overflow-x: auto;
+    height: 100%;
+    padding: 100px 16px 60px 16px;
   }
   .project-detail-header {
     max-width: 100%;
@@ -612,8 +607,11 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
     font-size: 2rem;
   }
   .psicromia-track {
-    grid-template-columns: 1fr;
-    gap: 14px;
+    height: 55vh;
+    gap: 10px;
+  }
+  .mosaic-card {
+    width: 200px;
   }
 }
 

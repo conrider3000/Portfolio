@@ -240,7 +240,7 @@ window.addEventListener('DOMContentLoaded', () => {
     } else if (activeView === 'psicromia') {
       const space = document.querySelector('.psicromia-space');
       if (space) {
-        space.scrollTop += e.deltaY;
+        space.scrollLeft += e.deltaY;
       }
     }
   });
@@ -1024,21 +1024,12 @@ function buildPsicromiaGallery() {
   // If there are no media items, use the cover image as a fallback
   const finalMedia = mediaItems.length > 0 ? mediaItems : [{ type: "image", url: project.image }];
 
-  const spans = [
-    [2, 2], [1, 1], [1, 1],
-    [1, 2], [2, 1], [1, 1],
-    [1, 1], [2, 2], [1, 1],
-    [1, 1], [1, 1], [2, 1],
-    [1, 2], [1, 1], [2, 1]
-  ];
-
   finalMedia.forEach((item, index) => {
     const card = document.createElement('div');
     card.className = 'mosaic-card';
 
-    const s = spans[index % spans.length];
-    card.style.gridColumn = `span ${s[0]}`;
-    card.style.gridRow = `span ${s[1]}`;
+    const widths = [280, 220, 260, 300, 240, 200, 320, 260, 220, 280, 240, 300, 200, 260, 220];
+    card.style.width = widths[index % widths.length] + 'px';
 
     if (item.type === 'video') {
       card.innerHTML = `
