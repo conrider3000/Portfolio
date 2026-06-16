@@ -453,9 +453,9 @@ function updateUnifiedLoop() {
     if (!isDraggingCascade && !isCascadeFocused) {
       // Slowly auto-scroll File view if not focused
       if (isHoveringCard || isProjectInfoPanelVisible) {
-        activeCascadeIndex += 0.0004; // Slow motion speed
+        activeCascadeIndex += 0.001; // Slow motion speed
       } else {
-        activeCascadeIndex += 0.0015;  // File browsing speed
+        activeCascadeIndex += 0.003;  // File browsing speed
       }
     }
     
