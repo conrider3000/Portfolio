@@ -908,6 +908,8 @@ function switchView(viewName) {
 
   if (viewName !== 'cascade') {
     isCascadeFocused = false;
+  } else {
+    hoverScales.fill(1);
   }
 
   const cascadeBackBtn = document.getElementById('cascade-back-btn');
