@@ -518,7 +518,8 @@ function updateUnifiedLoop() {
       cOpacity = 1.0;
       cRotateY = 0;
 
-      cZIndex = isActive ? 999 : 100;
+      // Bottom cards (foreground, negative offset) in front; top cards (background) behind
+      cZIndex = isActive ? 999 : Math.floor(100 - offset * 8);
 
       if (isCenter) {
         card.classList.add('active-cascade');
