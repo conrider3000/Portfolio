@@ -71,6 +71,7 @@ let startCascadeDragX = 0;
 let isCascadeFocused = false; // Flag for paused and focused card state in Cascade
 let focusScaleProgress = 0; // LERPed scale boost factor for focused card
 let cascadePanX = 0; // Global left shift of cascade stack when focused (-150)
+let focusLiftY = 0; // Vertical lift of focused card (-80 = up) so it clears the card ahead
 let isAnimatingFocus = false; // Prevents LERP from fighting GSAP during card switch
 let focusGsapTween = null; // GSAP tween handle for card-to-card focus animation
 
@@ -491,6 +492,7 @@ function updateUnifiedLoop() {
     // LERP the focus scale factor boost
     focusScaleProgress += ((isCascadeFocused ? 1 : 0) - focusScaleProgress) * 0.08;
     cascadePanX += ((isCascadeFocused ? -150 : 0) - cascadePanX) * 0.08;
+    focusLiftY += ((isCascadeFocused ? -80 : 0) - focusLiftY) * 0.08;
 
     if (!isAnimatingFocus) {
       smoothCascadeIndex += (activeCascadeIndex - smoothCascadeIndex) * 0.05;
@@ -513,6 +515,7 @@ function updateUnifiedLoop() {
     smoothCascadeIndex = activeCascadeIndex;
     focusScaleProgress += (0 - focusScaleProgress) * 0.08;
     cascadePanX += (0 - cascadePanX) * 0.08;
+    focusLiftY += (0 - focusLiftY) * 0.08;
   }
 
   const p = transitionProgress.value; 
@@ -544,7 +547,7 @@ function updateUnifiedLoop() {
       const isActive = isCenter && isCascadeFocused;
 
       cx = offset * spacingX + (isActive ? 0 : cascadePanX);
-      cy = -offset * spacingY;
+      cy = -offset * spacingY + (isActive ? focusLiftY : 0);
       cz = isActive ? 80 : 0;
 
       // All cards same scale; only focused card gets larger
