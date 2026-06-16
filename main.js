@@ -26,7 +26,6 @@ try {
 
 // Mouse tracking
 let mouseX = 0, mouseY = 0;
-let cursorX = 0, cursorY = 0;
 let activeHoveredCard = null;
 
 // Hover scaling values for Orbit cards (smooth integration in render loop)
@@ -473,10 +472,8 @@ const cursorEl = document.getElementById('cursor');
 
 function animateCursor() {
   if (!cursorEl) return;
-  cursorX += (mouseX - cursorX) * 0.15;
-  cursorY += (mouseY - cursorY) * 0.15;
-  cursorEl.style.left = `${cursorX}px`;
-  cursorEl.style.top = `${cursorY}px`;
+  cursorEl.style.left = `${mouseX}px`;
+  cursorEl.style.top = `${mouseY}px`;
   requestAnimationFrame(animateCursor);
 }
 
