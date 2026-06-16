@@ -558,6 +558,7 @@ body * {
   position: relative;
   height: 100%;
   width: auto;
+  max-width: 560px;
   flex-shrink: 0;
   cursor: pointer;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);

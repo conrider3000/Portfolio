@@ -9,15 +9,18 @@ let activeView = 'orbit'; // 'orbit', 'cascade', or 'psicromia'
 let transitionProgress = { value: 0 }; 
 
 // Load portfolio data from localStorage if available, otherwise use default portfolioData
+// Version flag so we can force re-sync when portfolio.js is updated
+const DATA_VERSION = '2';
 let projectsDb = [];
 try {
+  const cachedVersion = localStorage.getItem('portfolio_data_version');
   const localData = localStorage.getItem('portfolio_projects');
-  if (localData) {
+  if (localData && cachedVersion === DATA_VERSION) {
     projectsDb = JSON.parse(localData);
   } else {
-    // portfolioData comes from data/portfolio.js loaded in index.html
-    projectsDb = [...portfolioData];
+    projectsDb = typeof portfolioData !== 'undefined' ? [...portfolioData] : [];
     localStorage.setItem('portfolio_projects', JSON.stringify(projectsDb));
+    localStorage.setItem('portfolio_data_version', DATA_VERSION);
   }
 } catch (e) {
   console.error("Error loading portfolio projects", e);
