@@ -973,23 +973,42 @@ function switchView(viewName) {
     document.getElementById('projects-scene').classList.remove('active');
     document.getElementById('psicromia-scene').classList.add('active');
     gsap.to('.visualizer-select', { opacity: 0, y: 20, duration: 0.5, pointerEvents: 'none' });
-    
-    // Hide central orbit text just in case
     gsap.to('#orbit-center-text', { opacity: 0, duration: 0.3 });
 
-    // Hide typographic panel
+    // Capture info panel position for text morph animation
+    const infoPanel = document.getElementById('project-info-panel');
+    let infoRect = null;
+    if (infoPanel) {
+      infoRect = infoPanel.getBoundingClientRect();
+    }
+
+    // Fade out info panel
     gsap.to('#project-info-panel', {
-      opacity: 0,
-      yPercent: -50,
-      y: 20,
-      duration: 0.5,
-      ease: "power2.in",
-      pointerEvents: 'none'
+      opacity: 0, yPercent: -50, y: 20, duration: 0.5, ease: "power2.in", pointerEvents: 'none'
     });
 
-    // Build and animate entry of gallery
+    // Build gallery (populates header text)
     activePhotoIndex = 0;
     buildPsicromiaGallery();
+
+    // Animate header morphing from info panel position
+    const header = document.getElementById('project-detail-header');
+    if (infoRect && header) {
+      const hRect = header.getBoundingClientRect();
+      const dx = infoRect.left - hRect.left;
+      const dy = (infoRect.top + infoRect.height / 2) - (hRect.top + hRect.height / 2);
+      if (isFinite(dx) && isFinite(dy)) {
+        gsap.fromTo(header,
+          { x: dx, y: dy, opacity: 0 },
+          { x: 0, y: 0, opacity: 1, duration: 0.9, ease: "power3.out", clearProps: "transform" }
+        );
+      } else {
+        gsap.fromTo(header, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" });
+      }
+    } else {
+      gsap.fromTo(header, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" });
+    }
+
     animatePsicromiaEntry();
   } else {
     // Hide psicromia scene and show projects scene
@@ -1085,9 +1104,6 @@ function buildPsicromiaGallery() {
     const card = document.createElement('div');
     card.className = 'mosaic-card';
 
-    const widths = [280, 220, 260, 300, 240, 200, 320, 260, 220, 280, 240, 300, 200, 260, 220];
-    card.style.width = widths[index % widths.length] + 'px';
-
     if (item.type === 'video') {
       card.innerHTML = `
         <video src="${item.url}" autoplay loop muted playsinline class="mosaic-media" onerror="this.style.display='none';"></video>
@@ -1120,26 +1136,20 @@ function exitPsicromia() {
 }
 
 function animatePsicromiaEntry() {
-  const space = document.querySelector('.psicromia-space');
-  if (space) space.scrollTop = 0;
+  const track = document.getElementById('psicromia-track');
+  if (track) track.scrollLeft = 0;
 
   gsap.fromTo('.psicromia-back-btn', { x: -20, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "power2.out" });
-  
-  gsap.fromTo('#project-detail-header', 
-    { y: 30, opacity: 0 }, 
-    { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
-  );
 
   const cards = document.querySelectorAll('.mosaic-card');
   if (cards.length > 0) {
     gsap.fromTo(cards, 
-      { y: 40, opacity: 0, scale: 0.96 },
+      { x: -30, opacity: 0 },
       { 
-        y: 0, 
-        opacity: 1, 
-        scale: 1,
-        duration: 0.8, 
-        stagger: 0.03,
+        x: 0,
+        opacity: 1,
+        duration: 0.6,
+        stagger: 0.05,
         ease: "power3.out" 
       }
     );

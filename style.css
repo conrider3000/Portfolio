@@ -422,44 +422,25 @@ a, button {
   transition: transform 0.6s ease;
 }
 
-/* PSICROMIA / PROJECT DETAIL GRID GALLERY (View 3) */
+/* PSICROMIA / PROJECT DETAIL GALLERY (View 3) */
 .psicromia-space {
   width: 100%;
   height: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 130px 60px 60px 60px;
-  box-sizing: border-box;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(134, 134, 139, 0.3) transparent;
-}
-
-.psicromia-space::-webkit-scrollbar {
-  height: 6px;
-}
-.psicromia-space::-webkit-scrollbar-track {
-  background: transparent;
-}
-.psicromia-space::-webkit-scrollbar-thumb {
-  background: rgba(134, 134, 139, 0.3);
-  border-radius: 4px;
-}
-
-.psicromia-track {
   display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  height: 65vh;
-  gap: 16px;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 60px 0 60px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Editorial Project Detail Header */
 .project-detail-header {
-  max-width: 800px;
-  margin: 0 auto 2rem auto;
-  padding: 20px 0 10px 0;
+  flex-shrink: 0;
+  width: 380px;
+  padding: 20px 40px 20px 0;
   box-sizing: border-box;
+  align-self: center;
 }
 
 .project-detail-header__meta {
@@ -489,24 +470,53 @@ a, button {
   margin: 0;
 }
 
-/* Creative Mosaic Cards */
+.psicromia-track {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 55vh;
+  max-height: 500px;
+  min-height: 280px;
+  gap: 24px;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(134, 134, 139, 0.3) transparent;
+  padding: 0 4px;
+}
+
+.psicromia-track::-webkit-scrollbar {
+  height: 6px;
+}
+.psicromia-track::-webkit-scrollbar-track {
+  background: transparent;
+}
+.psicromia-track::-webkit-scrollbar-thumb {
+  background: rgba(134, 134, 139, 0.3);
+  border-radius: 4px;
+}
+
+/* Gallery Cards */
 .mosaic-card {
   position: relative;
-  border-radius: 10px;
-  overflow: hidden;
+  height: 100%;
+  width: auto;
+  flex-shrink: 0;
   cursor: pointer;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   line-height: 0;
-  flex-shrink: 0;
 }
 
 .mosaic-card:hover {
-  transform: scale(1.03);
+  transform: scale(1.02);
 }
 
 .mosaic-card img, .mosaic-card video {
-  width: 100%;
-  height: auto;
+  height: 100%;
+  width: auto;
+  object-fit: contain;
   display: block;
   border-radius: 10px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
