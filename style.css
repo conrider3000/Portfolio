@@ -652,6 +652,24 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
 
 /* hover border handled by JS in Orbit mode */
 
+/* Circle mode: crops orbit cards into circles */
+body.circle-mode .morph-card {
+  border-radius: 50%;
+  width: 160px;
+  height: 160px;
+  margin-left: -80px;
+  margin-top: -80px;
+}
+
+body.circle-mode .morph-card img {
+  object-fit: cover;
+  height: 100%;
+}
+
+body.circle-mode .morph-card:hover {
+  border-color: var(--accent-color);
+}
+
 /* Metadata Overlay for Active Cascade Cards */
 .morph-card__info {
   display: none !important;

@@ -877,10 +877,33 @@ function animateOrbitEntry() {
 }
 
 // ==========================================================================
+// CIRCLE MODE TOGGLE (Orbit view)
+// ==========================================================================
+let isCircleMode = false;
+
+function toggleCircles() {
+  isCircleMode = !isCircleMode;
+  const btn = document.getElementById('btn-circles');
+  if (isCircleMode) {
+    document.body.classList.add('circle-mode');
+    if (btn) btn.classList.add('active');
+  } else {
+    document.body.classList.remove('circle-mode');
+    if (btn) btn.classList.remove('active');
+  }
+}
+
+// ==========================================================================
 // MORPH VIEW SWITCHER
 // ==========================================================================
 function switchView(viewName) {
   if (activeView === viewName) return;
+  if (viewName !== 'orbit' && isCircleMode) {
+    isCircleMode = false;
+    document.body.classList.remove('circle-mode');
+    const btn = document.getElementById('btn-circles');
+    if (btn) btn.classList.remove('active');
+  }
   activeView = viewName;
 
   if (viewName !== 'cascade') {
