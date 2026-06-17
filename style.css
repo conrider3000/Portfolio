@@ -73,19 +73,8 @@ a, button {
 }
 
 /* ==========================================================================
-   GRID BACKGROUND & CANVAS
+   PARTICLES CANVAS
    ========================================================================== */
-.grid-bg {
-  display: none;
-}
-.grid-line {
-  border-right: 1px solid var(--text-color);
-  height: 100%;
-}
-.grid-line:last-child {
-  border-right: none;
-}
-
 #particles-canvas {
   position: fixed;
   top: 0;
@@ -533,7 +522,7 @@ body * {
   min-height: 280px;
   gap: 24px;
   flex: 1;
-  overflow-x: auto;
+  overflow-x: scroll;
   overflow-y: hidden;
   box-sizing: border-box;
   scrollbar-width: thin;
@@ -558,7 +547,7 @@ body * {
   height: 100%;
   width: auto;
   max-width: 560px;
-  min-width: 100px;
+  min-width: 260px;
   flex-shrink: 0;
   cursor: pointer;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);

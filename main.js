@@ -10,7 +10,7 @@ let transitionProgress = { value: 0 };
 
 // Load portfolio data from localStorage if available, otherwise use default portfolioData
 // Version flag so we can force re-sync when portfolio.js is updated
-const DATA_VERSION = '2';
+const DATA_VERSION = '3';
 let projectsDb = [];
 try {
   const cachedVersion = localStorage.getItem('portfolio_data_version');
@@ -1127,53 +1127,89 @@ function switchView(viewName) {
 // ==========================================================================
 // PSICROMIA PHOTO GALLERY (VIEW 3)
 // ==========================================================================
+function generatePlaceholderSVG(w, h, index, projectName) {
+  const hue = (index * 47) % 360;
+  return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'%3E%3Crect width='${w}' height='${h}' fill='hsl(${hue},40%25,55%25)'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='sans-serif' font-size='${Math.round(Math.min(w, h) * 0.06)}'%3E${encodeURIComponent(projectName)}%3C/text%3E%3Ctext x='50%25' y='${Math.round(h * 0.6)}' text-anchor='middle' dominant-baseline='middle' fill='rgba(255,255,255,0.6)' font-family='sans-serif' font-size='${Math.round(Math.min(w, h) * 0.035)}'%3EImagem ${index + 1}%3C/text%3E%3C/svg%3E`;
+}
+
 function buildPsicromiaGallery() {
   const track = document.getElementById('psicromia-track');
   if (!track) return;
   track.innerHTML = '';
 
-  // Get active project
   const M = projectsDb.length;
   if (M === 0) return;
   const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
   const project = projectsDb[wrappedActiveIndex];
   if (!project) return;
 
-  // Set the project header info
   document.getElementById('detail-header-year').innerText = project.year || '';
   document.getElementById('detail-header-tags').innerText = (project.tags || []).join(' / ');
   document.getElementById('detail-header-title').innerText = getLocalizedValue(project.title);
   document.getElementById('detail-header-desc').innerText = getLocalizedValue(project.description);
 
   const mediaItems = project.media || [];
-  
-  // If there are no media items, use the cover image as a fallback
   const finalMedia = mediaItems.length > 0 ? mediaItems : [{ type: "image", url: project.image }];
+
+  const loadPromises = [];
 
   finalMedia.forEach((item, index) => {
     const card = document.createElement('div');
     card.className = 'mosaic-card';
 
     if (item.type === 'video') {
-      card.innerHTML = `
-        <video src="${item.url}" autoplay loop muted playsinline class="mosaic-media" onerror="this.style.display='none';"></video>
-      `;
+      const video = document.createElement('video');
+      video.className = 'mosaic-media';
+      video.src = item.url;
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.onerror = function() {
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:hsl(0,0%,85%);border-radius:10px;font-family:sans-serif;font-size:0.85rem;color:#666;';
+        placeholder.textContent = 'Vídeo indisponível';
+        this.parentElement.replaceChild(placeholder, this);
+      };
+      card.appendChild(video);
     } else {
       const img = document.createElement('img');
       img.className = 'mosaic-media';
       img.alt = getLocalizedValue(project.title);
-      img.onerror = function() { this.style.display = 'none'; };
+
+      const p = new Promise(resolve => {
+        img.addEventListener('load', () => resolve());
+        img.addEventListener('error', () => {
+          img.src = generatePlaceholderSVG(800, 600, index, getLocalizedValue(project.title));
+          resolve();
+        });
+      });
+      loadPromises.push(p);
+
       img.src = item.url;
       card.appendChild(img);
     }
 
     track.appendChild(card);
 
-    // Click to open in full screen lightbox
     card.addEventListener('click', () => {
       openLightbox(item);
     });
   });
+
+  if (loadPromises.length > 0) {
+    Promise.allSettled(loadPromises).then(() => {
+      requestAnimationFrame(() => {
+        const t = document.getElementById('psicromia-track');
+        if (t) {
+          t.style.overflowX = 'hidden';
+          requestAnimationFrame(() => {
+            t.style.overflowX = 'scroll';
+          });
+        }
+      });
+    });
+  }
 }
 
 function updatePsicromiaGalleryPositions() {
