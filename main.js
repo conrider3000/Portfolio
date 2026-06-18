@@ -252,6 +252,21 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  // Arrow keys navigate gallery scroll
+  document.addEventListener('keydown', (e) => {
+    if (activeView === 'psicromia') {
+      const track = document.getElementById('psicromia-track');
+      if (!track) return;
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        track.scrollBy({ left: 400, behavior: 'smooth' });
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        track.scrollBy({ left: -400, behavior: 'smooth' });
+      }
+    }
+  });
 });
 
 // ==========================================================================
@@ -1157,8 +1172,10 @@ function generatePlaceholderSVG(w, h, index, projectName) {
 
 function buildPsicromiaGallery() {
   const track = document.getElementById('psicromia-track');
+  const bannerContainer = document.getElementById('gallery-banner');
   if (!track) return;
   track.innerHTML = '';
+  if (bannerContainer) bannerContainer.innerHTML = '';
 
   const M = projectsDb.length;
   if (M === 0) return;
@@ -1174,9 +1191,14 @@ function buildPsicromiaGallery() {
   const mediaItems = project.media || [];
   const finalMedia = mediaItems.length > 0 ? mediaItems : [{ type: "image", url: project.image }];
 
+  // Separate banners from gallery items
+  const galleryItems = finalMedia.filter(item => !item.banner);
+  const banners = finalMedia.filter(item => item.banner);
+
   const loadPromises = [];
 
-  finalMedia.forEach((item, index) => {
+  // Render gallery cards (non-banner)
+  galleryItems.forEach((item, index) => {
     const card = document.createElement('div');
     card.className = 'mosaic-card';
 
@@ -1233,6 +1255,21 @@ function buildPsicromiaGallery() {
           });
         }
       });
+    });
+  }
+
+  // Render banners
+  if (bannerContainer) {
+    banners.forEach((item) => {
+      if (item.type === 'image') {
+        const img = document.createElement('img');
+        img.src = item.url;
+        img.alt = getLocalizedValue(project.title);
+        img.onerror = function() {
+          this.style.display = 'none';
+        };
+        bannerContainer.appendChild(img);
+      }
     });
   }
 }
@@ -1296,6 +1333,11 @@ function openLightbox(item) {
   }
   
   overlay.classList.add('active');
+  document.addEventListener('keydown', onLightboxKeydown);
+}
+
+function onLightboxKeydown(e) {
+  if (e.key === 'Escape') closeLightbox();
 }
 
 function closeLightbox() {
@@ -1305,6 +1347,8 @@ function closeLightbox() {
   // Stop any playing video
   const content = overlay.querySelector('.lightbox-content');
   content.innerHTML = '';
+  
+  document.removeEventListener('keydown', onLightboxKeydown);
 }
 
 // ==========================================================================
@@ -1395,23 +1439,25 @@ function updateThemeToggleIcon() {
   const btn = document.getElementById('theme-toggle-btn');
   if (!btn) return;
   if (currentTheme === 'dark') {
+    btn.style.backgroundColor = '#ffffff';
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-color); display: block;">
-        <circle cx="12" cy="12" r="5"></circle>
-        <line x1="12" y1="1" x2="12" y2="3"></line>
-        <line x1="12" y1="21" x2="12" y2="23"></line>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-        <line x1="1" y1="12" x2="3" y2="12"></line>
-        <line x1="21" y1="12" x2="23" y2="12"></line>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="#000000" stroke="none">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
     `;
   } else {
+    btn.style.backgroundColor = '#f5a623';
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #4a5568; display: block;">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5" fill="#ffffff"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
       </svg>
     `;
   }
@@ -1608,7 +1654,7 @@ function openProjectForm(projectId = null) {
       // Populate media items
       const media = project.media || [];
       media.forEach(m => {
-        addGalleryMediaRow(m.url, m.type);
+        addGalleryMediaRow(m.url, m.type, m.banner);
       });
     }
   } else {
@@ -1632,7 +1678,7 @@ function closeProjectForm() {
   }
 }
 
-function addGalleryMediaRow(url = '', type = 'image') {
+function addGalleryMediaRow(url = '', type = 'image', banner = false) {
   const container = document.getElementById('admin-form-media-rows');
   if (!container) return;
 
@@ -1648,6 +1694,9 @@ function addGalleryMediaRow(url = '', type = 'image') {
       <option value="video" ${type === 'video' ? 'selected' : ''}>Vídeo</option>
     </select>
     <input type="text" class="admin-input form-media-url" placeholder="URL ou Base64" value="${url}" style="flex: 1; min-width: 0; padding: 6px;" required>
+    <label style="font-size: 11px; display: flex; align-items: center; gap: 2px; white-space: nowrap;">
+      <input type="checkbox" class="form-media-banner" ${banner ? 'checked' : ''}> Banner
+    </label>
     <label class="admin-upload-btn" title="Upload Local">
       📁
       <input type="file" class="form-media-file" accept="image/*,video/*" style="display: none;">
@@ -1715,8 +1764,9 @@ function saveProject(event) {
   mediaRows.forEach(row => {
     const type = row.querySelector('.form-media-type').value;
     const url = row.querySelector('.form-media-url').value.trim();
+    const banner = row.querySelector('.form-media-banner') ? row.querySelector('.form-media-banner').checked : false;
     if (url) {
-      media.push({ type, url });
+      media.push({ type, url, banner });
     }
   });
 
