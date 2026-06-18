@@ -114,7 +114,7 @@ function startLogoAlternator() {
   const logoText = document.getElementById('logo-text');
   if (!logoText) return;
   const words = ["CONRADO", "PORTFÓLIO"];
-  const colors = ["#2E7D32", "#DA291C", "#FFDF00", "#009C3B", "#002776"];
+  const colors = ["#388E3C", "#DA291C", "#C8A415", "#1565C0"];
   let wordIdx = 0;
   let colorIdx = 0;
   logoText.style.color = colors[0];
@@ -279,39 +279,190 @@ window.addEventListener('DOMContentLoaded', () => {
 // ==========================================================================
 function runLoader() {
   const loader = document.getElementById('loader');
-  const percentText = document.getElementById('loader-percent');
-  const barFill = document.getElementById('loader-bar-fill');
   const loaderWord = document.getElementById('loader-word');
-  
-  const introWords = ["Branding.", "UX Design.", "Autonomia.", "SURU.", "Conrado."];
-  let wordIdx = 0;
-  
-  const wordInterval = setInterval(() => {
-    loaderWord.innerText = introWords[wordIdx];
-    wordIdx = (wordIdx + 1) % introWords.length;
-  }, 250);
 
-  let progress = 0;
-  const progressInterval = setInterval(() => {
-    progress += Math.floor(Math.random() * 10) + 3;
-    if (progress >= 100) {
-      progress = 100;
-      clearInterval(progressInterval);
-      clearInterval(wordInterval);
-      
-      gsap.to(loader, {
-        opacity: 0,
-        duration: 0.8,
-        ease: "power2.out",
-        onComplete: () => {
-          loader.style.display = 'none';
-          animateOrbitEntry();
-        }
-      });
+  const stageColors = ["#388E3C", "#DA291C", "#C8A415", "#1565C0"];
+  const pts = [
+    document.getElementById('geo-p0'),
+    document.getElementById('geo-p1'),
+    document.getElementById('geo-p2'),
+    document.getElementById('geo-p3')
+  ];
+  const lines = [
+    document.getElementById('geo-l01'),
+    document.getElementById('geo-l02'),
+    document.getElementById('geo-l12'),
+    document.getElementById('geo-l03'),
+    document.getElementById('geo-l13'),
+    document.getElementById('geo-l23')
+  ];
+  const lineConnections = [[0,1],[0,2],[1,2],[0,3],[1,3],[2,3]];
+
+  pts.forEach((p, i) => p.setAttribute('fill', stageColors[i]));
+
+  const stages = [
+    { pts: [[120,120], null, null, null],      lines: [0,0,0,0,0,0] },
+    { pts: [[60,120], [180,120], null, null],   lines: [1,0,0,0,0,0] },
+    { pts: [[120,30], [30,195], [210,195], null], lines: [1,1,1,0,0,0] },
+    { pts: [[120,40], [35,185], [205,185], [120,95]], lines: [1,1,1,1,1,1] }
+  ];
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const dyn = document.getElementById('geo-dynamic');
+  let animLoop = null;
+
+  function killAnim() { if (animLoop) { cancelAnimationFrame(animLoop); animLoop = null; } }
+
+  function animToStage(idx) {
+    killAnim();
+    dyn.innerHTML = '';
+    const s = stages[idx];
+    s.pts.forEach((pos, i) => {
+      if (pos) {
+        gsap.to(pts[i], { attr: { cx: pos[0], cy: pos[1] }, opacity: 1, duration: 0.5, ease: "power2.inOut" });
+      } else {
+        gsap.to(pts[i], { opacity: 0, duration: 0.3 });
+      }
+    });
+    lineConnections.forEach((c, i) => {
+      const pa = s.pts[c[0]], pb = s.pts[c[1]];
+      if (pa && pb && s.lines[i]) {
+        gsap.to(lines[i], { attr: { x1: pa[0], y1: pa[1], x2: pb[0], y2: pb[1] }, opacity: 0.5, duration: 0.5, ease: "power2.inOut" });
+      } else {
+        gsap.to(lines[i], { opacity: 0, duration: 0.3 });
+      }
+    });
+  }
+
+  function startCircle() {
+    killAnim();
+    dyn.innerHTML = '';
+    gsap.to(lines, { opacity: 0, duration: 0.3 });
+
+    const num = 12;
+    const R = 80;
+    const allEls = [];
+    const allAngles = [];
+
+    for (let i = 0; i < num; i++) {
+      const angle = (i / num) * Math.PI * 2;
+      const cx = 120 + Math.cos(angle) * R;
+      const cy = 120 + Math.sin(angle) * R;
+      if (i < 4) {
+        pts[i].setAttribute('fill', stageColors[i]);
+        gsap.to(pts[i], { attr: { cx, cy }, opacity: 1, duration: 0.5, ease: "power2.inOut" });
+        allEls.push(pts[i]);
+      } else {
+        const el = document.createElementNS(NS, 'circle');
+        el.setAttribute('cx', cx);
+        el.setAttribute('cy', cy);
+        el.setAttribute('r', '4');
+        el.setAttribute('fill', stageColors[i % 4]);
+        el.setAttribute('opacity', '0');
+        dyn.appendChild(el);
+        gsap.to(el, { attr: { opacity: 0.8 }, duration: 0.3, delay: 0.05 * (i - 4) });
+        allEls.push(el);
+      }
+      allAngles.push(angle);
     }
-    percentText.innerText = `${progress}%`;
-    barFill.style.width = `${progress}%`;
-  }, 60);
+
+    const outline = document.createElementNS(NS, 'circle');
+    outline.setAttribute('cx', '120');
+    outline.setAttribute('cy', '120');
+    outline.setAttribute('r', '' + R);
+    outline.setAttribute('fill', 'none');
+    outline.setAttribute('stroke', 'rgba(255,255,255,0.2)');
+    outline.setAttribute('stroke-width', '1');
+    outline.setAttribute('stroke-dasharray', '' + (Math.PI * 2 * R));
+    outline.setAttribute('stroke-dashoffset', '' + (Math.PI * 2 * R));
+    dyn.appendChild(outline);
+    gsap.to(outline, { attr: { 'stroke-dashoffset': 0, opacity: 1 }, duration: 0.8, ease: "power2.out" });
+
+    let rot = 0;
+    function frame() {
+      rot += 0.02;
+      allAngles.forEach((a, i) => {
+        const na = a + rot;
+        allEls[i].setAttribute('cx', 120 + Math.cos(na) * R);
+        allEls[i].setAttribute('cy', 120 + Math.sin(na) * R);
+      });
+      animLoop = requestAnimationFrame(frame);
+    }
+    frame();
+  }
+
+  function startSphere() {
+    killAnim();
+    dyn.innerHTML = '';
+    gsap.to(pts, { opacity: 0, duration: 0.3 });
+    gsap.to(lines, { opacity: 0, duration: 0.3 });
+
+    const R = 70;
+    const lats = 6;
+    const lons = 10;
+    const spherePts = [];
+
+    for (let lat = 0; lat <= lats; lat++) {
+      const latAngle = (lat / lats) * Math.PI - Math.PI / 2;
+      const y = 120 - Math.sin(latAngle) * R;
+      const r = Math.cos(latAngle) * R;
+      const n = Math.max(4, Math.round(lons * Math.abs(Math.cos(latAngle))));
+      for (let j = 0; j < n; j++) {
+        const lonAngle = (j / n) * Math.PI * 2;
+        const cx = 120 + Math.cos(lonAngle) * r;
+        const cy = 120 + Math.sin(lonAngle) * r;
+        const el = document.createElementNS(NS, 'circle');
+        el.setAttribute('cx', cx);
+        el.setAttribute('cy', cy);
+        el.setAttribute('r', '3');
+        el.setAttribute('fill', stageColors[(lat + j) % 4]);
+        el.setAttribute('opacity', '0');
+        dyn.appendChild(el);
+        gsap.to(el, { attr: { opacity: 0.6 }, duration: 0.2, delay: 0.01 * spherePts.length });
+        spherePts.push({ el, lat: latAngle, lon: j, n, r });
+      }
+    }
+
+    let rot = 0;
+    function frame() {
+      rot += 0.015;
+      spherePts.forEach(p => {
+        const lonAngle = (p.lon / p.n) * Math.PI * 2 + rot;
+        const x = 120 + Math.cos(lonAngle) * p.r;
+        const y = 120 - Math.sin(p.lat) * R;
+        const z = Math.sin(lonAngle) * p.r;
+        const depth = (z / R + 1) / 2;
+        p.el.setAttribute('cx', x);
+        p.el.setAttribute('cy', y);
+        p.el.setAttribute('r', '' + (1.5 + depth * 2.5));
+        p.el.setAttribute('opacity', '' + (0.2 + depth * 0.5));
+      });
+      animLoop = requestAnimationFrame(frame);
+    }
+    frame();
+  }
+
+  gsap.set([pts[1], pts[2], pts[3]], { opacity: 0 });
+  gsap.set(lines, { opacity: 0 });
+
+  animToStage(0);
+  setTimeout(() => animToStage(1), 800);
+  setTimeout(() => animToStage(2), 1600);
+  setTimeout(() => animToStage(3), 2500);
+  setTimeout(() => { startCircle(); }, 3500);
+  setTimeout(() => { startSphere(); }, 4800);
+  setTimeout(() => {
+    killAnim();
+    gsap.to(loader, {
+      opacity: 0,
+      duration: 0.8,
+      ease: "power2.out",
+      onComplete: () => {
+        loader.style.display = 'none';
+        animateOrbitEntry();
+      }
+    });
+  }, 6200);
 }
 
 // ==========================================================================

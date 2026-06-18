@@ -41,16 +41,19 @@
 
   <!-- Site Intro Loader -->
   <div class="site-loader" id="loader">
-    <div class="site-loader__content">
-      <span>Conrado</span>
-      <div class="site-loader__word" id="loader-word">design.</div>
-    </div>
-    <div class="site-loader__progress">
-      <span class="site-loader__percent" id="loader-percent">0%</span>
-      <div class="site-loader__bar">
-        <div class="site-loader__bar-fill" id="loader-bar-fill"></div>
-      </div>
-    </div>
+    <svg class="loader-geo" id="loader-geo" viewBox="0 0 240 240">
+      <circle class="geo-point" id="geo-p0" cx="120" cy="120" r="5" />
+      <circle class="geo-point" id="geo-p1" cx="120" cy="120" r="5" />
+      <circle class="geo-point" id="geo-p2" cx="120" cy="120" r="5" />
+      <circle class="geo-point" id="geo-p3" cx="120" cy="120" r="5" />
+      <line class="geo-line" id="geo-l01" x1="120" y1="120" x2="120" y2="120" />
+      <line class="geo-line" id="geo-l02" x1="120" y1="120" x2="120" y2="120" />
+      <line class="geo-line" id="geo-l12" x1="120" y1="120" x2="120" y2="120" />
+      <line class="geo-line" id="geo-l03" x1="120" y1="120" x2="120" y2="120" />
+      <line class="geo-line" id="geo-l13" x1="120" y1="120" x2="120" y2="120" />
+      <line class="geo-line" id="geo-l23" x1="120" y1="120" x2="120" y2="120" />
+      <g id="geo-dynamic"></g>
+    </svg>
   </div>
 
   <!-- Header navigation -->
