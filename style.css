@@ -187,8 +187,8 @@ body * {
 
 /* Geometric Loader Animation */
 .loader-geo {
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 180px;
 }
 
 .geo-point {
@@ -584,22 +584,11 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
 }
 
-/* Psicromia scene column layout (space on top, banner below) */
-#psicromia-scene {
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  overflow-y: auto;
-}
-
-#psicromia-scene .psicromia-space {
-  flex: 1 0 auto;
-  height: auto;
-  min-height: 40vh;
-}
-
 /* Gallery Banner Styles */
 .gallery-banner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -607,7 +596,8 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
   gap: 20px;
   padding: 20px 60px 40px;
   box-sizing: border-box;
-  flex-shrink: 0;
+  pointer-events: none;
+  z-index: 5;
 }
 
 .gallery-banner img {
@@ -617,6 +607,7 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
   object-fit: contain;
   border-radius: 12px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+  pointer-events: auto;
 }
 
 /* Lightbox Styles */
@@ -722,9 +713,6 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
     max-height: 25vh;
   }
 }
-
-
-
 
 /* ==========================================================================
    MAPPING UNIFIED CARDS (.morph-card)

@@ -281,7 +281,6 @@ function runLoader() {
   const loader = document.getElementById('loader');
   const loaderWord = document.getElementById('loader-word');
 
-  const stageColors = ["#388E3C", "#DA291C", "#C8A415", "#1565C0"];
   const pts = [
     document.getElementById('geo-p0'),
     document.getElementById('geo-p1'),
@@ -298,13 +297,12 @@ function runLoader() {
   ];
   const lineConnections = [[0,1],[0,2],[1,2],[0,3],[1,3],[2,3]];
 
-  pts.forEach((p, i) => p.setAttribute('fill', stageColors[i]));
+  pts.forEach((p) => p.setAttribute('fill', '#ffffff'));
 
   const stages = [
     { pts: [[120,120], null, null, null],      lines: [0,0,0,0,0,0] },
     { pts: [[60,120], [180,120], null, null],   lines: [1,0,0,0,0,0] },
-    { pts: [[120,30], [30,195], [210,195], null], lines: [1,1,1,0,0,0] },
-    { pts: [[120,40], [35,185], [205,185], [120,95]], lines: [1,1,1,1,1,1] }
+    { pts: [[120,30], [30,195], [210,195], null], lines: [1,1,1,0,0,0] }
   ];
 
   const NS = 'http://www.w3.org/2000/svg';
@@ -334,6 +332,53 @@ function runLoader() {
     });
   }
 
+  function startTetrahedron() {
+    killAnim();
+    dyn.innerHTML = '';
+    gsap.to(lines, { opacity: 1, duration: 0.3 });
+
+    const verts3D = [
+      { x: 0, y: -65, z: 40 },
+      { x: -56, y: 32, z: -25 },
+      { x: 56, y: 32, z: -25 },
+      { x: 0, y: -12, z: -45 }
+    ];
+
+    let angle = 0;
+    function frame() {
+      angle += 0.015;
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+
+      const projected = verts3D.map(v => {
+        const rx = v.x * cosA + v.z * sinA;
+        const rz = -v.x * sinA + v.z * cosA;
+        const depth = (rz + 80) / 160;
+        return { x: 120 + rx, y: 120 + v.y, depth };
+      });
+
+      projected.forEach((p, i) => {
+        pts[i].setAttribute('cx', p.x);
+        pts[i].setAttribute('cy', p.y);
+        pts[i].setAttribute('r', '' + (2 + p.depth * 4));
+        pts[i].setAttribute('opacity', '' + (0.3 + p.depth * 0.7));
+      });
+
+      lineConnections.forEach((c, i) => {
+        const pa = projected[c[0]], pb = projected[c[1]];
+        const depth = (pa.depth + pb.depth) / 2;
+        lines[i].setAttribute('x1', pa.x);
+        lines[i].setAttribute('y1', pa.y);
+        lines[i].setAttribute('x2', pb.x);
+        lines[i].setAttribute('y2', pb.y);
+        lines[i].setAttribute('opacity', '' + (0.1 + depth * 0.5));
+      });
+
+      animLoop = requestAnimationFrame(frame);
+    }
+    frame();
+  }
+
   function startCircle() {
     killAnim();
     dyn.innerHTML = '';
@@ -349,7 +394,6 @@ function runLoader() {
       const cx = 120 + Math.cos(angle) * R;
       const cy = 120 + Math.sin(angle) * R;
       if (i < 4) {
-        pts[i].setAttribute('fill', stageColors[i]);
         gsap.to(pts[i], { attr: { cx, cy }, opacity: 1, duration: 0.5, ease: "power2.inOut" });
         allEls.push(pts[i]);
       } else {
@@ -357,7 +401,7 @@ function runLoader() {
         el.setAttribute('cx', cx);
         el.setAttribute('cy', cy);
         el.setAttribute('r', '4');
-        el.setAttribute('fill', stageColors[i % 4]);
+        el.setAttribute('fill', '#ffffff');
         el.setAttribute('opacity', '0');
         dyn.appendChild(el);
         gsap.to(el, { attr: { opacity: 0.8 }, duration: 0.3, delay: 0.05 * (i - 4) });
@@ -371,7 +415,8 @@ function runLoader() {
     outline.setAttribute('cy', '120');
     outline.setAttribute('r', '' + R);
     outline.setAttribute('fill', 'none');
-    outline.setAttribute('stroke', 'rgba(255,255,255,0.2)');
+    outline.setAttribute('stroke', '#ffffff');
+    outline.setAttribute('stroke-opacity', '0.2');
     outline.setAttribute('stroke-width', '1');
     outline.setAttribute('stroke-dasharray', '' + (Math.PI * 2 * R));
     outline.setAttribute('stroke-dashoffset', '' + (Math.PI * 2 * R));
@@ -415,7 +460,7 @@ function runLoader() {
         el.setAttribute('cx', cx);
         el.setAttribute('cy', cy);
         el.setAttribute('r', '3');
-        el.setAttribute('fill', stageColors[(lat + j) % 4]);
+        el.setAttribute('fill', '#ffffff');
         el.setAttribute('opacity', '0');
         dyn.appendChild(el);
         gsap.to(el, { attr: { opacity: 0.6 }, duration: 0.2, delay: 0.01 * spherePts.length });
@@ -448,7 +493,7 @@ function runLoader() {
   animToStage(0);
   setTimeout(() => animToStage(1), 800);
   setTimeout(() => animToStage(2), 1600);
-  setTimeout(() => animToStage(3), 2500);
+  setTimeout(() => { startTetrahedron(); }, 2500);
   setTimeout(() => { startCircle(); }, 3500);
   setTimeout(() => { startSphere(); }, 4800);
   setTimeout(() => {
