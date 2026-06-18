@@ -114,15 +114,20 @@ function startLogoAlternator() {
   const logoText = document.getElementById('logo-text');
   if (!logoText) return;
   const words = ["CONRADO", "PORTFÓLIO"];
-  let idx = 0;
+  const colors = ["#2E7D32", "#DA291C", "#FFDF00", "#009C3B", "#002776"];
+  let wordIdx = 0;
+  let colorIdx = 0;
+  logoText.style.color = colors[0];
   setInterval(() => {
     gsap.to(logoText, {
       opacity: 0,
       y: -5,
       duration: 0.4,
       onComplete: () => {
-        idx = (idx + 1) % words.length;
-        logoText.innerText = words[idx];
+        wordIdx = (wordIdx + 1) % words.length;
+        colorIdx = (colorIdx + 1) % colors.length;
+        logoText.innerText = words[wordIdx];
+        logoText.style.color = colors[colorIdx];
         gsap.fromTo(logoText, { y: 5, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4 });
       }
     });
@@ -1423,7 +1428,12 @@ function updateLanguageUI() {
 // ==========================================================================
 function initTheme() {
   const savedTheme = localStorage.getItem('theme');
-  currentTheme = savedTheme ? savedTheme : 'light';
+  if (savedTheme) {
+    currentTheme = savedTheme;
+  } else {
+    const hour = new Date().getHours();
+    currentTheme = (hour >= 6 && hour < 18) ? 'light' : 'dark';
+  }
   document.body.setAttribute('data-theme', currentTheme);
   updateThemeToggleIcon();
   
