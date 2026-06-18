@@ -1205,7 +1205,8 @@ function buildPsicromiaGallery() {
         img.addEventListener('load', onLoad);
         img.addEventListener('error', () => {
           img.src = generatePlaceholderSVG(800, 600, index, getLocalizedValue(project.title));
-          img.addEventListener('load', onLoad);
+          if (img.complete) { onLoad(); }
+          else { img.addEventListener('load', onLoad); }
         });
       });
       loadPromises.push(p);

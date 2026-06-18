@@ -474,10 +474,9 @@ body * {
   height: 100%;
   display: flex;
   flex-direction: row;
-  align-items: stretch;
-  padding: var(--header-height) 60px 60px 60px;
+  align-items: center;
+  padding: 0 60px;
   box-sizing: border-box;
-  gap: 40px;
 }
 
 /* Editorial Project Detail Header */
@@ -550,7 +549,7 @@ body * {
   height: 100%;
   width: auto;
   max-width: 560px;
-  min-width: 260px;
+  min-width: 320px;
   flex-shrink: 0;
   cursor: pointer;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -664,7 +663,7 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
 @media (max-width: 768px) {
   .psicromia-space {
     flex-direction: column;
-    align-items: stretch;
+  align-items: center;
     padding: 100px 16px 60px 16px;
     gap: 16px;
   }
