@@ -261,9 +261,9 @@ body * {
 }
 
 .nav__link {
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 700;
   text-decoration: none;
   color: var(--text-muted);
   transition: var(--transition-fast);

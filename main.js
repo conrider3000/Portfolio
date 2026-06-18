@@ -1197,10 +1197,11 @@ function buildPsicromiaGallery() {
       img.alt = getLocalizedValue(project.title);
 
       const p = new Promise(resolve => {
-        img.addEventListener('load', () => resolve());
+        const onLoad = () => resolve();
+        img.addEventListener('load', onLoad);
         img.addEventListener('error', () => {
           img.src = generatePlaceholderSVG(800, 600, index, getLocalizedValue(project.title));
-          resolve();
+          img.addEventListener('load', onLoad);
         });
       });
       loadPromises.push(p);
