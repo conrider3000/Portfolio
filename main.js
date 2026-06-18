@@ -455,10 +455,29 @@ function buildMorphingCards() {
               }
             });
           } else {
-            smoothCascadeIndex = matchIdx;
-            activeCascadeIndex = matchIdx;
-            isCascadeFocused = true;
-            showProjectInfoPanel();
+            if (focusGsapTween) focusGsapTween.kill();
+            const startIdx = smoothCascadeIndex;
+            const targetIdx = matchIdx;
+            const diff = targetIdx - startIdx;
+            const dist = Math.abs(diff);
+            const dur = gsap.utils.clamp(0.3, 0.7, dist * 0.15 + 0.2);
+            isAnimatingFocus = true;
+            focusGsapTween = gsap.to({}, {
+              duration: dur,
+              ease: "power2.inOut",
+              onUpdate: function() {
+                const p = this.progress();
+                smoothCascadeIndex = startIdx + diff * p;
+              },
+              onComplete: () => {
+                activeCascadeIndex = targetIdx;
+                smoothCascadeIndex = targetIdx;
+                isCascadeFocused = true;
+                isAnimatingFocus = false;
+                focusGsapTween = null;
+                showProjectInfoPanel();
+              }
+            });
           }
         }
       }
