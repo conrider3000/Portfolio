@@ -767,6 +767,10 @@ function bindSceneDrag() {
     if (activeView === 'cascade' && isCascadeFocused) {
       if (dragDistance <= 6) {
         isCascadeFocused = false;
+        focusScaleProgress = 0;
+        cascadePanX = 0;
+        if (focusGsapTween) { focusGsapTween.kill(); focusGsapTween = null; }
+        isAnimatingFocus = false;
         hideProjectInfoPanel();
       }
     }
@@ -1155,12 +1159,16 @@ function buildPsicromiaGallery() {
   const track = document.getElementById('psicromia-track');
   if (!track) return;
   track.innerHTML = '';
+  track.style.gridTemplateColumns = '';
 
   const M = projectsDb.length;
   if (M === 0) return;
   const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
   const project = projectsDb[wrappedActiveIndex];
   if (!project) return;
+
+  const cols = Math.min(Math.max(parseInt(project.columns) || 1, 1), 4);
+  track.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
   document.getElementById('detail-header-year').innerText = project.year || '';
   document.getElementById('detail-header-tags').innerText = (project.tags || []).join(' / ');
@@ -1179,17 +1187,17 @@ function buildPsicromiaGallery() {
     if (item.type === 'video') {
       const video = document.createElement('video');
       video.className = 'mosaic-media';
-      video.src = item.url;
       video.autoplay = true;
       video.loop = true;
       video.muted = true;
       video.playsInline = true;
       video.onerror = function() {
         const placeholder = document.createElement('div');
-        placeholder.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:hsl(0,0%,85%);border-radius:10px;font-family:sans-serif;font-size:0.85rem;color:#666;';
+        placeholder.style.cssText = 'width:100%;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;background:hsl(0,0%,85%);border-radius:10px;font-family:sans-serif;font-size:0.85rem;color:#666;';
         placeholder.textContent = 'Vídeo indisponível';
         this.parentElement.replaceChild(placeholder, this);
       };
+      video.src = item.url;
       card.appendChild(video);
     } else {
       const img = document.createElement('img');
@@ -1216,20 +1224,6 @@ function buildPsicromiaGallery() {
       openLightbox(item);
     });
   });
-
-  if (loadPromises.length > 0) {
-    Promise.allSettled(loadPromises).then(() => {
-      requestAnimationFrame(() => {
-        const t = document.getElementById('psicromia-track');
-        if (t) {
-          t.style.overflowX = 'hidden';
-          requestAnimationFrame(() => {
-            t.style.overflowX = 'scroll';
-          });
-        }
-      });
-    });
-  }
 }
 
 function updatePsicromiaGalleryPositions() {
@@ -1598,6 +1592,7 @@ function openProjectForm(projectId = null) {
       document.getElementById('form-project-tags').value = (project.tags || []).join(', ');
       document.getElementById('form-project-cover').value = project.image || '';
       updateCoverPreview(project.image || '');
+      document.getElementById('form-project-columns').value = project.columns || '1';
 
       // Populate media items
       const media = project.media || [];
@@ -1608,9 +1603,10 @@ function openProjectForm(projectId = null) {
   } else {
     modalTitle.innerText = "Novo Projeto";
     form.reset();
-    document.getElementById('form-project-id').value = '';
-    document.getElementById('form-project-id').disabled = false;
-    updateCoverPreview('');
+      document.getElementById('form-project-id').value = '';
+      document.getElementById('form-project-id').disabled = false;
+      document.getElementById('form-project-columns').value = '1';
+      updateCoverPreview('');
     // Add one default media row
     addGalleryMediaRow();
   }
@@ -1736,7 +1732,8 @@ function saveProject(event) {
       fr: document.getElementById('form-desc-fr').value.trim() || document.getElementById('form-desc-pt').value.trim()
     },
     image: coverUrl,
-    media: media
+    media: media,
+    columns: document.getElementById('form-project-columns').value || '1'
   };
 
   if (activeEditingProjectId) {
