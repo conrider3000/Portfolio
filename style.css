@@ -1372,11 +1372,11 @@ body[data-theme='light'] .admin-media-row {
   box-shadow: var(--card-shadow);
   z-index: 800;
   pointer-events: auto;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease, border 0.3s ease, transform 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border 0.3s ease, bottom 0.3s ease;
 }
 
 .status-widget:hover {
-  transform: translateY(-2px);
+  bottom: 2.15rem;
   background-color: rgba(255, 255, 255, 0.85);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }

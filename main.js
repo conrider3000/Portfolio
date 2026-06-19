@@ -1305,6 +1305,29 @@ function toggleCircles() {
 // ==========================================================================
 function switchView(viewName, keepFocus = false) {
   if (activeView === viewName) return;
+
+  // Intercept Orbit -> Cascade transition to slide the status-widget first
+  if (activeView === 'orbit' && viewName === 'cascade') {
+    const statusWidget = document.getElementById('status-widget');
+    if (statusWidget) {
+      gsap.to(statusWidget, {
+        left: "50%",
+        xPercent: -50,
+        duration: 0.5,
+        ease: "power2.out",
+        onComplete: () => {
+          proceedWithSwitchView(viewName, keepFocus);
+        }
+      });
+      return;
+    }
+  }
+
+  proceedWithSwitchView(viewName, keepFocus);
+}
+
+function proceedWithSwitchView(viewName, keepFocus = false) {
+  if (activeView === viewName) return;
   if (viewName !== 'orbit' && isCircleMode) {
     isCircleMode = false;
     document.body.classList.remove('circle-mode');
@@ -1490,6 +1513,18 @@ function switchView(viewName, keepFocus = false) {
         ease: "power2.in",
         pointerEvents: 'none'
       });
+
+      // Slide status-widget back to left corner
+      const statusWidget = document.getElementById('status-widget');
+      if (statusWidget) {
+        gsap.to(statusWidget, {
+          left: "2rem",
+          xPercent: 0,
+          duration: 0.5,
+          delay: 0.7,
+          ease: "power2.out"
+        });
+      }
     }
   }
 }
