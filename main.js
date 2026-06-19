@@ -1415,10 +1415,21 @@ function switchView(viewName, keepFocus = false) {
         ease: "power3.inOut"
       });
 
-      gsap.fromTo('.orbit-ring', 
-        { x: 350, rotationY: 12, transformOrigin: "center center" }, 
-        { x: 0, rotationY: 0, duration: 1.2, ease: "power3.inOut" }
-      );
+      // Slide and return animation
+      const tl = gsap.timeline();
+      tl.to('.orbit-ring', {
+        x: -300,
+        rotationY: -10,
+        transformOrigin: "center center",
+        duration: 0.6,
+        ease: "power2.inOut"
+      }).to('.orbit-ring', {
+        x: 0,
+        rotationY: 0,
+        transformOrigin: "center center",
+        duration: 0.6,
+        ease: "power2.inOut"
+      });
 
       gsap.to('#orbit-center-text', {
         scale: 0.5,
@@ -1449,10 +1460,21 @@ function switchView(viewName, keepFocus = false) {
         ease: "power3.inOut"
       });
 
-      gsap.fromTo('.orbit-ring', 
-        { x: -350, rotationY: -12, transformOrigin: "center center" }, 
-        { x: 0, rotationY: 0, duration: 1.2, ease: "power3.inOut" }
-      );
+      // Slide and return animation
+      const tl = gsap.timeline();
+      tl.to('.orbit-ring', {
+        x: 300,
+        rotationY: 10,
+        transformOrigin: "center center",
+        duration: 0.6,
+        ease: "power2.inOut"
+      }).to('.orbit-ring', {
+        x: 0,
+        rotationY: 0,
+        transformOrigin: "center center",
+        duration: 0.6,
+        ease: "power2.inOut"
+      });
 
       gsap.to('#orbit-center-text', {
         scale: 1,
