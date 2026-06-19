@@ -358,31 +358,44 @@ function runLoader() {
     dyn.innerHTML = '';
     for (let i = 0; i < 6; i++) tweenOpacity(lines[i], 1, 200);
 
-    const verts3D = [
-      { x: 0, y: -65, z: 40 },
-      { x: -56, y: 32, z: -25 },
-      { x: 56, y: 32, z: -25 },
-      { x: 0, y: -12, z: -45 }
+    // Perfect regular tetrahedron: vertices (±1, ±1, ±1) where product of signs = +1
+    // All 6 edges have exactly the same length = 2*sqrt(2) ≈ 2.828 units
+    // Scale so edge ≈ 192px (matching/evolving from the 180px triangle) → scale = 192 / (2*sqrt(2)) ≈ 67.8
+    const scale = 68;
+    const raw = [
+      { x:  1, y:  1, z:  1 },
+      { x:  1, y: -1, z: -1 },
+      { x: -1, y:  1, z: -1 },
+      { x: -1, y: -1, z:  1 }
     ];
+
+    // Fixed tilt on X axis so we see the shape in 3D from a nice angle
+    const tiltX = 0.42;
+    const cosX = Math.cos(tiltX), sinX = Math.sin(tiltX);
 
     let angle = 0;
     function frame() {
-      angle += 0.015;
-      const cosA = Math.cos(angle);
-      const sinA = Math.sin(angle);
+      angle += 0.018;
+      const cosA = Math.cos(angle), sinA = Math.sin(angle);
 
-      const projected = verts3D.map(v => {
+      const projected = raw.map(v => {
+        // Rotate around Y axis
         const rx = v.x * cosA + v.z * sinA;
         const rz = -v.x * sinA + v.z * cosA;
-        const depth = (rz + 80) / 160;
-        return { x: 120 + rx, y: 120 + v.y, depth };
+        const ry = v.y;
+        // Apply fixed tilt around X axis
+        const ry2 = ry * cosX - rz * sinX;
+        const rz2 = ry * sinX + rz * cosX;
+        // Depth for pseudo-3D shading (rz2 ranges ~ -1.73 to 1.73)
+        const depth = (rz2 + 2) / 4;
+        return { x: 120 + rx * scale, y: 120 + ry2 * scale, depth };
       });
 
       projected.forEach((p, i) => {
         pts[i].setAttribute('cx', p.x);
         pts[i].setAttribute('cy', p.y);
-        pts[i].setAttribute('r', '' + (2 + p.depth * 4));
-        pts[i].setAttribute('opacity', '' + (0.3 + p.depth * 0.7));
+        pts[i].setAttribute('r', '' + (2 + p.depth * 3));
+        pts[i].setAttribute('opacity', '' + (0.4 + p.depth * 0.6));
       });
 
       lineConnections.forEach((c, i) => {
@@ -392,12 +405,51 @@ function runLoader() {
         lines[i].setAttribute('y1', pa.y);
         lines[i].setAttribute('x2', pb.x);
         lines[i].setAttribute('y2', pb.y);
-        lines[i].setAttribute('opacity', '' + (0.1 + depth * 0.5));
+        lines[i].setAttribute('opacity', '' + (0.15 + depth * 0.55));
       });
 
       animLoop = requestAnimationFrame(frame);
     }
     frame();
+  }
+
+  // Track whether the site has fully loaded and whether the circle phase started
+  let siteReady = false;
+  let circlePhaseStarted = false;
+  let minCircleTimePassed = false;
+
+  // If already loaded (e.g. cached page) set flag immediately
+  if (document.readyState === 'complete') {
+    siteReady = true;
+  } else {
+    window.addEventListener('load', () => {
+      siteReady = true;
+      tryFadeOut();
+    }, { once: true });
+  }
+
+  function tryFadeOut() {
+    // Only fade when: circle is visible + site loaded + minimum display time passed
+    if (circlePhaseStarted && siteReady && minCircleTimePassed) {
+      fadeOutLoader();
+    }
+  }
+
+  function fadeOutLoader() {
+    killAnim();
+    let op = 1;
+    function fade() {
+      op -= 0.025;
+      if (op <= 0) {
+        loader.style.opacity = 0;
+        loader.style.display = 'none';
+        animateOrbitEntry();
+        return;
+      }
+      loader.style.opacity = op;
+      requestAnimationFrame(fade);
+    }
+    requestAnimationFrame(fade);
   }
 
   function startCircle() {
@@ -443,6 +495,14 @@ function runLoader() {
     dyn.appendChild(outline);
     tweenAttr(outline, { 'stroke-dashoffset': 0 }, 600);
 
+    circlePhaseStarted = true;
+
+    // Minimum 800ms in circle phase so it doesn't flash away instantly
+    setTimeout(() => {
+      minCircleTimePassed = true;
+      tryFadeOut();
+    }, 800);
+
     let rot = 0;
     function frame() {
       rot += 0.02;
@@ -466,17 +526,6 @@ function runLoader() {
   setTimeout(() => animToStage(2), 2000);
   setTimeout(() => { startTetrahedron(); }, 3000);
   setTimeout(() => { startCircle(); }, 4500);
-  setTimeout(() => {
-    killAnim();
-    let op = 1;
-    function fade(now) {
-      op -= 0.02;
-      if (op <= 0) { loader.style.opacity = 0; loader.style.display = 'none'; animateOrbitEntry(); return; }
-      loader.style.opacity = op;
-      requestAnimationFrame(fade);
-    }
-    requestAnimationFrame(fade);
-  }, 6000);
 }
 
 // ==========================================================================
@@ -602,8 +651,8 @@ function buildMorphingCards() {
         if (matchIdx !== -1) {
           smoothCascadeIndex = matchIdx;
           activeCascadeIndex = matchIdx;
-          switchView('cascade');
-          isCascadeFocused = false;
+          isCascadeFocused = true;
+          switchView('cascade', true);
         }
       } else if (activeView === 'cascade') {
         if (matchIdx !== -1) {
@@ -1182,7 +1231,7 @@ function toggleCircles() {
 // ==========================================================================
 // MORPH VIEW SWITCHER
 // ==========================================================================
-function switchView(viewName) {
+function switchView(viewName, keepFocus = false) {
   if (activeView === viewName) return;
   if (viewName !== 'orbit' && isCircleMode) {
     isCircleMode = false;
@@ -1197,6 +1246,7 @@ function switchView(viewName) {
     isAnimatingFocus = false;
     if (focusGsapTween) { focusGsapTween.kill(); focusGsapTween = null; }
   } else {
+    gsap.killTweensOf(hoverScales);
     hoverScales.fill(1);
     morphCards.forEach(card => {
       card.style.borderColor = '';
@@ -1282,7 +1332,9 @@ function switchView(viewName) {
     if (btn) btn.classList.add('active');
 
     if (viewName === 'cascade') {
-      isCascadeFocused = false; // reset when entered via switchView
+      if (!keepFocus) {
+        isCascadeFocused = false; // reset when entered via switchView
+      }
       gsap.to(transitionProgress, {
         value: 1,
         duration: 1.2,
@@ -1296,13 +1348,17 @@ function switchView(viewName) {
         ease: "power2.out"
       });
 
-      // Update text values in the background but keep the panel hidden by default
-      updateProjectInfoPanel(true);
-      gsap.to('#project-info-panel', {
-        opacity: 0,
-        duration: 0.3,
-        pointerEvents: 'none'
-      });
+      if (!keepFocus) {
+        // Update text values in the background but keep the panel hidden by default
+        updateProjectInfoPanel(true);
+        gsap.to('#project-info-panel', {
+          opacity: 0,
+          duration: 0.3,
+          pointerEvents: 'none'
+        });
+      } else {
+        showProjectInfoPanel();
+      }
     } else {
       // viewName === 'orbit'
       const centerText = document.getElementById('orbit-center-text');
@@ -1614,17 +1670,19 @@ function updateThemeToggleIcon() {
   const btn = document.getElementById('theme-toggle-btn');
   if (!btn) return;
   if (currentTheme === 'dark') {
-    btn.style.backgroundColor = '#ffffff';
+    btn.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+    btn.style.border = '1px solid rgba(255, 255, 255, 0.15)';
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="#000000" stroke="none">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="#2997ff" stroke="none">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
     `;
   } else {
-    btn.style.backgroundColor = '#f5a623';
+    btn.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+    btn.style.border = '1px solid rgba(0, 0, 0, 0.08)';
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="5" fill="#ffffff"/>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#1d1d1f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5" fill="#1d1d1f"/>
         <line x1="12" y1="1" x2="12" y2="3"/>
         <line x1="12" y1="21" x2="12" y2="23"/>
         <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
