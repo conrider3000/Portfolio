@@ -602,6 +602,11 @@ function buildMorphingCards() {
       targetOrbitSpeed = 0.0002; // Slow motion speed on hover
       activeHoveredCard = card;
 
+      if (cursorEl) {
+        cursorEl.classList.add('card-hover');
+        cursorEl.classList.add('hovered');
+      }
+
       if (activeView === 'orbit') {
         const title = getLocalizedValue(item.title);
         setCenterText(title);
@@ -622,6 +627,11 @@ function buildMorphingCards() {
       isHoveringCard = false;
       targetOrbitSpeed = 0.0012; // Restore faster speed
       activeHoveredCard = null;
+
+      if (cursorEl) {
+        cursorEl.classList.remove('card-hover');
+        cursorEl.classList.remove('hovered');
+      }
 
       if (activeView === 'orbit') {
         setCenterText("CONRADO.");

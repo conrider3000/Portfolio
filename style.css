@@ -132,6 +132,17 @@ body * {
   opacity: 1;
 }
 
+.custom-cursor.card-hover {
+  width: 28px;
+  height: 28px;
+}
+.custom-cursor.card-hover .cursor-icon {
+  width: 26px;
+  height: 26px;
+  color: var(--accent-color);
+  opacity: 1;
+}
+
 .custom-cursor.project-hover .cursor-icon {
   display: none;
 }
