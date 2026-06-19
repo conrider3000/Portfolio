@@ -138,6 +138,7 @@ function startLogoAlternator() {
 // INITIALIZATION
 // ==========================================================================
 window.addEventListener('DOMContentLoaded', () => {
+  runLoader();
   initTheme();
   initLanguage();
   initParticles();
@@ -180,7 +181,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateUnifiedLoop();
   bindSceneDrag();
-  runLoader();
   startLogoAlternator();
   animateCursor();
   addCursorInteractions();
@@ -279,7 +279,6 @@ window.addEventListener('DOMContentLoaded', () => {
 // ==========================================================================
 function runLoader() {
   const loader = document.getElementById('loader');
-  const loaderWord = document.getElementById('loader-word');
 
   const pts = [
     document.getElementById('geo-p0'),
@@ -311,31 +310,53 @@ function runLoader() {
 
   function killAnim() { if (animLoop) { cancelAnimationFrame(animLoop); animLoop = null; } }
 
+  function easeOut(t) { return 1 - Math.pow(1 - t, 2); }
+
+  function tweenAttr(el, target, dur, cb) {
+    const start = {};
+    for (const k in target) start[k] = parseFloat(el.getAttribute(k) || el.style[k] || 0);
+    const t0 = performance.now();
+    function tick(now) {
+      const p = Math.min((now - t0) / dur, 1);
+      const e = easeOut(p);
+      for (const k in target) el.setAttribute(k, start[k] + (target[k] - start[k]) * e);
+      if (p < 1) requestAnimationFrame(tick);
+      else if (cb) cb();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function tweenOpacity(el, to, dur, cb) {
+    const from = parseFloat(el.getAttribute('opacity') || 1);
+    const t0 = performance.now();
+    function tick(now) {
+      const p = Math.min((now - t0) / dur, 1);
+      el.setAttribute('opacity', from + (to - from) * easeOut(p));
+      if (p < 1) requestAnimationFrame(tick);
+      else if (cb) cb();
+    }
+    requestAnimationFrame(tick);
+  }
+
   function animToStage(idx) {
     killAnim();
     dyn.innerHTML = '';
     const s = stages[idx];
     s.pts.forEach((pos, i) => {
-      if (pos) {
-        gsap.to(pts[i], { attr: { cx: pos[0], cy: pos[1] }, opacity: 1, duration: 0.5, ease: "power2.inOut" });
-      } else {
-        gsap.to(pts[i], { opacity: 0, duration: 0.3 });
-      }
+      if (pos) tweenAttr(pts[i], { cx: pos[0], cy: pos[1], opacity: 1 }, 400);
+      else tweenOpacity(pts[i], 0, 250);
     });
     lineConnections.forEach((c, i) => {
       const pa = s.pts[c[0]], pb = s.pts[c[1]];
-      if (pa && pb && s.lines[i]) {
-        gsap.to(lines[i], { attr: { x1: pa[0], y1: pa[1], x2: pb[0], y2: pb[1] }, opacity: 0.5, duration: 0.5, ease: "power2.inOut" });
-      } else {
-        gsap.to(lines[i], { opacity: 0, duration: 0.3 });
-      }
+      if (pa && pb && s.lines[i]) tweenAttr(lines[i], { x1: pa[0], y1: pa[1], x2: pb[0], y2: pb[1], opacity: 0.5 }, 400);
+      else tweenOpacity(lines[i], 0, 250);
     });
   }
 
   function startTetrahedron() {
     killAnim();
     dyn.innerHTML = '';
-    gsap.to(lines, { opacity: 1, duration: 0.3 });
+    for (let i = 0; i < 6; i++) tweenOpacity(lines[i], 1, 200);
 
     const verts3D = [
       { x: 0, y: -65, z: 40 },
@@ -382,19 +403,17 @@ function runLoader() {
   function startCircle() {
     killAnim();
     dyn.innerHTML = '';
-    gsap.to(lines, { opacity: 0, duration: 0.3 });
+    for (let i = 0; i < 6; i++) tweenOpacity(lines[i], 0, 200);
 
-    const num = 12;
-    const R = 80;
-    const allEls = [];
-    const allAngles = [];
+    const num = 12, R = 80;
+    const allEls = [], allAngles = [];
 
     for (let i = 0; i < num; i++) {
       const angle = (i / num) * Math.PI * 2;
       const cx = 120 + Math.cos(angle) * R;
       const cy = 120 + Math.sin(angle) * R;
       if (i < 4) {
-        gsap.to(pts[i], { attr: { cx, cy }, opacity: 1, duration: 0.5, ease: "power2.inOut" });
+        tweenAttr(pts[i], { cx, cy, opacity: 1 }, 400);
         allEls.push(pts[i]);
       } else {
         const el = document.createElementNS(NS, 'circle');
@@ -404,7 +423,7 @@ function runLoader() {
         el.setAttribute('fill', '#ffffff');
         el.setAttribute('opacity', '0');
         dyn.appendChild(el);
-        gsap.to(el, { attr: { opacity: 0.8 }, duration: 0.3, delay: 0.05 * (i - 4) });
+        tweenOpacity(el, 0.8, 250);
         allEls.push(el);
       }
       allAngles.push(angle);
@@ -418,10 +437,11 @@ function runLoader() {
     outline.setAttribute('stroke', '#ffffff');
     outline.setAttribute('stroke-opacity', '0.2');
     outline.setAttribute('stroke-width', '1');
-    outline.setAttribute('stroke-dasharray', '' + (Math.PI * 2 * R));
-    outline.setAttribute('stroke-dashoffset', '' + (Math.PI * 2 * R));
+    const circ = Math.PI * 2 * R;
+    outline.setAttribute('stroke-dasharray', '' + circ);
+    outline.setAttribute('stroke-dashoffset', '' + circ);
     dyn.appendChild(outline);
-    gsap.to(outline, { attr: { 'stroke-dashoffset': 0, opacity: 1 }, duration: 0.8, ease: "power2.out" });
+    tweenAttr(outline, { 'stroke-dashoffset': 0 }, 600);
 
     let rot = 0;
     function frame() {
@@ -436,78 +456,27 @@ function runLoader() {
     frame();
   }
 
-  function startSphere() {
-    killAnim();
-    dyn.innerHTML = '';
-    gsap.to(pts, { opacity: 0, duration: 0.3 });
-    gsap.to(lines, { opacity: 0, duration: 0.3 });
-
-    const R = 70;
-    const lats = 6;
-    const lons = 10;
-    const spherePts = [];
-
-    for (let lat = 0; lat <= lats; lat++) {
-      const latAngle = (lat / lats) * Math.PI - Math.PI / 2;
-      const y = 120 - Math.sin(latAngle) * R;
-      const r = Math.cos(latAngle) * R;
-      const n = Math.max(4, Math.round(lons * Math.abs(Math.cos(latAngle))));
-      for (let j = 0; j < n; j++) {
-        const lonAngle = (j / n) * Math.PI * 2;
-        const cx = 120 + Math.cos(lonAngle) * r;
-        const cy = 120 + Math.sin(lonAngle) * r;
-        const el = document.createElementNS(NS, 'circle');
-        el.setAttribute('cx', cx);
-        el.setAttribute('cy', cy);
-        el.setAttribute('r', '3');
-        el.setAttribute('fill', '#ffffff');
-        el.setAttribute('opacity', '0');
-        dyn.appendChild(el);
-        gsap.to(el, { attr: { opacity: 0.6 }, duration: 0.2, delay: 0.01 * spherePts.length });
-        spherePts.push({ el, lat: latAngle, lon: j, n, r });
-      }
-    }
-
-    let rot = 0;
-    function frame() {
-      rot += 0.015;
-      spherePts.forEach(p => {
-        const lonAngle = (p.lon / p.n) * Math.PI * 2 + rot;
-        const x = 120 + Math.cos(lonAngle) * p.r;
-        const y = 120 - Math.sin(p.lat) * R;
-        const z = Math.sin(lonAngle) * p.r;
-        const depth = (z / R + 1) / 2;
-        p.el.setAttribute('cx', x);
-        p.el.setAttribute('cy', y);
-        p.el.setAttribute('r', '' + (1.5 + depth * 2.5));
-        p.el.setAttribute('opacity', '' + (0.2 + depth * 0.5));
-      });
-      animLoop = requestAnimationFrame(frame);
-    }
-    frame();
-  }
-
-  gsap.set([pts[1], pts[2], pts[3]], { opacity: 0 });
-  gsap.set(lines, { opacity: 0 });
+  pts[1].setAttribute('opacity', '0');
+  pts[2].setAttribute('opacity', '0');
+  pts[3].setAttribute('opacity', '0');
+  for (let i = 0; i < 6; i++) lines[i].setAttribute('opacity', '0');
 
   animToStage(0);
-  setTimeout(() => animToStage(1), 800);
-  setTimeout(() => animToStage(2), 1600);
-  setTimeout(() => { startTetrahedron(); }, 2500);
-  setTimeout(() => { startCircle(); }, 3500);
-  setTimeout(() => { startSphere(); }, 4800);
+  setTimeout(() => animToStage(1), 1000);
+  setTimeout(() => animToStage(2), 2000);
+  setTimeout(() => { startTetrahedron(); }, 3000);
+  setTimeout(() => { startCircle(); }, 4500);
   setTimeout(() => {
     killAnim();
-    gsap.to(loader, {
-      opacity: 0,
-      duration: 0.8,
-      ease: "power2.out",
-      onComplete: () => {
-        loader.style.display = 'none';
-        animateOrbitEntry();
-      }
-    });
-  }, 6200);
+    let op = 1;
+    function fade(now) {
+      op -= 0.02;
+      if (op <= 0) { loader.style.opacity = 0; loader.style.display = 'none'; animateOrbitEntry(); return; }
+      loader.style.opacity = op;
+      requestAnimationFrame(fade);
+    }
+    requestAnimationFrame(fade);
+  }, 6000);
 }
 
 // ==========================================================================
