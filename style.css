@@ -1359,6 +1359,7 @@ body[data-theme='light'] .admin-media-row {
 .status-widget {
   position: fixed;
   bottom: 2rem;
+  left: 2rem;
   display: flex;
   align-items: center;
   gap: 0.8rem;
@@ -1371,33 +1372,16 @@ body[data-theme='light'] .admin-media-row {
   box-shadow: var(--card-shadow);
   z-index: 800;
   pointer-events: auto;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, border 0.3s ease, transform 0.3s ease;
 }
 
-.status-widget.is-orbit {
-  left: 2rem;
-  transform: translateX(0);
-}
-
-.status-widget.is-orbit:hover {
+.status-widget:hover {
   transform: translateY(-2px);
   background-color: rgba(255, 255, 255, 0.85);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-.status-widget.is-cascade {
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.status-widget.is-cascade:hover {
-  transform: translateX(-50%) translateY(-2px);
-  background-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="dark"] .status-widget.is-orbit:hover,
-[data-theme="dark"] .status-widget.is-cascade:hover {
+[data-theme="dark"] .status-widget:hover {
   background-color: rgba(28, 28, 30, 0.9);
 }
 

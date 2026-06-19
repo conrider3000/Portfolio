@@ -1403,15 +1403,7 @@ function switchView(viewName, keepFocus = false) {
     const btn = document.getElementById(`btn-${viewName}`);
     if (btn) btn.classList.add('active');
 
-    const statusWidget = document.getElementById('status-widget');
-    if (statusWidget) {
-      statusWidget.classList.remove('is-orbit', 'is-cascade');
-      if (viewName === 'cascade') {
-        statusWidget.classList.add('is-cascade');
-      } else if (viewName === 'orbit') {
-        statusWidget.classList.add('is-orbit');
-      }
-    }
+
 
     if (viewName === 'cascade') {
       if (!keepFocus) {
@@ -2357,20 +2349,9 @@ function initWidgetGeo() {
   const coordsEl = document.getElementById('widget-coords');
   const tempEl = document.getElementById('widget-temp');
   const extraEl = document.getElementById('widget-extra');
-  const statusWidget = document.getElementById('status-widget');
   const compassIcon = document.getElementById('compass-icon');
 
   if (!locEl || !coordsEl || !tempEl || !extraEl) return;
-
-  // Initial layout class setup
-  if (statusWidget) {
-    statusWidget.classList.remove('is-orbit', 'is-cascade');
-    if (activeView === 'cascade') {
-      statusWidget.classList.add('is-cascade');
-    } else {
-      statusWidget.classList.add('is-orbit');
-    }
-  }
 
   // Simulated weather variation based on hour (fallback defaults)
   const hour = new Date().getHours();
