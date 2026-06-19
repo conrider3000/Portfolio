@@ -70,6 +70,7 @@ body {
 
 a, button {
   cursor: pointer;
+  font-family: inherit;
 }
 
 /* ==========================================================================
@@ -303,6 +304,8 @@ body * {
 }
 
 .lang-btn {
+  font-family: var(--font-sans);
+  letter-spacing: normal;
   background: none;
   border: none;
   color: var(--text-color);
