@@ -1403,6 +1403,16 @@ function switchView(viewName, keepFocus = false) {
     const btn = document.getElementById(`btn-${viewName}`);
     if (btn) btn.classList.add('active');
 
+    const statusWidget = document.getElementById('status-widget');
+    if (statusWidget) {
+      statusWidget.classList.remove('is-orbit', 'is-cascade');
+      if (viewName === 'cascade') {
+        statusWidget.classList.add('is-cascade');
+      } else if (viewName === 'orbit') {
+        statusWidget.classList.add('is-orbit');
+      }
+    }
+
     if (viewName === 'cascade') {
       if (!keepFocus) {
         isCascadeFocused = false; // reset when entered via switchView
@@ -1412,6 +1422,11 @@ function switchView(viewName, keepFocus = false) {
         duration: 1.2,
         ease: "power3.inOut"
       });
+
+      gsap.fromTo('.orbit-ring', 
+        { x: 350, rotationY: 12, transformOrigin: "center center" }, 
+        { x: 0, rotationY: 0, duration: 1.2, ease: "power3.inOut" }
+      );
 
       gsap.to('#orbit-center-text', {
         scale: 0.5,
@@ -1441,6 +1456,11 @@ function switchView(viewName, keepFocus = false) {
         duration: 1.2,
         ease: "power3.inOut"
       });
+
+      gsap.fromTo('.orbit-ring', 
+        { x: -350, rotationY: -12, transformOrigin: "center center" }, 
+        { x: 0, rotationY: 0, duration: 1.2, ease: "power3.inOut" }
+      );
 
       gsap.to('#orbit-center-text', {
         scale: 1,
@@ -2337,10 +2357,22 @@ function initWidgetGeo() {
   const coordsEl = document.getElementById('widget-coords');
   const tempEl = document.getElementById('widget-temp');
   const extraEl = document.getElementById('widget-extra');
+  const statusWidget = document.getElementById('status-widget');
+  const compassIcon = document.getElementById('compass-icon');
 
   if (!locEl || !coordsEl || !tempEl || !extraEl) return;
 
-  // Simulated weather variation based on hour
+  // Initial layout class setup
+  if (statusWidget) {
+    statusWidget.classList.remove('is-orbit', 'is-cascade');
+    if (activeView === 'cascade') {
+      statusWidget.classList.add('is-cascade');
+    } else {
+      statusWidget.classList.add('is-orbit');
+    }
+  }
+
+  // Simulated weather variation based on hour (fallback defaults)
   const hour = new Date().getHours();
   let baseTemp = 21;
   let weatherDesc = "Parcialmente Nublado";
@@ -2356,47 +2388,121 @@ function initWidgetGeo() {
   tempEl.innerText = `${baseTemp}°C`;
   extraEl.innerText = `${weatherDesc} • NW 14km/h`;
 
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((position) => {
-      const lat = position.coords.latitude.toFixed(4);
-      const lon = position.coords.longitude.toFixed(4);
-      
-      coordsEl.innerText = `${Math.abs(lat)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon)}° ${lon >= 0 ? 'E' : 'W'}`;
-      
-      // Reverse geocoding (OpenStreetMap Nominatim API, no key required)
-      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.address) {
-            const city = data.address.city || data.address.town || data.address.village || data.address.municipality || "São Paulo";
-            const state = data.address.state || "SP";
-            locEl.innerText = `${city}, ${state}`;
-          }
-        })
-        .catch(err => console.log("Geocoding failed:", err));
+  // Helper to fetch details from Nominatim and Open-Meteo
+  function updateLocationAndWeather(lat, lon) {
+    const latStr = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}`;
+    const lonStr = `${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'W'}`;
+    coordsEl.innerText = `${latStr}, ${lonStr}`;
 
-      // Real temperature (Open-Meteo Weather API, no key required)
-      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
-      fetch(weatherUrl)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.current_weather) {
-            const temp = Math.round(data.current_weather.temperature);
-            tempEl.innerText = `${temp}°C`;
-            const code = data.current_weather.weathercode;
-            let desc = "Limpo";
-            if (code >= 1 && code <= 3) desc = "Parcialmente Nublado";
-            else if (code >= 51 && code <= 67) desc = "Chuva Leve";
-            else if (code >= 71 && code <= 86) desc = "Neve";
-            else if (code >= 95) desc = "Tempestade";
-            extraEl.innerText = `${desc} • NW ${Math.round(data.current_weather.windspeed)}km/h`;
-          }
-        })
-        .catch(err => console.log("Weather API failed:", err));
-        
-    }, (error) => {
-      console.log("Geolocation blocked or failed:", error);
+    // Reverse geocoding (OpenStreetMap Nominatim API, no key required)
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
+    const geocodePromise = fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.address) {
+          const city = data.address.city || data.address.town || data.address.village || data.address.municipality || data.address.suburb || "São Paulo";
+          const state = data.address.state || "SP";
+          locEl.innerText = `${city}, ${state}`;
+        }
+      })
+      .catch(err => console.log("Geocoding failed:", err));
+
+    // Real temperature (Open-Meteo Weather API, no key required)
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+    const weatherPromise = fetch(weatherUrl)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.current_weather) {
+          const temp = Math.round(data.current_weather.temperature);
+          tempEl.innerText = `${temp}°C`;
+          const code = data.current_weather.weathercode;
+          
+          let desc = currentLanguage === 'pt' ? "Limpo" : "Clear";
+          if (code >= 1 && code <= 3) desc = currentLanguage === 'pt' ? "Parcialmente Nublado" : "Partly Cloudy";
+          else if (code >= 51 && code <= 67) desc = currentLanguage === 'pt' ? "Chuva Leve" : "Light Rain";
+          else if (code >= 71 && code <= 86) desc = currentLanguage === 'pt' ? "Neve" : "Snow";
+          else if (code >= 95) desc = currentLanguage === 'pt' ? "Tempestade" : "Thunderstorm";
+
+          const windDir = data.current_weather.winddirection;
+          let windText = "NW";
+          if (windDir >= 337.5 || windDir < 22.5) windText = "N";
+          else if (windDir >= 22.5 && windDir < 67.5) windText = "NE";
+          else if (windDir >= 67.5 && windDir < 112.5) windText = "E";
+          else if (windDir >= 112.5 && windDir < 157.5) windText = "SE";
+          else if (windDir >= 157.5 && windDir < 202.5) windText = "S";
+          else if (windDir >= 202.5 && windDir < 247.5) windText = "SW";
+          else if (windDir >= 247.5 && windDir < 292.5) windText = "W";
+          else if (windDir >= 292.5 && windDir < 337.5) windText = "NW";
+
+          extraEl.innerText = `${desc} • ${windText} ${Math.round(data.current_weather.windspeed)}km/h`;
+        }
+      })
+      .catch(err => console.log("Weather API failed:", err));
+
+    Promise.allSettled([geocodePromise, weatherPromise]).then(() => {
+      if (compassIcon) {
+        compassIcon.classList.remove('is-spinning');
+      }
+    });
+  }
+
+  // Helper to request browser's Geolocation
+  function getAndUpdatePosition(showError = false) {
+    if (!navigator.geolocation) {
+      if (showError) {
+        alert(currentLanguage === 'pt' 
+          ? "Geolocalização não é suportada pelo seu navegador." 
+          : "Geolocation is not supported by your browser.");
+      }
+      return;
+    }
+
+    if (compassIcon) {
+      compassIcon.classList.add('is-spinning');
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        updateLocationAndWeather(lat, lon);
+      },
+      (error) => {
+        console.log("Geolocation error:", error);
+        if (compassIcon) {
+          compassIcon.classList.remove('is-spinning');
+        }
+        if (showError) {
+          alert(currentLanguage === 'pt' 
+            ? "Não foi possível obter sua localização. Por favor, conceda permissão de acesso à localização." 
+            : "Could not obtain your location. Please grant location access permission.");
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  }
+
+  // Automatic geolocate on load ONLY if permission is already granted
+  if (navigator.geolocation && navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+      if (status.state === 'granted') {
+        getAndUpdatePosition(false);
+      }
+    }).catch(err => {
+      console.log("Permissions API query failed:", err);
+    });
+  }
+
+  // Bind compass click listener
+  const compassBtn = document.querySelector('.status-widget__compass');
+  if (compassBtn) {
+    compassBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      getAndUpdatePosition(true);
     });
   }
 }
