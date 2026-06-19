@@ -697,6 +697,7 @@ function buildMorphingCards() {
             switchView('psicromia');
           } else if (isCascadeFocused) {
             // Animate: old card shrinks, cascade moves right, then slides to new card and grows
+            hideProjectInfoPanel();
             isCascadeFocused = false;
             if (focusGsapTween) focusGsapTween.kill();
             const startIdx = smoothCascadeIndex;
@@ -1244,6 +1245,9 @@ function triggerRandomProjectCascade() {
   const currentActiveIdx = mod(Math.round(smoothCascadeIndex), M);
   if (M > 1 && randomIdx === currentActiveIdx) {
     randomIdx = (randomIdx + 1) % M;
+  }
+  if (isCascadeFocused) {
+    hideProjectInfoPanel();
   }
   if (focusGsapTween) focusGsapTween.kill();
   const startIdx = smoothCascadeIndex;

@@ -262,6 +262,27 @@ body * {
   letter-spacing: normal;
   text-transform: uppercase;
   pointer-events: auto;
+  background-color: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  padding: 0.35rem 0.9rem;
+  border-radius: 30px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"] .logo:hover {
+  background-color: rgba(44, 44, 46, 0.95);
 }
 
 .logo span {
