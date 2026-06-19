@@ -267,9 +267,9 @@ window.addEventListener('DOMContentLoaded', () => {
         navigateCascade(-1);
       }
     } else if (activeView === 'psicromia') {
-      const space = document.querySelector('.psicromia-space');
-      if (space) {
-        space.scrollLeft += e.deltaY;
+      const track = document.getElementById('psicromia-track');
+      if (track) {
+        track.scrollLeft += e.deltaY;
       }
     }
   });
