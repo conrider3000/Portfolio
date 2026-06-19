@@ -300,13 +300,14 @@ function runLoader() {
 
   const stages = [
     { pts: [[120,120], null, null, null],      lines: [0,0,0,0,0,0] },
-    { pts: [[60,120], [180,120], null, null],   lines: [1,0,0,0,0,0] },
+    { pts: [[30,120], [210,120], null, null],   lines: [1,0,0,0,0,0] }, // Adjusted length to 180px
     { pts: [[120,30], [30,195], [210,195], null], lines: [1,1,1,0,0,0] }
   ];
 
   const NS = 'http://www.w3.org/2000/svg';
   const dyn = document.getElementById('geo-dynamic');
   let animLoop = null;
+  let tetraOpacity = 1.0; // Control variable to fade out the tetrahedron as it spins
 
   function killAnim() { if (animLoop) { cancelAnimationFrame(animLoop); animLoop = null; } }
 
@@ -395,7 +396,7 @@ function runLoader() {
         pts[i].setAttribute('cx', p.x);
         pts[i].setAttribute('cy', p.y);
         pts[i].setAttribute('r', '' + (2 + p.depth * 3));
-        pts[i].setAttribute('opacity', '' + (0.4 + p.depth * 0.6));
+        pts[i].setAttribute('opacity', '' + (0.4 + p.depth * 0.6) * tetraOpacity);
       });
 
       lineConnections.forEach((c, i) => {
@@ -405,7 +406,7 @@ function runLoader() {
         lines[i].setAttribute('y1', pa.y);
         lines[i].setAttribute('x2', pb.x);
         lines[i].setAttribute('y2', pb.y);
-        lines[i].setAttribute('opacity', '' + (0.15 + depth * 0.55));
+        lines[i].setAttribute('opacity', '' + (0.15 + depth * 0.55) * tetraOpacity);
       });
 
       animLoop = requestAnimationFrame(frame);
@@ -453,47 +454,41 @@ function runLoader() {
   }
 
   function startCircle() {
-    killAnim();
+    // Note: Do NOT call killAnim() here because we want the rotating tetrahedron loop to keep running as it fades out!
     dyn.innerHTML = '';
-    for (let i = 0; i < 6; i++) tweenOpacity(lines[i], 0, 200);
 
-    const num = 12, R = 80;
-    const allEls = [], allAngles = [];
-
-    for (let i = 0; i < num; i++) {
-      const angle = (i / num) * Math.PI * 2;
-      const cx = 120 + Math.cos(angle) * R;
-      const cy = 120 + Math.sin(angle) * R;
-      if (i < 4) {
-        tweenAttr(pts[i], { cx, cy, opacity: 1 }, 400);
-        allEls.push(pts[i]);
-      } else {
-        const el = document.createElementNS(NS, 'circle');
-        el.setAttribute('cx', cx);
-        el.setAttribute('cy', cy);
-        el.setAttribute('r', '4');
-        el.setAttribute('fill', '#ffffff');
-        el.setAttribute('opacity', '0');
-        dyn.appendChild(el);
-        tweenOpacity(el, 0.8, 250);
-        allEls.push(el);
-      }
-      allAngles.push(angle);
+    // Animate the fading of the tetrahedron opacity from 1 to 0 over 800ms
+    const t0 = performance.now();
+    function fadeTetra(now) {
+      const p = Math.min((now - t0) / 800, 1);
+      tetraOpacity = 1.0 - easeOut(p);
+      if (p < 1) requestAnimationFrame(fadeTetra);
     }
+    requestAnimationFrame(fadeTetra);
 
+    // Create a continuous outline circle (radius 96 described by the rotation)
+    const R = 96;
     const outline = document.createElementNS(NS, 'circle');
     outline.setAttribute('cx', '120');
     outline.setAttribute('cy', '120');
     outline.setAttribute('r', '' + R);
     outline.setAttribute('fill', 'none');
     outline.setAttribute('stroke', '#ffffff');
-    outline.setAttribute('stroke-opacity', '0.2');
-    outline.setAttribute('stroke-width', '1');
+    outline.setAttribute('stroke-opacity', '0.9');
+    outline.setAttribute('stroke-width', '1.5');
+    
     const circ = Math.PI * 2 * R;
     outline.setAttribute('stroke-dasharray', '' + circ);
     outline.setAttribute('stroke-dashoffset', '' + circ);
     dyn.appendChild(outline);
-    tweenAttr(outline, { 'stroke-dashoffset': 0 }, 600);
+    
+    // Draw the continuous circle outline over 800ms
+    tweenAttr(outline, { 'stroke-dashoffset': 0 }, 800, () => {
+      // Once fully drawn and tetrahedron faded, clean up the tetrahedron loop
+      killAnim();
+      pts.forEach(p => p.setAttribute('opacity', '0'));
+      lines.forEach(l => l.setAttribute('opacity', '0'));
+    });
 
     circlePhaseStarted = true;
 
@@ -502,18 +497,6 @@ function runLoader() {
       minCircleTimePassed = true;
       tryFadeOut();
     }, 800);
-
-    let rot = 0;
-    function frame() {
-      rot += 0.02;
-      allAngles.forEach((a, i) => {
-        const na = a + rot;
-        allEls[i].setAttribute('cx', 120 + Math.cos(na) * R);
-        allEls[i].setAttribute('cy', 120 + Math.sin(na) * R);
-      });
-      animLoop = requestAnimationFrame(frame);
-    }
-    frame();
   }
 
   pts[1].setAttribute('opacity', '0');
