@@ -142,6 +142,15 @@ body * {
   font-size: 18px;
 }
 
+.custom-cursor.lightbox-active .cursor-icon {
+  display: block !important;
+  color: var(--accent-color) !important;
+  opacity: 1 !important;
+}
+.custom-cursor.lightbox-active::after {
+  display: none !important;
+}
+
 @keyframes cursor-pulse {
   0%, 100% { transform: scale(1) rotate(0deg); }
   50% { transform: scale(1.08) rotate(8deg); }

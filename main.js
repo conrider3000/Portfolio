@@ -77,6 +77,10 @@ let cascadePanX = 0; // Global left shift of cascade stack when focused (-150)
 let isAnimatingFocus = false; // Prevents LERP from fighting GSAP during card switch
 let focusGsapTween = null; // GSAP tween handle for card-to-card focus animation
 
+// Lightbox state variables
+let currentLightboxItems = [];
+let currentLightboxIndex = -1;
+
 // Unified media items (scraped projects only, no fake/placeholder items)
 let combinedMediaItems = [...projectsDb];
 let morphCards = [];
@@ -1530,7 +1534,7 @@ function buildPsicromiaGallery() {
     track.appendChild(card);
 
     card.addEventListener('click', () => {
-      openLightbox(item);
+      openLightbox(item, index, galleryItems);
     });
   });
 
@@ -1603,7 +1607,10 @@ function animatePsicromiaEntry() {
 }
 
 // Lightbox controller functions
-function openLightbox(item) {
+function openLightbox(item, index = -1, items = []) {
+  currentLightboxItems = items;
+  currentLightboxIndex = index;
+
   const overlay = document.getElementById('lightbox-overlay');
   const content = overlay.querySelector('.lightbox-content');
   content.innerHTML = '';
@@ -1623,20 +1630,70 @@ function openLightbox(item) {
   }
   
   overlay.classList.add('active');
+  
+  if (cursorEl) {
+    cursorEl.classList.add('lightbox-active');
+  }
+
   document.addEventListener('keydown', onLightboxKeydown);
 }
 
 function onLightboxKeydown(e) {
-  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'Escape') {
+    closeLightbox();
+  } else if (e.key === 'ArrowRight' || e.key === 'Right') {
+    navigateLightbox(1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'Left') {
+    navigateLightbox(-1);
+  }
+}
+
+function navigateLightbox(direction) {
+  if (!currentLightboxItems || currentLightboxItems.length === 0) return;
+  
+  let newIdx = currentLightboxIndex + direction;
+  const len = currentLightboxItems.length;
+  newIdx = (newIdx % len + len) % len;
+  
+  currentLightboxIndex = newIdx;
+  const item = currentLightboxItems[newIdx];
+  
+  const overlay = document.getElementById('lightbox-overlay');
+  const content = overlay.querySelector('.lightbox-content');
+  
+  gsap.to(content, {
+    opacity: 0,
+    duration: 0.2,
+    onComplete: () => {
+      content.innerHTML = '';
+      if (item.type === 'video') {
+        const video = document.createElement('video');
+        video.src = item.url;
+        video.controls = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        content.appendChild(video);
+      } else {
+        const img = document.createElement('img');
+        img.src = item.url;
+        img.alt = 'Zoomed project media';
+        content.appendChild(img);
+      }
+      gsap.to(content, { opacity: 1, duration: 0.25 });
+    }
+  });
 }
 
 function closeLightbox() {
   const overlay = document.getElementById('lightbox-overlay');
   overlay.classList.remove('active');
   
-  // Stop any playing video
   const content = overlay.querySelector('.lightbox-content');
   content.innerHTML = '';
+  
+  if (cursorEl) {
+    cursorEl.classList.remove('lightbox-active');
+  }
   
   document.removeEventListener('keydown', onLightboxKeydown);
 }
