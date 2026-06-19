@@ -309,6 +309,8 @@ function runLoader() {
   let animLoop = null;
   let tetraOpacity = 1.0; // Control variable to fade out the tetrahedron as it spins
 
+  let morphToCircle = 0; // Transition value to flatten and expand the tetrahedron to the circle
+
   function killAnim() { if (animLoop) { cancelAnimationFrame(animLoop); animLoop = null; } }
 
   function easeOut(t) { return 1 - Math.pow(1 - t, 2); }
@@ -387,9 +389,24 @@ function runLoader() {
         // Apply fixed tilt around X axis
         const ry2 = ry * cosX - rz * sinX;
         const rz2 = ry * sinX + rz * cosX;
-        // Depth for pseudo-3D shading (rz2 ranges ~ -1.73 to 1.73)
-        const depth = (rz2 + 2) / 4;
-        return { x: 120 + rx * scale, y: 120 + ry2 * scale, depth };
+        
+        // Base 3D projection coordinates
+        const base3dX = 120 + rx * scale;
+        const base3dY = 120 + ry2 * scale;
+        
+        // 2D Circle target coordinates (radius R = 110 matching triangle circumcircle)
+        const angleOnScreen = Math.atan2(ry2, rx);
+        const R = 110;
+        const target2dX = 120 + Math.cos(angleOnScreen) * R;
+        const target2dY = 120 + Math.sin(angleOnScreen) * R;
+        
+        // LERP between 3D projection and 2D circle
+        const x = base3dX + (target2dX - base3dX) * morphToCircle;
+        const y = base3dY + (target2dY - base3dY) * morphToCircle;
+        
+        // Depth for pseudo-3D shading (fades to flat as morphToCircle increases)
+        const depth = ((rz2 + 2) / 4) * (1 - morphToCircle) + 0.5 * morphToCircle;
+        return { x, y, depth };
       });
 
       projected.forEach((p, i) => {
@@ -457,17 +474,19 @@ function runLoader() {
     // Note: Do NOT call killAnim() here because we want the rotating tetrahedron loop to keep running as it fades out!
     dyn.innerHTML = '';
 
-    // Animate the fading of the tetrahedron opacity from 1 to 0 over 800ms
+    // Animate morphToCircle from 0 to 1 and the fading of the tetrahedron opacity from 1 to 0 over 800ms
     const t0 = performance.now();
-    function fadeTetra(now) {
+    function morphTick(now) {
       const p = Math.min((now - t0) / 800, 1);
-      tetraOpacity = 1.0 - easeOut(p);
-      if (p < 1) requestAnimationFrame(fadeTetra);
+      const e = easeOut(p);
+      morphToCircle = e;
+      tetraOpacity = 1.0 - e;
+      if (p < 1) requestAnimationFrame(morphTick);
     }
-    requestAnimationFrame(fadeTetra);
+    requestAnimationFrame(morphTick);
 
-    // Create a continuous outline circle (radius 96 described by the rotation)
-    const R = 96;
+    // Create a continuous outline circle (radius 110 described by the rotation)
+    const R = 110;
     const outline = document.createElementNS(NS, 'circle');
     outline.setAttribute('cx', '120');
     outline.setAttribute('cy', '120');
