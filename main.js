@@ -1653,19 +1653,19 @@ function updateThemeToggleIcon() {
   const btn = document.getElementById('theme-toggle-btn');
   if (!btn) return;
   if (currentTheme === 'dark') {
-    btn.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-    btn.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+    btn.style.backgroundColor = '#ffffff';
+    btn.style.border = 'none';
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="#2997ff" stroke="none">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="#000000" stroke="none">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
     `;
   } else {
-    btn.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-    btn.style.border = '1px solid rgba(0, 0, 0, 0.08)';
+    btn.style.backgroundColor = '#f5a623';
+    btn.style.border = 'none';
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#1d1d1f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="5" fill="#1d1d1f"/>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5" fill="#ffffff"/>
         <line x1="12" y1="1" x2="12" y2="3"/>
         <line x1="12" y1="21" x2="12" y2="23"/>
         <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
