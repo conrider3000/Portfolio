@@ -41,19 +41,24 @@
 
   <!-- Site Intro Loader -->
   <div class="site-loader" id="loader">
-    <svg class="loader-geo" id="loader-geo" viewBox="0 0 240 240">
-      <circle class="geo-point" id="geo-p0" cx="120" cy="120" r="5" />
-      <circle class="geo-point" id="geo-p1" cx="120" cy="120" r="5" />
-      <circle class="geo-point" id="geo-p2" cx="120" cy="120" r="5" />
-      <circle class="geo-point" id="geo-p3" cx="120" cy="120" r="5" />
-      <line class="geo-line" id="geo-l01" x1="120" y1="120" x2="120" y2="120" />
-      <line class="geo-line" id="geo-l02" x1="120" y1="120" x2="120" y2="120" />
-      <line class="geo-line" id="geo-l12" x1="120" y1="120" x2="120" y2="120" />
-      <line class="geo-line" id="geo-l03" x1="120" y1="120" x2="120" y2="120" />
-      <line class="geo-line" id="geo-l13" x1="120" y1="120" x2="120" y2="120" />
-      <line class="geo-line" id="geo-l23" x1="120" y1="120" x2="120" y2="120" />
-      <g id="geo-dynamic"></g>
-    </svg>
+    <div class="loader-container">
+      <svg class="loader-geo" id="loader-geo" viewBox="0 0 240 240">
+        <circle class="geo-point" id="geo-p0" cx="120" cy="120" r="5" />
+        <circle class="geo-point" id="geo-p1" cx="120" cy="120" r="5" />
+        <circle class="geo-point" id="geo-p2" cx="120" cy="120" r="5" />
+        <circle class="geo-point" id="geo-p3" cx="120" cy="120" r="5" />
+        <line class="geo-line" id="geo-l01" x1="120" y1="120" x2="120" y2="120" />
+        <line class="geo-line" id="geo-l02" x1="120" y1="120" x2="120" y2="120" />
+        <line class="geo-line" id="geo-l12" x1="120" y1="120" x2="120" y2="120" />
+        <line class="geo-line" id="geo-l03" x1="120" y1="120" x2="120" y2="120" />
+        <line class="geo-line" id="geo-l13" x1="120" y1="120" x2="120" y2="120" />
+        <line class="geo-line" id="geo-l23" x1="120" y1="120" x2="120" y2="120" />
+        <g id="geo-dynamic"></g>
+      </svg>
+      <div class="loader-bar-container">
+        <div class="loader-bar-fill" id="loader-bar-fill"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Header navigation -->
@@ -360,6 +365,34 @@
       <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
     </svg>
   </button>
+
+  <!-- Dynamic Left Corner Widget -->
+  <div class="status-widget" id="status-widget">
+    <div class="status-widget__compass">
+      <svg viewBox="0 0 24 24" class="compass-icon" id="compass-icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        <polygon points="12,4 15,12 12,10 9,12" fill="currentColor"/>
+        <polygon points="12,20 15,12 12,10 9,12" fill="none" stroke="currentColor" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="status-widget__info">
+      <div class="status-widget__row">
+        <span class="status-widget__time" id="widget-time">--:--:--</span>
+        <span class="status-widget__sep">•</span>
+        <span class="status-widget__date" id="widget-date">--/--/----</span>
+      </div>
+      <div class="status-widget__row status-widget__geo">
+        <span id="widget-loc">São Paulo, BR</span>
+        <span class="status-widget__sep">•</span>
+        <span id="widget-coords">-23.5505° S, -46.6333° W</span>
+      </div>
+      <div class="status-widget__row status-widget__weather">
+        <span id="widget-temp">22°C</span>
+        <span class="status-widget__sep">•</span>
+        <span id="widget-extra">Nublado • NW 14km/h</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Javascript Imports -->
   <script src="data/portfolio.js?v=1.0.35"></script>

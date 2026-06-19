@@ -150,6 +150,16 @@ window.addEventListener('DOMContentLoaded', () => {
     mouseX = e.clientX;
     mouseY = e.clientY;
 
+    // Rotate compass needle toward cursor
+    const compass = document.getElementById('compass-icon');
+    if (compass) {
+      const rect = compass.getBoundingClientRect();
+      const compassX = rect.left + rect.width / 2;
+      const compassY = rect.top + rect.height / 2;
+      const angle = Math.atan2(mouseY - compassY, mouseX - compassX) * (180 / Math.PI) + 90;
+      gsap.to(compass, { rotation: angle, duration: 0.5, overwrite: "auto" });
+    }
+
     // Tilt the central planet slightly toward the cursor (only in Orbit view)
     if (activeView === 'orbit') {
       const centerX = window.innerWidth / 2;
@@ -184,6 +194,8 @@ window.addEventListener('DOMContentLoaded', () => {
   startLogoAlternator();
   animateCursor();
   addCursorInteractions();
+  initWidgetGeo();
+  startWidgetClock();
 
   // Live Cover Preview & Local Upload
   const coverInput = document.getElementById('form-project-cover');
@@ -523,6 +535,11 @@ function runLoader() {
   pts[3].setAttribute('opacity', '0');
   for (let i = 0; i < 6; i++) lines[i].setAttribute('opacity', '0');
 
+  const barFill = document.getElementById('loader-bar-fill');
+  if (barFill) {
+    gsap.fromTo(barFill, { width: '0%' }, { width: '100%', duration: 5.3, ease: "none" });
+  }
+
   animToStage(0);
   setTimeout(() => animToStage(1), 1000);
   setTimeout(() => animToStage(2), 2000);
@@ -746,7 +763,7 @@ function animateCursor() {
 }
 
 function addCursorInteractions() {
-  document.querySelectorAll('a, button, .nav__link, .vis-btn, .morph-card, .mosaic-card, .filter-btn, .filter-dropdown-item, .info-panel-more-btn, .psicromia-back-btn, .cascade-back-btn').forEach(el => {
+  document.querySelectorAll('a, button, .nav__link, .vis-btn, .morph-card, .mosaic-card, .filter-btn, .filter-dropdown-item, .info-panel-more-btn, .psicromia-back-btn, .cascade-back-btn, .status-widget').forEach(el => {
     el.addEventListener('mouseenter', () => {
       if (cursorEl) cursorEl.classList.add('hovered');
     });
@@ -1216,6 +1233,41 @@ function triggerEasterEggSpin() {
   });
 }
 
+function triggerRandomProjectCascade() {
+  if (projectsDb.length === 0) return;
+  const M = projectsDb.length;
+  let randomIdx = Math.floor(Math.random() * M);
+  const currentActiveIdx = mod(Math.round(smoothCascadeIndex), M);
+  if (M > 1 && randomIdx === currentActiveIdx) {
+    randomIdx = (randomIdx + 1) % M;
+  }
+  if (focusGsapTween) focusGsapTween.kill();
+  const startIdx = smoothCascadeIndex;
+  let diff = randomIdx - (startIdx % M);
+  diff = mod(diff + M / 2, M) - M / 2;
+  const targetIdx = startIdx + diff;
+  const dist = Math.abs(diff);
+  const dur = gsap.utils.clamp(0.4, 0.9, dist * 0.15 + 0.25);
+  isCascadeFocused = false;
+  isAnimatingFocus = true;
+  focusGsapTween = gsap.to({}, {
+    duration: dur,
+    ease: "power2.inOut",
+    onUpdate: function() {
+      const p = this.progress();
+      smoothCascadeIndex = startIdx + diff * p;
+    },
+    onComplete: () => {
+      activeCascadeIndex = targetIdx;
+      smoothCascadeIndex = targetIdx;
+      isCascadeFocused = true;
+      isAnimatingFocus = false;
+      focusGsapTween = null;
+      showProjectInfoPanel();
+    }
+  });
+}
+
 function animateOrbitEntry() {
   gsap.from('.logo', { y: -20, opacity: 0, duration: 1, ease: "power2.out" });
   gsap.from('.nav', { y: -20, opacity: 0, duration: 1, ease: "power2.out", delay: 0.2 });
@@ -1610,7 +1662,17 @@ function closeAllPanels() {
 function resetToHome(event) {
   if (event) event.preventDefault();
   closeAllPanels();
-  switchView('orbit');
+  
+  if (activeView === 'orbit') {
+    triggerEasterEggSpin();
+  } else if (activeView === 'cascade') {
+    triggerRandomProjectCascade();
+  } else {
+    switchView('orbit');
+    setTimeout(() => {
+      triggerEasterEggSpin();
+    }, 100);
+  }
 }
 
 // ==========================================================================
@@ -2204,4 +2266,92 @@ function compressImage(file, maxDimension = 1600, quality = 0.75) {
     };
     reader.onerror = (err) => reject(err);
   });
+}
+
+// ==========================================================================
+// DYNAMIC LEFT CORNER STATUS WIDGET LOGIC
+// ==========================================================================
+function initWidgetGeo() {
+  const locEl = document.getElementById('widget-loc');
+  const coordsEl = document.getElementById('widget-coords');
+  const tempEl = document.getElementById('widget-temp');
+  const extraEl = document.getElementById('widget-extra');
+
+  if (!locEl || !coordsEl || !tempEl || !extraEl) return;
+
+  // Simulated weather variation based on hour
+  const hour = new Date().getHours();
+  let baseTemp = 21;
+  let weatherDesc = "Parcialmente Nublado";
+  
+  if (hour >= 12 && hour < 17) {
+    baseTemp = 24;
+    weatherDesc = "Ensolarado";
+  } else if (hour >= 18 || hour < 6) {
+    baseTemp = 18;
+    weatherDesc = "Céu Limpo";
+  }
+  
+  tempEl.innerText = `${baseTemp}°C`;
+  extraEl.innerText = `${weatherDesc} • NW 14km/h`;
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const lat = position.coords.latitude.toFixed(4);
+      const lon = position.coords.longitude.toFixed(4);
+      
+      coordsEl.innerText = `${Math.abs(lat)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon)}° ${lon >= 0 ? 'E' : 'W'}`;
+      
+      // Reverse geocoding (OpenStreetMap Nominatim API, no key required)
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.address) {
+            const city = data.address.city || data.address.town || data.address.village || data.address.municipality || "São Paulo";
+            const state = data.address.state || "SP";
+            locEl.innerText = `${city}, ${state}`;
+          }
+        })
+        .catch(err => console.log("Geocoding failed:", err));
+
+      // Real temperature (Open-Meteo Weather API, no key required)
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+      fetch(weatherUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.current_weather) {
+            const temp = Math.round(data.current_weather.temperature);
+            tempEl.innerText = `${temp}°C`;
+            const code = data.current_weather.weathercode;
+            let desc = "Limpo";
+            if (code >= 1 && code <= 3) desc = "Parcialmente Nublado";
+            else if (code >= 51 && code <= 67) desc = "Chuva Leve";
+            else if (code >= 71 && code <= 86) desc = "Neve";
+            else if (code >= 95) desc = "Tempestade";
+            extraEl.innerText = `${desc} • NW ${Math.round(data.current_weather.windspeed)}km/h`;
+          }
+        })
+        .catch(err => console.log("Weather API failed:", err));
+        
+    }, (error) => {
+      console.log("Geolocation blocked or failed:", error);
+    });
+  }
+}
+
+function startWidgetClock() {
+  const timeEl = document.getElementById('widget-time');
+  const dateEl = document.getElementById('widget-date');
+  
+  function updateTime() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString(currentLanguage === 'pt' ? 'pt-BR' : 'en-US', { hour12: false });
+    const dateStr = now.toLocaleDateString(currentLanguage === 'pt' ? 'pt-BR' : 'en-US');
+    if (timeEl) timeEl.innerText = timeStr;
+    if (dateEl) dateEl.innerText = dateStr;
+  }
+  
+  updateTime();
+  setInterval(updateTime, 1000);
 }
