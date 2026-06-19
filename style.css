@@ -234,7 +234,7 @@ body * {
 .logo {
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   text-decoration: none;
   color: var(--text-color);
   letter-spacing: normal;
@@ -268,7 +268,7 @@ body * {
 
 .nav__link {
   font-family: var(--font-sans);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: normal;
   text-transform: uppercase;
@@ -309,7 +309,7 @@ body * {
   background: none;
   border: none;
   color: var(--text-color);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
