@@ -142,13 +142,17 @@ function startLogoAlternator() {
 // INITIALIZATION
 // ==========================================================================
 window.addEventListener('DOMContentLoaded', () => {
-  runLoader();
   initTheme();
   initLanguage();
   initParticles();
 
   buildMorphingCards();
   buildPsicromiaGallery();
+
+  // If the loader finished its fadeout before main.js initialized, play entry anims now
+  if (window.loaderFinished) {
+    animateOrbitEntry();
+  }
 
   document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
@@ -293,263 +297,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // ==========================================================================
 // SITE LOADER INTRO
 // ==========================================================================
-function runLoader() {
-  const loader = document.getElementById('loader');
-
-  const pts = [
-    document.getElementById('geo-p0'),
-    document.getElementById('geo-p1'),
-    document.getElementById('geo-p2'),
-    document.getElementById('geo-p3')
-  ];
-  const lines = [
-    document.getElementById('geo-l01'),
-    document.getElementById('geo-l02'),
-    document.getElementById('geo-l12'),
-    document.getElementById('geo-l03'),
-    document.getElementById('geo-l13'),
-    document.getElementById('geo-l23')
-  ];
-  const lineConnections = [[0,1],[0,2],[1,2],[0,3],[1,3],[2,3]];
-
-  pts.forEach((p) => p.setAttribute('fill', '#ffffff'));
-
-  const stages = [
-    { pts: [[120,120], null, null, null],      lines: [0,0,0,0,0,0] },
-    { pts: [[30,120], [210,120], null, null],   lines: [1,0,0,0,0,0] }, // Adjusted length to 180px
-    { pts: [[120,30], [30,195], [210,195], null], lines: [1,1,1,0,0,0] }
-  ];
-
-  const NS = 'http://www.w3.org/2000/svg';
-  const dyn = document.getElementById('geo-dynamic');
-  let animLoop = null;
-  let tetraOpacity = 1.0; // Control variable to fade out the tetrahedron as it spins
-
-  let morphToCircle = 0; // Transition value to flatten and expand the tetrahedron to the circle
-
-  function killAnim() { if (animLoop) { cancelAnimationFrame(animLoop); animLoop = null; } }
-
-  function easeOut(t) { return 1 - Math.pow(1 - t, 2); }
-
-  function tweenAttr(el, target, dur, cb) {
-    const start = {};
-    for (const k in target) start[k] = parseFloat(el.getAttribute(k) || el.style[k] || 0);
-    const t0 = performance.now();
-    function tick(now) {
-      const p = Math.min((now - t0) / dur, 1);
-      const e = easeOut(p);
-      for (const k in target) el.setAttribute(k, start[k] + (target[k] - start[k]) * e);
-      if (p < 1) requestAnimationFrame(tick);
-      else if (cb) cb();
-    }
-    requestAnimationFrame(tick);
-  }
-
-  function tweenOpacity(el, to, dur, cb) {
-    const from = parseFloat(el.getAttribute('opacity') || 1);
-    const t0 = performance.now();
-    function tick(now) {
-      const p = Math.min((now - t0) / dur, 1);
-      el.setAttribute('opacity', from + (to - from) * easeOut(p));
-      if (p < 1) requestAnimationFrame(tick);
-      else if (cb) cb();
-    }
-    requestAnimationFrame(tick);
-  }
-
-  function animToStage(idx) {
-    killAnim();
-    dyn.innerHTML = '';
-    const s = stages[idx];
-    s.pts.forEach((pos, i) => {
-      if (pos) tweenAttr(pts[i], { cx: pos[0], cy: pos[1], opacity: 1 }, 400);
-      else tweenOpacity(pts[i], 0, 250);
-    });
-    lineConnections.forEach((c, i) => {
-      const pa = s.pts[c[0]], pb = s.pts[c[1]];
-      if (pa && pb && s.lines[i]) tweenAttr(lines[i], { x1: pa[0], y1: pa[1], x2: pb[0], y2: pb[1], opacity: 0.5 }, 400);
-      else tweenOpacity(lines[i], 0, 250);
-    });
-  }
-
-  function startTetrahedron() {
-    killAnim();
-    dyn.innerHTML = '';
-    for (let i = 0; i < 6; i++) tweenOpacity(lines[i], 1, 200);
-
-    // Perfect regular tetrahedron: vertices (±1, ±1, ±1) where product of signs = +1
-    // All 6 edges have exactly the same length = 2*sqrt(2) ≈ 2.828 units
-    // Scale so edge ≈ 192px (matching/evolving from the 180px triangle) → scale = 192 / (2*sqrt(2)) ≈ 67.8
-    const scale = 68;
-    const raw = [
-      { x:  1, y:  1, z:  1 },
-      { x:  1, y: -1, z: -1 },
-      { x: -1, y:  1, z: -1 },
-      { x: -1, y: -1, z:  1 }
-    ];
-
-    // Fixed tilt on X axis so we see the shape in 3D from a nice angle
-    const tiltX = 0.42;
-    const cosX = Math.cos(tiltX), sinX = Math.sin(tiltX);
-
-    let angle = 0;
-    function frame() {
-      angle += 0.018;
-      const cosA = Math.cos(angle), sinA = Math.sin(angle);
-
-      const projected = raw.map(v => {
-        // Rotate around Y axis
-        const rx = v.x * cosA + v.z * sinA;
-        const rz = -v.x * sinA + v.z * cosA;
-        const ry = v.y;
-        // Apply fixed tilt around X axis
-        const ry2 = ry * cosX - rz * sinX;
-        const rz2 = ry * sinX + rz * cosX;
-        
-        // Base 3D projection coordinates
-        const base3dX = 120 + rx * scale;
-        const base3dY = 120 + ry2 * scale;
-        
-        // 2D Circle target coordinates (radius R = 110 matching triangle circumcircle)
-        const angleOnScreen = Math.atan2(ry2, rx);
-        const R = 110;
-        const target2dX = 120 + Math.cos(angleOnScreen) * R;
-        const target2dY = 120 + Math.sin(angleOnScreen) * R;
-        
-        // LERP between 3D projection and 2D circle
-        const x = base3dX + (target2dX - base3dX) * morphToCircle;
-        const y = base3dY + (target2dY - base3dY) * morphToCircle;
-        
-        // Depth for pseudo-3D shading (fades to flat as morphToCircle increases)
-        const depth = ((rz2 + 2) / 4) * (1 - morphToCircle) + 0.5 * morphToCircle;
-        return { x, y, depth };
-      });
-
-      projected.forEach((p, i) => {
-        pts[i].setAttribute('cx', p.x);
-        pts[i].setAttribute('cy', p.y);
-        pts[i].setAttribute('r', '' + (2 + p.depth * 3));
-        pts[i].setAttribute('opacity', '' + (0.4 + p.depth * 0.6) * tetraOpacity);
-      });
-
-      lineConnections.forEach((c, i) => {
-        const pa = projected[c[0]], pb = projected[c[1]];
-        const depth = (pa.depth + pb.depth) / 2;
-        lines[i].setAttribute('x1', pa.x);
-        lines[i].setAttribute('y1', pa.y);
-        lines[i].setAttribute('x2', pb.x);
-        lines[i].setAttribute('y2', pb.y);
-        lines[i].setAttribute('opacity', '' + (0.15 + depth * 0.55) * tetraOpacity);
-      });
-
-      animLoop = requestAnimationFrame(frame);
-    }
-    frame();
-  }
-
-  // Track whether the site has fully loaded and whether the circle phase started
-  let siteReady = false;
-  let circlePhaseStarted = false;
-  let minCircleTimePassed = false;
-
-  // If already loaded (e.g. cached page) set flag immediately
-  if (document.readyState === 'complete') {
-    siteReady = true;
-  } else {
-    window.addEventListener('load', () => {
-      siteReady = true;
-      tryFadeOut();
-    }, { once: true });
-  }
-
-  function tryFadeOut() {
-    // Only fade when: circle is visible + site loaded + minimum display time passed
-    if (circlePhaseStarted && siteReady && minCircleTimePassed) {
-      fadeOutLoader();
-    }
-  }
-
-  function fadeOutLoader() {
-    killAnim();
-    let op = 1;
-    function fade() {
-      op -= 0.025;
-      if (op <= 0) {
-        loader.style.opacity = 0;
-        loader.style.display = 'none';
-        animateOrbitEntry();
-        return;
-      }
-      loader.style.opacity = op;
-      requestAnimationFrame(fade);
-    }
-    requestAnimationFrame(fade);
-  }
-
-  function startCircle() {
-    // Note: Do NOT call killAnim() here because we want the rotating tetrahedron loop to keep running as it fades out!
-    dyn.innerHTML = '';
-
-    // Animate morphToCircle from 0 to 1 and the fading of the tetrahedron opacity from 1 to 0 over 800ms
-    const t0 = performance.now();
-    function morphTick(now) {
-      const p = Math.min((now - t0) / 800, 1);
-      const e = easeOut(p);
-      morphToCircle = e;
-      tetraOpacity = 1.0 - e;
-      if (p < 1) requestAnimationFrame(morphTick);
-    }
-    requestAnimationFrame(morphTick);
-
-    // Create a continuous outline circle (radius 110 described by the rotation)
-    const R = 110;
-    const outline = document.createElementNS(NS, 'circle');
-    outline.setAttribute('cx', '120');
-    outline.setAttribute('cy', '120');
-    outline.setAttribute('r', '' + R);
-    outline.setAttribute('fill', 'none');
-    outline.setAttribute('stroke', '#ffffff');
-    outline.setAttribute('stroke-opacity', '0.9');
-    outline.setAttribute('stroke-width', '1.5');
-    
-    const circ = Math.PI * 2 * R;
-    outline.setAttribute('stroke-dasharray', '' + circ);
-    outline.setAttribute('stroke-dashoffset', '' + circ);
-    dyn.appendChild(outline);
-    
-    // Draw the continuous circle outline over 800ms
-    tweenAttr(outline, { 'stroke-dashoffset': 0 }, 800, () => {
-      // Once fully drawn and tetrahedron faded, clean up the tetrahedron loop
-      killAnim();
-      pts.forEach(p => p.setAttribute('opacity', '0'));
-      lines.forEach(l => l.setAttribute('opacity', '0'));
-    });
-
-    circlePhaseStarted = true;
-
-    // Minimum 800ms in circle phase so it doesn't flash away instantly
-    setTimeout(() => {
-      minCircleTimePassed = true;
-      tryFadeOut();
-    }, 800);
-  }
-
-  pts[1].setAttribute('opacity', '0');
-  pts[2].setAttribute('opacity', '0');
-  pts[3].setAttribute('opacity', '0');
-  for (let i = 0; i < 6; i++) lines[i].setAttribute('opacity', '0');
-
-  const barFill = document.getElementById('loader-bar-fill');
-  if (barFill) {
-    gsap.fromTo(barFill, { width: '0%' }, { width: '100%', duration: 5.3, ease: "none" });
-  }
-
-  animToStage(0);
-  setTimeout(() => animToStage(1), 1000);
-  setTimeout(() => animToStage(2), 2000);
-  setTimeout(() => { startTetrahedron(); }, 3000);
-  setTimeout(() => { startCircle(); }, 4500);
-}
+//// (runLoader function removed and placed inline in index.html to load instantly)
 
 // ==========================================================================
 // CENTRAL TEXT ANIMATION HELPER
@@ -1282,6 +1030,7 @@ function animateOrbitEntry() {
   gsap.from('.visualizer-select', { y: 20, opacity: 0, duration: 1, ease: "power2.out", delay: 0.4 });
   gsap.from('.orbit-center', { scale: 0.8, opacity: 0, duration: 1.2, ease: "power3.out" });
 }
+window.animateOrbitEntry = animateOrbitEntry;
 
 // ==========================================================================
 // CIRCLE MODE TOGGLE (Orbit view)

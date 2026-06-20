@@ -61,6 +61,253 @@
     </div>
   </div>
 
+  <!-- Inline self-contained script to start loading animations instantly -->
+  <script>
+    (function() {
+      function runLoader() {
+        const loader = document.getElementById('loader');
+        if (!loader) return;
+
+        const pts = [
+          document.getElementById('geo-p0'),
+          document.getElementById('geo-p1'),
+          document.getElementById('geo-p2'),
+          document.getElementById('geo-p3')
+        ];
+        const lines = [
+          document.getElementById('geo-l01'),
+          document.getElementById('geo-l02'),
+          document.getElementById('geo-l12'),
+          document.getElementById('geo-l03'),
+          document.getElementById('geo-l13'),
+          document.getElementById('geo-l23')
+        ];
+        const lineConnections = [[0,1],[0,2],[1,2],[0,3],[1,3],[2,3]];
+
+        pts.forEach((p) => p && p.setAttribute('fill', '#ffffff'));
+
+        const stages = [
+          { pts: [[120,120], null, null, null],      lines: [0,0,0,0,0,0] },
+          { pts: [[30,120], [210,120], null, null],   lines: [1,0,0,0,0,0] },
+          { pts: [[120,30], [30,195], [210,195], null], lines: [1,1,1,0,0,0] }
+        ];
+
+        const NS = 'http://www.w3.org/2000/svg';
+        const dyn = document.getElementById('geo-dynamic');
+        let animLoop = null;
+        let tetraOpacity = 1.0;
+        let morphToCircle = 0;
+
+        function killAnim() { if (animLoop) { cancelAnimationFrame(animLoop); animLoop = null; } }
+        function easeOut(t) { return 1 - Math.pow(1 - t, 2); }
+
+        function tweenAttr(el, target, dur, cb) {
+          if (!el) return;
+          const start = {};
+          for (const k in target) start[k] = parseFloat(el.getAttribute(k) || el.style[k] || 0);
+          const t0 = performance.now();
+          function tick(now) {
+            const p = Math.min((now - t0) / dur, 1);
+            const e = easeOut(p);
+            for (const k in target) el.setAttribute(k, start[k] + (target[k] - start[k]) * e);
+            if (p < 1) requestAnimationFrame(tick);
+            else if (cb) cb();
+          }
+          requestAnimationFrame(tick);
+        }
+
+        function tweenOpacity(el, to, dur, cb) {
+          if (!el) return;
+          const from = parseFloat(el.getAttribute('opacity') || 1);
+          const t0 = performance.now();
+          function tick(now) {
+            const p = Math.min((now - t0) / dur, 1);
+            el.setAttribute('opacity', from + (to - from) * easeOut(p));
+            if (p < 1) requestAnimationFrame(tick);
+            else if (cb) cb();
+          }
+          requestAnimationFrame(tick);
+        }
+
+        function animToStage(idx) {
+          killAnim();
+          if (dyn) dyn.innerHTML = '';
+          const s = stages[idx];
+          s.pts.forEach((pos, i) => {
+            if (pos) tweenAttr(pts[i], { cx: pos[0], cy: pos[1], opacity: 1 }, 400);
+            else tweenOpacity(pts[i], 0, 250);
+          });
+          lineConnections.forEach((c, i) => {
+            const pa = s.pts[c[0]], pb = s.pts[c[1]];
+            if (pa && pb && s.lines[i]) tweenAttr(lines[i], { x1: pa[0], y1: pa[1], x2: pb[0], y2: pb[1], opacity: 0.5 }, 400);
+            else tweenOpacity(lines[i], 0, 250);
+          });
+        }
+
+        function startTetrahedron() {
+          killAnim();
+          if (dyn) dyn.innerHTML = '';
+          for (let i = 0; i < 6; i++) tweenOpacity(lines[i], 1, 200);
+
+          const scale = 68;
+          const raw = [
+            { x:  1, y:  1, z:  1 },
+            { x:  1, y: -1, z: -1 },
+            { x: -1, y:  1, z: -1 },
+            { x: -1, y: -1, z:  1 }
+          ];
+
+          const tiltX = 0.42;
+          const cosX = Math.cos(tiltX), sinX = Math.sin(tiltX);
+
+          let angle = 0;
+          function frame() {
+            angle += 0.018;
+            const cosA = Math.cos(angle), sinA = Math.sin(angle);
+
+            const projected = raw.map(v => {
+              const rx = v.x * cosA + v.z * sinA;
+              const rz = -v.x * sinA + v.z * cosA;
+              const ry = v.y;
+              const ry2 = ry * cosX - rz * sinX;
+              const rz2 = ry * sinX + rz * cosX;
+              
+              const base3dX = 120 + rx * scale;
+              const base3dY = 120 + ry2 * scale;
+              
+              const angleOnScreen = Math.atan2(ry2, rx);
+              const R = 110;
+              const target2dX = 120 + Math.cos(angleOnScreen) * R;
+              const target2dY = 120 + Math.sin(angleOnScreen) * R;
+              
+              const x = base3dX + (target2dX - base3dX) * morphToCircle;
+              const y = base3dY + (target2dY - base3dY) * morphToCircle;
+              
+              const depth = ((rz2 + 2) / 4) * (1 - morphToCircle) + 0.5 * morphToCircle;
+              return { x, y, depth };
+            });
+
+            projected.forEach((p, i) => {
+              if (pts[i]) {
+                pts[i].setAttribute('cx', p.x);
+                pts[i].setAttribute('cy', p.y);
+                pts[i].setAttribute('r', '' + (2 + p.depth * 3));
+                pts[i].setAttribute('opacity', '' + (0.4 + p.depth * 0.6) * tetraOpacity);
+              }
+            });
+
+            lineConnections.forEach((c, i) => {
+              if (lines[i]) {
+                const pa = projected[c[0]], pb = projected[c[1]];
+                const depth = (pa.depth + pb.depth) / 2;
+                lines[i].setAttribute('x1', pa.x);
+                lines[i].setAttribute('y1', pa.y);
+                lines[i].setAttribute('x2', pb.x);
+                lines[i].setAttribute('y2', pb.y);
+                lines[i].setAttribute('opacity', '' + (0.15 + depth * 0.55) * tetraOpacity);
+              }
+            });
+
+            animLoop = requestAnimationFrame(frame);
+          }
+          frame();
+        }
+
+        let siteReady = false;
+        let circlePhaseStarted = false;
+        let minCircleTimePassed = false;
+
+        if (document.readyState === 'complete') {
+          siteReady = true;
+        } else {
+          window.addEventListener('load', () => {
+            siteReady = true;
+            tryFadeOut();
+          }, { once: true });
+        }
+
+        function tryFadeOut() {
+          if (circlePhaseStarted && siteReady && minCircleTimePassed) {
+            fadeOutLoader();
+          }
+        }
+
+        function fadeOutLoader() {
+          killAnim();
+          let op = 1;
+          function fade() {
+            op -= 0.025;
+            if (op <= 0) {
+              loader.style.opacity = 0;
+              loader.style.display = 'none';
+              if (window.animateOrbitEntry) {
+                window.animateOrbitEntry();
+              } else {
+                window.loaderFinished = true;
+              }
+              return;
+            }
+            loader.style.opacity = op;
+            requestAnimationFrame(fade);
+          }
+          requestAnimationFrame(fade);
+        }
+
+        function startCircle() {
+          if (dyn) dyn.innerHTML = '';
+          const R = 110;
+          const outline = document.createElementNS(NS, 'circle');
+          outline.setAttribute('cx', '120');
+          outline.setAttribute('cy', '120');
+          outline.setAttribute('r', '' + R);
+          outline.setAttribute('fill', 'none');
+          outline.setAttribute('stroke', '#ffffff');
+          outline.setAttribute('stroke-opacity', '0.9');
+          outline.setAttribute('stroke-width', '1.5');
+          
+          const circ = Math.PI * 2 * R;
+          outline.setAttribute('stroke-dasharray', '' + circ);
+          outline.setAttribute('stroke-dashoffset', '' + circ);
+          if (dyn) dyn.appendChild(outline);
+          
+          tweenAttr(outline, { 'stroke-dashoffset': 0 }, 800, () => {
+            killAnim();
+            pts.forEach(p => p && p.setAttribute('opacity', '0'));
+            lines.forEach(l => l && l.setAttribute('opacity', '0'));
+          });
+
+          circlePhaseStarted = true;
+
+          setTimeout(() => {
+            minCircleTimePassed = true;
+            tryFadeOut();
+          }, 800);
+        }
+
+        pts[1].setAttribute('opacity', '0');
+        pts[2].setAttribute('opacity', '0');
+        pts[3].setAttribute('opacity', '0');
+        for (let i = 0; i < 6; i++) lines[i].setAttribute('opacity', '0');
+
+        const barFill = document.getElementById('loader-bar-fill');
+        if (barFill) {
+          barFill.style.transition = 'width 5.3s linear';
+          barFill.style.width = '0%';
+          barFill.offsetHeight; // Force reflow
+          barFill.style.width = '100%';
+        }
+
+        animToStage(0);
+        setTimeout(() => animToStage(1), 1000);
+        setTimeout(() => animToStage(2), 2000);
+        setTimeout(() => { startTetrahedron(); }, 3000);
+        setTimeout(() => { startCircle(); }, 4500);
+      }
+
+      runLoader();
+    })();
+  </script>
+
   <!-- Header navigation -->
   <header class="header">
     <div class="header-left">
