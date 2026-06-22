@@ -900,7 +900,7 @@ function renderGlobe(gCtx, SIZE) {
     const uProj = globeProject(uLon, uLat, lon0, lat0, R);
     if (uProj.visible) {
       const uLabel = globeCityName || (currentLanguage === 'pt' ? "Sua Localização" : "Your Location");
-      globeDrawPin(gCtx, cx + uProj.x, cy - uProj.y, globePinPulse, uLabel);
+      globeDrawPin(gCtx, cx + uProj.x, cy - uProj.y, globePinPulse, uLabel, true);
     }
   }
 
@@ -981,70 +981,151 @@ function globeDrawContinent(gCtx, cx, cy, R, lon0, lat0, points, activeGlobeThem
   gCtx.stroke();
 }
 
-function globeDrawPin(gCtx, x, y, pulse, city) {
-  const PR  = 7;   // pin head radius
-  const TIP = 20;  // distance from head center to tip
-  const bounce = Math.sin(pulse * 1.8) * 1.8;
+function globeDrawPin(gCtx, x, y, pulse, city, isUser = false) {
   const px = Math.round(x);
-  const py = Math.round(y) - bounce;
-  const hy = py - TIP;   // head center y
+  const py = Math.round(y);
+  
+  if (isUser) {
+    // Apple HIG User Location: Pulsing blue dot with white border
+    const radius = 5.5;
+    const bounce = Math.sin(pulse * 1.5) * 0.8; // subtle bounce/float
+    const cy = py - bounce;
 
-  // Shadow
-  gCtx.save();
-  gCtx.shadowColor   = 'rgba(0,0,0,0.45)';
-  gCtx.shadowBlur    = 9;
-  gCtx.shadowOffsetY = 3;
-
-  // Teardrop body: semicircle top + bezier curves to tip
-  gCtx.beginPath();
-  gCtx.arc(px, hy, PR, Math.PI, 0);
-  gCtx.bezierCurveTo(px + PR, hy + PR * 1.5, px + PR * 0.4, py - 2, px, py);
-  gCtx.bezierCurveTo(px - PR * 0.4, py - 2, px - PR, hy + PR * 1.5, px - PR, hy);
-  gCtx.closePath();
-  gCtx.fillStyle = '#ffffff';
-  gCtx.fill();
-  gCtx.restore();
-
-  // Inner dot (accent)
-  gCtx.beginPath();
-  gCtx.arc(px, hy, PR * 0.42, 0, Math.PI * 2);
-  gCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#e03a3a';
-  gCtx.fill();
-
-  // Pulse ring
-  const pr = PR + 1.5 + (Math.sin(pulse) * 0.5 + 0.5) * 5.5;
-  const pa = 0.55 - ((pr - PR - 1.5) / 5.5) * 0.55;
-  if (pa > 0) {
-    gCtx.beginPath();
-    gCtx.arc(px, hy, pr, 0, Math.PI * 2);
-    gCtx.strokeStyle = `rgba(124,109,250,${pa.toFixed(2)})`;
-    gCtx.lineWidth   = 1.5;
-    gCtx.stroke();
-  }
-
-  // City name tooltip bubble
-  if (city) {
-    gCtx.font = 'bold 9px -apple-system, "Inter", sans-serif';
-    const tw  = gCtx.measureText(city).width;
-    const bw  = tw + 13;
-    const bh  = 16;
-    const bx  = px - bw / 2;
-    const by  = hy - PR - bh - 6;
-
+    // Shadow
     gCtx.save();
-    gCtx.shadowColor   = 'rgba(0,0,0,0.22)';
+    gCtx.shadowColor   = 'rgba(0,0,0,0.3)';
     gCtx.shadowBlur    = 6;
     gCtx.shadowOffsetY = 2;
-    globeRoundRect(gCtx, bx, by, bw, bh, 4);
-    gCtx.fillStyle = 'rgba(255,255,255,0.96)';
+
+    // White border outer circle
+    gCtx.beginPath();
+    gCtx.arc(px, cy, radius + 1.5, 0, Math.PI * 2);
+    gCtx.fillStyle = '#ffffff';
     gCtx.fill();
     gCtx.restore();
 
-    gCtx.fillStyle    = '#1a1a2e';
-    gCtx.textAlign    = 'center';
-    gCtx.textBaseline = 'middle';
-    gCtx.fillText(city, px, by + bh / 2);
+    // Vibrant blue inner circle
+    gCtx.beginPath();
+    gCtx.arc(px, cy, radius, 0, Math.PI * 2);
+    gCtx.fillStyle = '#007aff'; // Apple System Blue
+    gCtx.fill();
+
+    // Pulsing halo
+    const pulseScale = (pulse % 3) / 3; // 0 to 1 loop
+    const haloRadius = radius + 2 + pulseScale * 14;
+    const haloOpacity = 0.45 * (1 - pulseScale);
+    if (haloOpacity > 0) {
+      gCtx.beginPath();
+      gCtx.arc(px, cy, haloRadius, 0, Math.PI * 2);
+      gCtx.strokeStyle = `rgba(0, 122, 255, ${haloOpacity.toFixed(2)})`;
+      gCtx.lineWidth   = 1.5;
+      gCtx.stroke();
+    }
+
+    // City name tooltip bubble
+    if (city) {
+      globeDrawTooltip(gCtx, px, cy - radius - 5, city);
+    }
+  } else {
+    // Apple HIG POI Teardrop Marker (Creator Location)
+    const PR  = 7;   // pin head radius
+    const TIP = 18;  // distance from head center to tip
+    const bounce = Math.sin(pulse * 1.8) * 1.5;
+    const cy = py - bounce;
+    const hy = cy - TIP;   // head center y
+
+    // Shadow
+    gCtx.save();
+    gCtx.shadowColor   = 'rgba(0,0,0,0.35)';
+    gCtx.shadowBlur    = 8;
+    gCtx.shadowOffsetY = 3;
+
+    // Teardrop body
+    gCtx.beginPath();
+    gCtx.arc(px, hy, PR, Math.PI, 0);
+    gCtx.bezierCurveTo(px + PR, hy + PR * 1.4, px + PR * 0.4, cy - 1, px, cy);
+    gCtx.bezierCurveTo(px - PR * 0.4, cy - 1, px - PR, hy + PR * 1.4, px - PR, hy);
+    gCtx.closePath();
+    
+    // Fill with accent color or Apple Red
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#ff3b30';
+    gCtx.fillStyle = accent;
+    gCtx.fill();
+
+    // Fine white border
+    gCtx.strokeStyle = '#ffffff';
+    gCtx.lineWidth = 1;
+    gCtx.stroke();
+    gCtx.restore();
+
+    // Inner white circle (badge)
+    gCtx.beginPath();
+    gCtx.arc(px, hy, PR * 0.55, 0, Math.PI * 2);
+    gCtx.fillStyle = '#ffffff';
+    gCtx.fill();
+
+    // Tiny glyph center (a small pinhead/star or just a colored dot)
+    gCtx.beginPath();
+    gCtx.arc(px, hy, PR * 0.25, 0, Math.PI * 2);
+    gCtx.fillStyle = accent;
+    gCtx.fill();
+
+    // Soft halo
+    const pulseScale = (pulse % 3) / 3;
+    const haloRadius = PR + 1.5 + pulseScale * 10;
+    const haloOpacity = 0.35 * (1 - pulseScale);
+    if (haloOpacity > 0) {
+      gCtx.beginPath();
+      gCtx.arc(px, hy, haloRadius, 0, Math.PI * 2);
+      gCtx.strokeStyle = `rgba(255, 59, 48, ${haloOpacity.toFixed(2)})`; // Apple System Red
+      gCtx.lineWidth   = 1.2;
+      gCtx.stroke();
+    }
+
+    // City name tooltip bubble
+    if (city) {
+      globeDrawTooltip(gCtx, px, hy - PR - 4, city);
+    }
   }
+}
+
+function globeDrawTooltip(gCtx, px, yBottom, city) {
+  gCtx.font = '500 10px -apple-system, SF Pro Text, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  const tw  = gCtx.measureText(city).width;
+  const bw  = tw + 14;
+  const bh  = 18;
+  const r   = 5; // rounded corner radius
+  const bx  = px - bw / 2;
+  const by  = yBottom - bh;
+
+  // Draw tooltip background
+  gCtx.save();
+  gCtx.shadowColor   = 'rgba(0,0,0,0.18)';
+  gCtx.shadowBlur    = 6;
+  gCtx.shadowOffsetY = 2.5;
+  
+  // Apple styling: translucent white or sleek dark tooltip
+  const theme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+  if (theme === 'light') {
+    gCtx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+  } else {
+    gCtx.fillStyle = 'rgba(28, 28, 30, 0.94)'; // Apple systemDarkGray
+  }
+  
+  globeRoundRect(gCtx, bx, by, bw, bh, r);
+  gCtx.fill();
+
+  // Subtle border
+  gCtx.strokeStyle = theme === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)';
+  gCtx.lineWidth   = 0.5;
+  gCtx.stroke();
+  gCtx.restore();
+
+  // Draw text
+  gCtx.fillStyle    = theme === 'light' ? '#1c1c1e' : '#ffffff';
+  gCtx.textAlign    = 'center';
+  gCtx.textBaseline = 'middle';
+  gCtx.fillText(city, px, by + bh / 2 + 0.5);
 }
 
 function globeRoundRect(gCtx, x, y, w, h, r) {
