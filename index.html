@@ -39,7 +39,7 @@
   <!-- Site Intro Loader -->
   <div class="site-loader" id="loader">
     <div class="loader-container">
-      <canvas class="loader-geo" id="loader-canvas" width="480" height="480" style="display: block;"></canvas>
+      <canvas class="loader-geo" id="loader-canvas" width="720" height="720" style="display: block;"></canvas>
       <div class="loader-bar-container">
         <div class="loader-bar-fill" id="loader-bar-fill"></div>
       </div>
@@ -56,7 +56,7 @@
         const canvas = document.getElementById('loader-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        ctx.scale(2, 2); // support HiDPI with 240x240 coordinates system on 480x480 backing store
+        ctx.scale(2, 2); // support HiDPI with 360x360 coordinates system on 720x720 backing store
 
         // 1. Define Vertices for all Platonic Solids (Normalized to distance approx sqrt(3) ~ 1.732)
         const tetraVertices = [
@@ -236,7 +236,7 @@
         // 4. Define Shapes Sequence
         const shapes = [
           { vertices: [{ x: 0, y: 0, z: 0 }], edges: [], faces: [], scale: 0 },
-          { vertices: [{ x: -1, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }], edges: [[0, 1]], faces: [], scale: 42.5 },
+          { vertices: [{ x: -1, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }], edges: [[0, 1]], faces: [], scale: 64 },
           {
             vertices: [
               { x: 0, y: -1, z: 0 },
@@ -245,13 +245,13 @@
             ],
             edges: [[0, 1], [1, 2], [2, 0]],
             faces: triangleFaces,
-            scale: 49.1
+            scale: 74
           },
-          { vertices: tetraVertices, edges: T_conn, faces: tetraFaces, scale: 30.1 },
-          { vertices: octaVertices, edges: octaEdges, faces: octaFaces, scale: 34.7 },
-          { vertices: cubeVertices, edges: C_conn, faces: cubeFaces, scale: 42.5 },
-          { vertices: icosaVertices, edges: icosaEdges, faces: icosaFaces, scale: 46.7 },
-          { vertices: dodecaVertices, edges: dodecaEdges, faces: dodecaFaces, scale: 68.8 }
+          { vertices: tetraVertices, edges: T_conn, faces: tetraFaces, scale: 45 },
+          { vertices: octaVertices, edges: octaEdges, faces: octaFaces, scale: 52 },
+          { vertices: cubeVertices, edges: C_conn, faces: cubeFaces, scale: 64 },
+          { vertices: icosaVertices, edges: icosaEdges, faces: icosaFaces, scale: 70 },
+          { vertices: dodecaVertices, edges: dodecaEdges, faces: dodecaFaces, scale: 103 }
         ];
 
         function easeIn(t) { return t * t; }
@@ -364,8 +364,8 @@
           const ry2 = ry * cosX - rz * sinX;
           const rz2 = ry * sinX + rz * cosX;
 
-          const x = 120 + rx * scale;
-          const y = 120 + ry2 * scale;
+          const x = 180 + rx * scale;
+          const y = 180 + ry2 * scale;
 
           const maxZ = 1.732;
           const depth = (rz2 + maxZ) / (2 * maxZ);
@@ -486,15 +486,15 @@
             if (is3D) {
               pt = project3D({ x: x3D, y: y3D, z: z3D }, angle, tiltX, scale);
             } else {
-              pt = { x: 120 + x3D * scale, y: 120 + y3D * scale, depth: 0.5 };
+              pt = { x: 180 + x3D * scale, y: 180 + y3D * scale, depth: 0.5 };
             }
 
             // Circle morphing
             if (t >= 5300) {
               const e5 = easeInOut(circleMorph);
               const angleTarget = angle + i * Math.PI / 10;
-              const tx = 120 + 110 * Math.cos(angleTarget);
-              const ty = 120 + 110 * Math.sin(angleTarget);
+              const tx = 180 + 165 * Math.cos(angleTarget);
+              const ty = 180 + 165 * Math.sin(angleTarget);
               pt.x = pt.x * (1 - e5) + tx * e5;
               pt.y = pt.y * (1 - e5) + ty * e5;
               pt.depth = pt.depth * (1 - e5) + 0.5 * e5;
@@ -503,7 +503,7 @@
             // Sphere morphing
             if (t >= 6500) {
               const eSphere = easeInOut(sphereMorph);
-              const ptSphere = project3D(sphereVertices[i], angle, tiltX, 110);
+              const ptSphere = project3D(sphereVertices[i], angle, tiltX, 165);
               pt.x = pt.x * (1 - eSphere) + ptSphere.x * eSphere;
               pt.y = pt.y * (1 - eSphere) + ptSphere.y * eSphere;
               pt.depth = pt.depth * (1 - eSphere) + ptSphere.depth * eSphere;
@@ -518,43 +518,43 @@
             curPoints.push(pt);
           }
 
-          // Apply compression scaling to points relative to center (120, 120)
+          // Apply compression scaling to points relative to center (180, 180)
           if (isCompressing) {
             const elapsed = now - compressStartTime;
             const cp = Math.min(elapsed / compressDuration, 1);
             const ec = easeIn(cp);
             
             curPoints.forEach(pt => {
-              pt.x = 120 + (pt.x - 120) * (1 - ec);
-              pt.y = 120 + (pt.y - 120) * (1 - ec);
+              pt.x = 180 + (pt.x - 180) * (1 - ec);
+              pt.y = 180 + (pt.y - 180) * (1 - ec);
               pt.opacity = pt.opacity * (1 - ec);
             });
           }
 
-          // Clear Canvas
-          ctx.clearRect(0, 0, 240, 240);
+          // Clear Canvas (360x360 coordinates)
+          ctx.clearRect(0, 0, 360, 360);
 
           // Draw volumetric shading inside circle/sphere boundary when t >= 5300
           if (t >= 5300) {
             const circleOpacity = Math.min((t - 5300) / 1200, 1) * 0.16;
-            let radius = 110;
+            let radius = 165;
             let opacity = circleOpacity;
             
             if (isCompressing) {
               const elapsed = now - compressStartTime;
               const cp = Math.min(elapsed / compressDuration, 1);
               const ec = easeIn(cp);
-              radius = 110 * (1 - ec);
+              radius = 165 * (1 - ec);
               opacity = circleOpacity * (1 - ec);
             }
             
             if (radius > 0.1) {
-              const radGrad = ctx.createRadialGradient(120 - 20 * (radius / 110), 120 - 20 * (radius / 110), 0, 120, 120, radius);
+              const radGrad = ctx.createRadialGradient(180 - 30 * (radius / 165), 180 - 30 * (radius / 165), 0, 180, 180, radius);
               radGrad.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
               radGrad.addColorStop(1, `rgba(0, 0, 0, ${opacity * 1.6})`);
               ctx.fillStyle = radGrad;
               ctx.beginPath();
-              ctx.arc(120, 120, radius, 0, Math.PI * 2);
+              ctx.arc(180, 180, radius, 0, Math.PI * 2);
               ctx.fill();
             }
           }

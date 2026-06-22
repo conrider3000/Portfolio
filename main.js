@@ -237,10 +237,15 @@ function startLogoAlternator() {
   const logoText = document.getElementById('logo-text');
   if (!logoText) return;
   const words = ["Conrado", "Portfólio"];
-  const colors = ["#388E3C", "#DA291C", "#C8A415", "#1565C0"];
+  const bgColors = ["#e03a3a", "#2e7d32", "#4169e1", "#ffab00"]; // Vermelho Oficial, Verde Floresta, Azul Royal, Amarelo Alaranjado
   let wordIdx = 0;
   let colorIdx = 0;
-  logoText.style.color = colors[0];
+  
+  // Set initial styles
+  logoText.style.color = "#ffffff";
+  logoText.style.backgroundColor = bgColors[0];
+  logoText.style.borderColor = bgColors[0];
+
   setInterval(() => {
     gsap.to(logoText, {
       opacity: 0,
@@ -248,9 +253,11 @@ function startLogoAlternator() {
       duration: 0.4,
       onComplete: () => {
         wordIdx = (wordIdx + 1) % words.length;
-        colorIdx = (colorIdx + 1) % colors.length;
+        colorIdx = (colorIdx + 1) % bgColors.length;
         logoText.innerText = words[wordIdx];
-        logoText.style.color = colors[colorIdx];
+        logoText.style.color = "#ffffff";
+        logoText.style.backgroundColor = bgColors[colorIdx];
+        logoText.style.borderColor = bgColors[colorIdx];
         gsap.fromTo(logoText, { y: 5, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4 });
       }
     });
@@ -636,7 +643,7 @@ function deactivateGlobe(onCompleteCallback = null) {
   const centerText  = document.getElementById('orbit-center-text');
 
   gsap.to(globeCanvas, {
-    opacity: 0, scale: 0.25, xPercent: -50, yPercent: -50, z: 120, y: -25, duration: 0.28, ease: 'power2.in',
+    opacity: 0, scale: 0, xPercent: -50, yPercent: -50, z: 120, y: -25, duration: 0.35, ease: 'power2.in',
     onComplete: () => {
       globeCanvas.style.display = 'none';
       globeCanvas.classList.remove('globe-active');
@@ -645,19 +652,21 @@ function deactivateGlobe(onCompleteCallback = null) {
       if (onCompleteCallback) {
         onCompleteCallback();
       } else {
-        if (centerText) {
-          if (activeHoveredCard) {
-            const cardIdx = parseInt(activeHoveredCard.getAttribute('data-index'));
-            const item = combinedMediaItems[cardIdx];
-            if (item) {
-              setCenterText(getLocalizedValue(item.title));
+        if (activeView === 'orbit') {
+          if (centerText) {
+            if (activeHoveredCard) {
+              const cardIdx = parseInt(activeHoveredCard.getAttribute('data-index'));
+              const item = combinedMediaItems[cardIdx];
+              if (item) {
+                setCenterText(getLocalizedValue(item.title));
+              } else {
+                setCenterText("CONRADO.");
+              }
             } else {
               setCenterText("CONRADO.");
             }
-          } else {
-            setCenterText("CONRADO.");
+            gsap.to(centerText, { scale: 1, opacity: 0.95, duration: 0.4, delay: 0.15, ease: 'power2.out' });
           }
-          gsap.to(centerText, { scale: 1, opacity: 0.95, duration: 0.4, delay: 0.15, ease: 'power2.out' });
         }
       }
     }
@@ -1540,6 +1549,10 @@ function bindSceneDrag() {
     }
 
     if (e.button !== 0) return; // Only allow left-clicks for other dragging
+
+    if (e.target.id === 'earth-globe') {
+      return;
+    }
 
     if (activeView === 'orbit' && (isSpinningEasterEgg || isSpinningMomentum)) {
       // Disable left-drag interaction during spin animation
@@ -2496,7 +2509,7 @@ function updateThemeToggleIcon() {
   
   if (currentTheme === 'dark') {
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="#ffffff" stroke="none">
+      <svg viewBox="0 0 24 24" width="27" height="27" fill="#ffffff" stroke="none">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
     `;
