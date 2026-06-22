@@ -550,6 +550,7 @@ body * {
   top: 0;
   left: 0;
   transform-style: preserve-3d;
+  pointer-events: none;
 }
 
 /* Morph-card background cover adjustment (removed heavy blur filter) */
@@ -832,6 +833,7 @@ body[data-theme="dark"] .mosaic-card:hover img, body[data-theme="dark"] .mosaic-
   user-select: none;
   transform-style: preserve-3d;
   will-change: transform, opacity;
+  pointer-events: auto;
 }
 
 .morph-card img {
