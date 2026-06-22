@@ -98,17 +98,19 @@ const numberOfParticles = 35;
 // ==========================================================================
 // EARTH GLOBE — state
 // ==========================================================================
-let globeActive    = false;
-let globeAnimId    = null;
-let globeLon0      = -46.0;   // current center longitude (°)
-let globeLat0      =  15.0;   // current center latitude  (°)
-let globeTargetLon =  -46.0;
-let globeTargetLat =   15.0;
-let globeUserLon   = null;
-let globeUserLat   = null;
-let globeCityName  = null;
-let globeFoundUser = false;
-let globePinPulse  = 0;
+let globeActive      = false;
+let globeAnimId      = null;
+let globeLon0        = -46.0;   // current center longitude (°)
+let globeLat0        =  15.0;   // current center latitude  (°)
+let globeTargetLon   =  -46.0;
+let globeTargetLat   =   15.0;
+let globeUserLon     = null;
+let globeUserLat     = null;
+let globeCityName    = null;
+let globeFoundUser   = false;
+let globePinPulse    = 0;
+let isCenteringGlobe = false;
+let isDraggingGlobe  = false;
 
 // Satellite Globe Textures & Offscreen Canvas State
 let earthDayImg = new Image();
@@ -526,10 +528,14 @@ function activateGlobe(focusOn = 'curitiba') {
   // Only in orbit view
   if (activeView !== 'orbit') return;
 
+  const globeCanvas = document.getElementById('earth-globe');
+  if (!globeCanvas) return;
+
   const firstActivation = !globeActive;
-  globeActive    = true;
-  globeFoundUser = true; // immediately LERP to focus coordinates
-  globePinPulse  = 0;
+  globeActive      = true;
+  isCenteringGlobe = true;
+  globeFoundUser   = true; // immediately LERP to focus coordinates
+  globePinPulse    = 0;
 
   if (focusOn === 'curitiba') {
     // Focus Curitiba (permanent pin)
@@ -562,9 +568,7 @@ function activateGlobe(focusOn = 'curitiba') {
   }
 
   if (firstActivation) {
-    const globeCanvas = document.getElementById('earth-globe');
     const centerText  = document.getElementById('orbit-center-text');
-    if (!globeCanvas) return;
 
     // Set canvas resolution (HiDPI)
     const dpr  = window.devicePixelRatio || 1;
@@ -590,7 +594,6 @@ function activateGlobe(focusOn = 'curitiba') {
   }
 
   // Implement interactive click-and-drag rotation
-  let isDraggingGlobe = false;
   let startPointerX = 0;
   let startPointerY = 0;
   let startLon0 = 0;
@@ -600,6 +603,7 @@ function activateGlobe(focusOn = 'curitiba') {
   globeCanvas.onpointerdown = (e) => {
     e.stopPropagation();
     isDraggingGlobe = true;
+    isCenteringGlobe = false; // Stop LERP immediately when manual drag begins!
     globeCanvas.setPointerCapture(e.pointerId);
     startPointerX = e.clientX;
     startPointerY = e.clientY;
@@ -716,17 +720,21 @@ function renderGlobe(gCtx, SIZE) {
   const R  = SIZE / 2 - 3;
 
   // — Rotation logic —
-  if (!globeFoundUser) {
-    globeLon0 += 0.22; // auto-spin
-  } else {
+  if (isCenteringGlobe) {
     let dLon = globeTargetLon - globeLon0;
     while (dLon >  180) dLon -= 360;
     while (dLon < -180) dLon += 360;
     const dLat = globeTargetLat - globeLat0;
-    globeLon0 += dLon * 0.028;
-    globeLat0 += dLat * 0.028;
-    // Gentle drift once settled
-    if (Math.abs(dLon) < 0.4 && Math.abs(dLat) < 0.4) globeLon0 += 0.04;
+    globeLon0 += dLon * 0.045; // Snappier LERP focus
+    globeLat0 += dLat * 0.045;
+    
+    // When close enough, release centering lock to allow free spin
+    if (Math.abs(dLon) < 0.25 && Math.abs(dLat) < 0.25) {
+      isCenteringGlobe = false;
+    }
+  } else if (!isDraggingGlobe) {
+    // Smooth auto-spin from current position when not centering and not dragging
+    globeLon0 += 0.12; 
   }
 
   const lon0 = globeLon0 * Math.PI / 180;
@@ -3317,6 +3325,7 @@ function initWidgetGeo() {
         if (globeActive) {
           globeTargetLat = lat;
           globeTargetLon = lon;
+          isCenteringGlobe = true;
         }
 
         // Reverse geocoding for globe pin
