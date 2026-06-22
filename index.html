@@ -770,12 +770,11 @@
         <!-- Central Planet Text -->
         <div class="orbit-center" id="orbit-center-text">CONRADO.</div>
 
-        <!-- Earth Globe Canvas (activated by clicking status widget) -->
-        <canvas id="earth-globe" aria-label="Globo terrestre interativo"></canvas>
-
         <!-- Staggered Card deck container -->
         <div class="orbit-ring" id="projects-container">
-          <!-- Rendered dynamically by main.js -->
+          <!-- Earth Globe Canvas: inside orbit-ring so it shares the same stacking context as cards -->
+          <canvas id="earth-globe" aria-label="Globo terrestre interativo"></canvas>
+          <!-- Cards rendered dynamically by main.js -->
         </div>
       </div>
     </div>
