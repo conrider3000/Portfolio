@@ -1076,7 +1076,11 @@ function setCenterText(newText) {
 // ==========================================================================
 function buildMorphingCards() {
   const container = document.getElementById('projects-container');
+  // Preserve the globe canvas before wiping the container
+  const globeCanvas = document.getElementById('earth-globe');
   container.innerHTML = '';
+  // Reinsert globe canvas as first child so it stays inside orbit-ring
+  if (globeCanvas) container.appendChild(globeCanvas);
   morphCards = [];
   combinedMediaItems = [...projectsDb]; // Re-initialize in case data was updated in the admin panel
   hoverScales = Array(combinedMediaItems.length).fill(1);
