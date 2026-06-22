@@ -236,7 +236,7 @@
         // 4. Define Shapes Sequence
         const shapes = [
           { vertices: [{ x: 0, y: 0, z: 0 }], edges: [], faces: [], scale: 0 },
-          { vertices: [{ x: -1, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }], edges: [[0, 1]], faces: [], scale: 90 },
+          { vertices: [{ x: -1, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }], edges: [[0, 1]], faces: [], scale: 42.5 },
           {
             vertices: [
               { x: 0, y: -1, z: 0 },
@@ -245,17 +245,31 @@
             ],
             edges: [[0, 1], [1, 2], [2, 0]],
             faces: triangleFaces,
-            scale: 95
+            scale: 49.1
           },
-          { vertices: tetraVertices, edges: T_conn, faces: tetraFaces, scale: 68 },
-          { vertices: octaVertices, edges: octaEdges, faces: octaFaces, scale: 68 },
-          { vertices: cubeVertices, edges: C_conn, faces: cubeFaces, scale: 55 },
-          { vertices: icosaVertices, edges: icosaEdges, faces: icosaFaces, scale: 45 },
-          { vertices: dodecaVertices, edges: dodecaEdges, faces: dodecaFaces, scale: 36 }
+          { vertices: tetraVertices, edges: T_conn, faces: tetraFaces, scale: 30.1 },
+          { vertices: octaVertices, edges: octaEdges, faces: octaFaces, scale: 34.7 },
+          { vertices: cubeVertices, edges: C_conn, faces: cubeFaces, scale: 42.5 },
+          { vertices: icosaVertices, edges: icosaEdges, faces: icosaFaces, scale: 46.7 },
+          { vertices: dodecaVertices, edges: dodecaEdges, faces: dodecaFaces, scale: 68.8 }
         ];
 
+        function easeIn(t) { return t * t; }
         function easeOut(t) { return 1 - Math.pow(1 - t, 2); }
         function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+        // 20 vertices distributed on a unit sphere (Fibonacci spherical distribution)
+        const sphereVertices = [];
+        const phi_golden = (1 + Math.sqrt(5)) / 2;
+        for (let i = 0; i < 20; i++) {
+          const theta = 2 * Math.PI * i / phi_golden;
+          const phi_angle = Math.acos(1 - 2 * (i + 0.5) / 20);
+          sphereVertices.push({
+            x: Math.sin(phi_angle) * Math.cos(theta),
+            y: Math.sin(phi_angle) * Math.sin(theta),
+            z: Math.cos(phi_angle)
+          });
+        }
 
         function getClosestVertex(v, shape) {
           let minDist = Infinity;
@@ -366,10 +380,31 @@
         let siteReady = false;
         let circlePhaseStarted = false;
         let minCircleTimePassed = false;
+        let isCompressing = false;
+        let compressStartTime = 0;
+        const compressDuration = 550; // 550ms compression duration
 
         function killAnim() { if (animLoop) { cancelAnimationFrame(animLoop); animLoop = null; } }
 
         function tick(now) {
+          if (isCompressing) {
+            const elapsed = now - compressStartTime;
+            if (elapsed >= compressDuration) {
+              killAnim();
+              loader.style.transition = 'opacity 0.28s ease';
+              loader.style.opacity = '0';
+              setTimeout(() => {
+                loader.style.display = 'none';
+                if (window.animateOrbitEntry) {
+                  window.animateOrbitEntry();
+                } else {
+                  window.loaderFinished = true;
+                }
+              }, 280);
+              return;
+            }
+          }
+
           const t = now - startTime;
           const dt = now - lastTime;
           lastTime = now;
@@ -425,10 +460,16 @@
 
           let tiltX = 0.42;
           let circleMorph = 0;
+          let sphereMorph = 0;
           if (t >= 5300) {
             circleMorph = Math.min((t - 5300) / 1200, 1);
             const e5 = easeInOut(circleMorph);
             tiltX = 0.42 * (1 - e5);
+          }
+          if (t >= 6500) {
+            sphereMorph = Math.min((t - 6500) / 1200, 1);
+            const eSphere = easeInOut(sphereMorph);
+            tiltX = 0.42 * eSphere;
           }
 
           const map = transitionMaps[mapIdx];
@@ -459,6 +500,15 @@
               pt.depth = pt.depth * (1 - e5) + 0.5 * e5;
             }
 
+            // Sphere morphing
+            if (t >= 6500) {
+              const eSphere = easeInOut(sphereMorph);
+              const ptSphere = project3D(sphereVertices[i], angle, tiltX, 110);
+              pt.x = pt.x * (1 - eSphere) + ptSphere.x * eSphere;
+              pt.y = pt.y * (1 - eSphere) + ptSphere.y * eSphere;
+              pt.depth = pt.depth * (1 - eSphere) + ptSphere.depth * eSphere;
+            }
+
             let opacity = m.op_A * (1 - ep) + m.op_B * ep;
             if (t >= 5300) {
               const e5 = easeInOut(circleMorph);
@@ -468,11 +518,48 @@
             curPoints.push(pt);
           }
 
+          // Apply compression scaling to points relative to center (120, 120)
+          if (isCompressing) {
+            const elapsed = now - compressStartTime;
+            const cp = Math.min(elapsed / compressDuration, 1);
+            const ec = easeIn(cp);
+            
+            curPoints.forEach(pt => {
+              pt.x = 120 + (pt.x - 120) * (1 - ec);
+              pt.y = 120 + (pt.y - 120) * (1 - ec);
+              pt.opacity = pt.opacity * (1 - ec);
+            });
+          }
+
           // Clear Canvas
           ctx.clearRect(0, 0, 240, 240);
 
+          // Draw volumetric shading inside circle/sphere boundary when t >= 5300
+          if (t >= 5300) {
+            const circleOpacity = Math.min((t - 5300) / 1200, 1) * 0.16;
+            let radius = 110;
+            let opacity = circleOpacity;
+            
+            if (isCompressing) {
+              const elapsed = now - compressStartTime;
+              const cp = Math.min(elapsed / compressDuration, 1);
+              const ec = easeIn(cp);
+              radius = 110 * (1 - ec);
+              opacity = circleOpacity * (1 - ec);
+            }
+            
+            if (radius > 0.1) {
+              const radGrad = ctx.createRadialGradient(120 - 20 * (radius / 110), 120 - 20 * (radius / 110), 0, 120, 120, radius);
+              radGrad.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
+              radGrad.addColorStop(1, `rgba(0, 0, 0, ${opacity * 1.6})`);
+              ctx.fillStyle = radGrad;
+              ctx.beginPath();
+              ctx.arc(120, 120, radius, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
           // 1. Gather & Sort Translucent Faces (Painter's Algorithm)
-          // Opacity is very subtle (e.g. 0.04) as requested.
           const facesToDraw = [];
           
           // Draw faces of sA
@@ -507,7 +594,14 @@
 
           // Draw faces
           facesToDraw.forEach(face => {
-            ctx.fillStyle = `rgba(255, 255, 255, ${face.opacity})`;
+            let opacityVal = face.opacity;
+            if (isCompressing) {
+              const elapsed = now - compressStartTime;
+              const cp = Math.min(elapsed / compressDuration, 1);
+              const ec = easeIn(cp);
+              opacityVal = opacityVal * (1 - ec);
+            }
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacityVal})`;
             ctx.beginPath();
             ctx.moveTo(curPoints[face.indices[0]].x, curPoints[face.indices[0]].y);
             for (let idx = 1; idx < face.indices.length; idx++) {
@@ -519,28 +613,34 @@
 
           // 2. Draw 30 Edges (Lines)
           for (let k = 0; k < 30; k++) {
-            const m = map.edgeMap[k];
-            let opacity = m.op_A * (1 - ep) + m.op_B * ep;
+            const mapObj = map.edgeMap[k];
+            let opacity = mapObj.op_A * (1 - ep) + mapObj.op_B * ep;
             if (opacity <= 0.001) continue;
 
-            const idxA_0 = m.connA[0];
-            const idxA_1 = m.connA[1];
-            const idxB_0 = m.connB[0];
-            const idxB_1 = m.connB[1];
+            const idxA_0 = mapObj.connA[0];
+            const idxA_1 = mapObj.connA[1];
+            const idxB_0 = mapObj.connB[0];
+            const idxB_1 = mapObj.connB[1];
 
-            const x1 = curPoints[idxA_0].x * (1 - ep) + curPoints[idxB_0].x * ep;
-            const y1 = curPoints[idxA_0].y * (1 - ep) + curPoints[idxB_0].y * ep;
-            const x2 = curPoints[idxA_1].x * (1 - ep) + curPoints[idxB_1].x * ep;
-            const y2 = curPoints[idxA_1].y * (1 - ep) + curPoints[idxB_1].y * ep;
-
-            const depth = (curPoints[idxA_0].depth * (1 - ep) + curPoints[idxB_0].depth * ep +
-                           curPoints[idxA_1].depth * (1 - ep) + curPoints[idxB_1].depth * ep) / 2;
+            const x1 = curPoints[idxA_0].x;
+            const y1 = curPoints[idxA_0].y;
+            const x2 = curPoints[idxA_1].x;
+            const y2 = curPoints[idxA_1].y;
 
             if (t >= 5300) {
               opacity = opacity * (1 - circleMorph);
             }
 
-            const finalOpacity = opacity * (is3D ? (0.15 + depth * 0.55) : 0.5);
+            const depth = (curPoints[idxA_0].depth + curPoints[idxB_0].depth +
+                           curPoints[idxA_1].depth + curPoints[idxB_1].depth) / 4;
+
+            let finalOpacity = opacity * (is3D ? (0.15 + depth * 0.55) : 0.5);
+            if (isCompressing) {
+              const elapsed = now - compressStartTime;
+              const cp = Math.min(elapsed / compressDuration, 1);
+              const ec = easeIn(cp);
+              finalOpacity = finalOpacity * (1 - ec);
+            }
 
             ctx.strokeStyle = `rgba(255, 255, 255, ${finalOpacity})`;
             ctx.lineWidth = 1.5;
@@ -554,7 +654,14 @@
           // 3. Draw 20 Ring Edge Lines (for circle phase)
           if (t >= 5300) {
             const e5 = easeInOut(circleMorph);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${e5 * 0.9})`;
+            let edgeOpacity = e5 * 0.9;
+            if (isCompressing) {
+              const elapsed = now - compressStartTime;
+              const cp = Math.min(elapsed / compressDuration, 1);
+              const ec = easeIn(cp);
+              edgeOpacity = edgeOpacity * (1 - ec);
+            }
+            ctx.strokeStyle = `rgba(255, 255, 255, ${edgeOpacity})`;
             ctx.lineWidth = 1.5;
             ctx.lineCap = 'round';
             for (let i = 0; i < 20; i++) {
@@ -588,7 +695,7 @@
           if (t >= 5300 && !circlePhaseStarted) {
             circlePhaseStarted = true;
           }
-          if (t >= 6100 && !minCircleTimePassed) {
+          if (t >= 7700 && !minCircleTimePassed) {
             minCircleTimePassed = true;
             tryFadeOut();
           }
@@ -599,7 +706,7 @@
         // Initialize progress bar
         const barFill = document.getElementById('loader-bar-fill');
         if (barFill) {
-          barFill.style.transition = 'width 6.2s linear';
+          barFill.style.transition = 'width 7.7s linear';
           barFill.style.width = '0%';
           barFill.offsetHeight; // Force reflow
           barFill.style.width = '100%';
@@ -608,28 +715,20 @@
         // Start tick loop
         animLoop = requestAnimationFrame(tick);
 
-        if (document.readyState === 'complete') {
+        if (document.readyState !== 'loading') {
           siteReady = true;
+          tryFadeOut();
         } else {
-          window.addEventListener('load', () => {
+          document.addEventListener('DOMContentLoaded', () => {
             siteReady = true;
             tryFadeOut();
           }, { once: true });
         }
 
         function tryFadeOut() {
-          if (siteReady && minCircleTimePassed) {
-            loader.style.transition = 'opacity 0.6s ease';
-            loader.style.opacity = '0';
-            setTimeout(() => {
-              loader.style.display = 'none';
-              killAnim();
-              if (window.animateOrbitEntry) {
-                window.animateOrbitEntry();
-              } else {
-                window.loaderFinished = true;
-              }
-            }, 600);
+          if (siteReady && minCircleTimePassed && !isCompressing) {
+            isCompressing = true;
+            compressStartTime = performance.now();
           }
         }
       }

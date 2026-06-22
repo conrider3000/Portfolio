@@ -9,8 +9,8 @@
   --bg-dark-color: #000000;         /* Apple True Black */
   --text-color: #1d1d1f;            /* Apple primary dark text */
   --text-muted: #86868b;            /* Apple secondary gray text */
-  --accent-color: #0071e3;          /* Apple System Blue */
-  --accent-dark: #005db3;           /* Apple Dark Blue */
+  --accent-color: #e03a3a;          /* Rich Red-Coral */
+  --accent-dark: #c52b2b;           /* Darker Rich Red-Coral */
   --border-color: rgba(0, 0, 0, 0.14); /* Thin border */
   --glass-bg: rgba(255, 255, 255, 0.7); /* Apple SystemMaterial */
   --glass-border: rgba(0, 0, 0, 0.14);
@@ -39,8 +39,8 @@
   --glass-bg: rgba(28, 28, 30, 0.75); /* macOS systemMaterialDark */
   --glass-border: rgba(255, 255, 255, 0.12);
   --card-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  --accent-color: #2997ff;          /* Apple System Blue Dark Mode */
-  --accent-dark: #0071e3;
+  --accent-color: #e03a3a;          /* Rich Red-Coral Dark Mode */
+  --accent-dark: #f05252;
 }
 
 /* ==========================================================================
@@ -476,10 +476,12 @@ body * {
   font-weight: 700;
   color: var(--text-color);
   text-align: center;
-  pointer-events: none;
-  z-index: 10;
+  pointer-events: auto;
+  cursor: pointer;
   letter-spacing: -0.02em;
   opacity: 0.95;
+  transform: translateY(-25px) translateZ(120px);
+  transform-style: preserve-3d;
   transition: transform 0.1s ease;
 }
 
@@ -488,18 +490,21 @@ body * {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0);
+  transform: translate(-50%, -50%) translateY(-25px) translateZ(120px) scale(0);
   width: 300px;
   height: 300px;
   display: none;
   opacity: 0;
   pointer-events: none;
-  cursor: pointer;
-  z-index: 12;
+  cursor: grab;
   filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.55));
   outline: none;
   -webkit-tap-highlight-color: transparent;
   will-change: transform, opacity;
+}
+
+#earth-globe:active {
+  cursor: grabbing;
 }
 
 #earth-globe.globe-active {
@@ -1414,7 +1419,7 @@ body[data-theme='light'] .admin-media-row {
   justify-content: center;
   width: 32px;
   height: 32px;
-  color: #ff3b30; /* Vermelho bússola */
+  color: var(--accent-color); /* Theme Accent Color */
   cursor: pointer;
   transition: transform 0.2s ease;
 }

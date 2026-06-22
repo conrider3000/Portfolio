@@ -269,6 +269,16 @@ window.addEventListener('DOMContentLoaded', () => {
   buildMorphingCards();
   buildPsicromiaGallery();
 
+  // Bind click to central text to open globe focused on Curitiba
+  const centerTextEl = document.getElementById('orbit-center-text');
+  if (centerTextEl) {
+    centerTextEl.addEventListener('click', (e) => {
+      if (isEntryAnimating) return;
+      e.stopPropagation();
+      activateGlobe('curitiba');
+    });
+  }
+
   // If the loader finished its fadeout before main.js initialized, play entry anims now
   if (window.loaderFinished) {
     animateOrbitEntry();
@@ -505,18 +515,39 @@ window.addEventListener('DOMContentLoaded', () => {
 // ==========================================================================
 // EARTH GLOBE — functions
 // ==========================================================================
-function activateGlobe() {
+function activateGlobe(focusOn = 'curitiba') {
   // Toggle: clicking again closes
   if (globeActive) { deactivateGlobe(); return; }
   // Only in orbit view
   if (activeView !== 'orbit') return;
 
   globeActive    = true;
-  globeFoundUser = false;
-  globeUserLon   = null;
-  globeUserLat   = null;
-  globeCityName  = null;
+  globeFoundUser = true; // immediately LERP to focus coordinates
   globePinPulse  = 0;
+
+  if (focusOn === 'curitiba') {
+    // Focus Curitiba (permanent pin)
+    globeTargetLat = -25.4284;
+    globeTargetLon = -49.2733;
+    // Start slightly rotated to create a smooth centering spin animation
+    globeLon0 = -49.2733 - 55;
+    globeLat0 = -25.4284 - 15;
+  } else {
+    // Focus User Location (requires geolocation query)
+    if (globeUserLat !== null && globeUserLon !== null) {
+      globeTargetLat = globeUserLat;
+      globeTargetLon = globeUserLon;
+      globeLon0 = globeUserLon - 55;
+      globeLat0 = globeUserLat - 15;
+    } else {
+      // Default to Curitiba rotation initially while querying
+      globeTargetLat = -25.4284;
+      globeTargetLon = -49.2733;
+      globeLon0 = -49.2733 - 55;
+      globeLat0 = -25.4284 - 15;
+      getAndUpdatePosition(false);
+    }
+  }
 
   const globeCanvas = document.getElementById('earth-globe');
   const centerText  = document.getElementById('orbit-center-text');
@@ -539,64 +570,98 @@ function activateGlobe() {
   globeCanvas.style.display = 'block';
   globeCanvas.classList.add('globe-active');
   gsap.fromTo(globeCanvas,
-    { opacity: 0, scale: 0.25 },
-    { opacity: 1, scale: 1, duration: 0.55, delay: 0.2, ease: 'back.out(1.7)',
+    { opacity: 0, scale: 0.25, xPercent: -50, yPercent: -50, z: 120, y: -25 },
+    { opacity: 1, scale: 1, xPercent: -50, yPercent: -50, z: 120, y: -25, duration: 0.55, delay: 0.2, ease: 'back.out(1.7)',
       onStart: () => startGlobeLoop(gCtx, SIZE) }
   );
 
-  // Click globe to close
-  globeCanvas.onclick = () => deactivateGlobe();
+  // Implement interactive click-and-drag rotation
+  let isDraggingGlobe = false;
+  let startPointerX = 0;
+  let startPointerY = 0;
+  let startLon0 = 0;
+  let startLat0 = 0;
+  let dragDistance = 0;
 
-  // Geolocation request
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      pos => onGlobeGeoSuccess(pos),
-      ()  => {}, // silent fail — globe still spins
-      { timeout: 9000 }
-    );
-  }
+  globeCanvas.onpointerdown = (e) => {
+    e.stopPropagation();
+    isDraggingGlobe = true;
+    globeCanvas.setPointerCapture(e.pointerId);
+    startPointerX = e.clientX;
+    startPointerY = e.clientY;
+    startLon0 = globeLon0;
+    startLat0 = globeLat0;
+    dragDistance = 0;
+  };
+
+  globeCanvas.onpointermove = (e) => {
+    if (!isDraggingGlobe) return;
+    e.stopPropagation();
+    const dx = e.clientX - startPointerX;
+    const dy = e.clientY - startPointerY;
+    dragDistance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Rotate the globe (adjust signs for natural dragging with South pole on top)
+    globeLon0 = startLon0 - dx * 0.45;
+    globeLat0 = startLat0 + dy * 0.45;
+    
+    if (globeLat0 > 85) globeLat0 = 85;
+    if (globeLat0 < -85) globeLat0 = -85;
+    
+    globeTargetLon = globeLon0;
+    globeTargetLat = globeLat0;
+  };
+
+  globeCanvas.onpointerup = (e) => {
+    if (!isDraggingGlobe) return;
+    e.stopPropagation();
+    isDraggingGlobe = false;
+    globeCanvas.releasePointerCapture(e.pointerId);
+    
+    // If pointer travels very little, treat as click and close the globe
+    if (dragDistance < 6) {
+      deactivateGlobe();
+    }
+  };
 }
 
-function deactivateGlobe() {
-  if (!globeActive) return;
+function deactivateGlobe(onCompleteCallback = null) {
+  if (!globeActive) {
+    if (onCompleteCallback) onCompleteCallback();
+    return;
+  }
   globeActive = false;
 
   const globeCanvas = document.getElementById('earth-globe');
   const centerText  = document.getElementById('orbit-center-text');
 
   gsap.to(globeCanvas, {
-    opacity: 0, scale: 0.25, duration: 0.28, ease: 'power2.in',
+    opacity: 0, scale: 0.25, xPercent: -50, yPercent: -50, z: 120, y: -25, duration: 0.28, ease: 'power2.in',
     onComplete: () => {
       globeCanvas.style.display = 'none';
       globeCanvas.classList.remove('globe-active');
       if (globeAnimId) { cancelAnimationFrame(globeAnimId); globeAnimId = null; }
+      
+      if (onCompleteCallback) {
+        onCompleteCallback();
+      } else {
+        if (centerText) {
+          if (activeHoveredCard) {
+            const cardIdx = parseInt(activeHoveredCard.getAttribute('data-index'));
+            const item = combinedMediaItems[cardIdx];
+            if (item) {
+              setCenterText(getLocalizedValue(item.title));
+            } else {
+              setCenterText("CONRADO.");
+            }
+          } else {
+            setCenterText("CONRADO.");
+          }
+          gsap.to(centerText, { scale: 1, opacity: 0.95, duration: 0.4, delay: 0.15, ease: 'power2.out' });
+        }
+      }
     }
   });
-
-  if (centerText) {
-    if (activeHoveredCard) {
-      const cardIdx = parseInt(activeHoveredCard.getAttribute('data-index'));
-      const item = combinedMediaItems[cardIdx];
-      if (item) {
-        centerText.innerText = getLocalizedValue(item.title);
-      } else {
-        centerText.innerText = "CONRADO.";
-      }
-    } else {
-      centerText.innerText = "CONRADO.";
-    }
-  }
-
-  if (activeView === 'orbit') {
-    gsap.fromTo(centerText,
-      { scale: 0.35, opacity: 0 },
-      { scale: 1, opacity: 0.95, duration: 0.45, delay: 0.18, ease: 'back.out(1.5)' }
-    );
-  } else {
-    if (centerText) {
-      gsap.set(centerText, { scale: 0.5, opacity: 0 });
-    }
-  }
 }
 
 function onGlobeGeoSuccess(pos) {
@@ -689,8 +754,8 @@ function renderGlobe(gCtx, SIZE) {
         if (dist2 <= R2) {
           const dz = Math.sqrt(R2 - dist2);
           
-          const X = dx / R;
-          const Y = -dy / R; // Invert canvas Y coordinate
+          const X = -dx / R;
+          const Y = dy / R; // Invert canvas Y coordinate and rotate 180 deg to show South on top
           const Z = dz / R;
 
           // Rotate around X axis by lat0
@@ -801,14 +866,25 @@ function renderGlobe(gCtx, SIZE) {
     gCtx.restore();
   }
 
-  // Draw Pin
-  if (globeUserLon !== null) {
-    globePinPulse += 0.045;
-    const pLon = globeUserLon * Math.PI / 180;
-    const pLat = globeUserLat * Math.PI / 180;
-    const proj = globeProject(pLon, pLat, lon0, lat0, R);
-    if (proj.visible) {
-      globeDrawPin(gCtx, cx + proj.x, cy - proj.y, globePinPulse, globeCityName);
+  // Draw Pins
+  globePinPulse += 0.045;
+
+  // 1. Permanent Curitiba Pin
+  const cLon = -49.2733 * Math.PI / 180;
+  const cLat = -25.4284 * Math.PI / 180;
+  const cProj = globeProject(cLon, cLat, lon0, lat0, R);
+  if (cProj.visible) {
+    globeDrawPin(gCtx, cx + cProj.x, cy - cProj.y, globePinPulse, "Curitiba");
+  }
+
+  // 2. Optional User Location Pin
+  if (globeUserLon !== null && globeUserLat !== null) {
+    const uLon = globeUserLon * Math.PI / 180;
+    const uLat = globeUserLat * Math.PI / 180;
+    const uProj = globeProject(uLon, uLat, lon0, lat0, R);
+    if (uProj.visible) {
+      const uLabel = globeCityName || (currentLanguage === 'pt' ? "Sua Localização" : "Your Location");
+      globeDrawPin(gCtx, cx + uProj.x, cy - uProj.y, globePinPulse, uLabel);
     }
   }
 
@@ -822,8 +898,8 @@ function globeProject(lonRad, latRad, lon0, lat0, R) {
   const cosL0  = Math.cos(lat0),     sinL0  = Math.sin(lat0);
   const cosDL  = Math.cos(dLon);
   return {
-    x: R * cosLat * Math.sin(dLon),
-    y: R * (sinLat * cosL0 - cosLat * sinL0 * cosDL),
+    x: -R * cosLat * Math.sin(dLon),
+    y: -R * (sinLat * cosL0 - cosLat * sinL0 * cosDL),
     visible: (sinLat * sinL0 + cosLat * cosL0 * cosDL) > 0
   };
 }
@@ -916,7 +992,7 @@ function globeDrawPin(gCtx, x, y, pulse, city) {
   // Inner dot (accent)
   gCtx.beginPath();
   gCtx.arc(px, hy, PR * 0.42, 0, Math.PI * 2);
-  gCtx.fillStyle = '#7c6dfa';
+  gCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#e03a3a';
   gCtx.fill();
 
   // Pulse ring
@@ -1276,7 +1352,7 @@ function updateUnifiedLoop() {
     // ORBIT STATE
     const theta = (index / N) * 2 * Math.PI + orbitAngle;
     const ox = Math.cos(theta) * orbitRadiusX;
-    const oy = Math.sin(theta) * currentOrbitRadiusY; // Uses the dynamic pitch tilt radius
+    const oy = Math.sin(theta) * currentOrbitRadiusY - 25; // Uses the dynamic pitch tilt radius with translateY offset
     const oz = Math.sin(theta); 
     const oScale = gsap.utils.mapRange(-1, 1, 0.42, 0.58, oz); // Aumentada escala mínima para preencher o espaço atrás
     const oOpacity = 1.0;
@@ -1334,7 +1410,14 @@ function updateUnifiedLoop() {
     let finalScale = (oScale + (cScale - oScale) * p) * (hoverScales[index] || 1);
     let finalOpacity = oOpacity + (cOpacity - oOpacity) * p;
     let finalRotateY = oRotateY + (cRotateY - oRotateY) * p;
-    let finalZIndex = (activeHoveredCard === card && activeView !== 'cascade') ? 999 : (p > 0.5 ? cZIndex : oZIndex);
+    let finalZIndex;
+    if (activeHoveredCard === card && activeView !== 'cascade') {
+      finalZIndex = 999;
+    } else if (p > 0.1) {
+      finalZIndex = p > 0.5 ? cZIndex : oZIndex;
+    } else {
+      finalZIndex = ''; // Clear z-index to allow native 3D depth sorting
+    }
 
     // Apply Psicromia transition overlay
     const tp = psicromiaTransitionProgress.value;
@@ -1658,27 +1741,50 @@ function triggerEasterEggSpin() {
 
   const finalTargetAngle = orbitAngle + spinDir * (4 * 2 * Math.PI) + diff;
 
-  isSpinningEasterEgg = true;
-  let spinObj = { angle: orbitAngle };
+  const languages = ["ESTOU COM SORTE.", "I'M FEELING LUCKY.", "ESTOY CON SUERTE.", "J'AI DE LA CHANCE."];
 
-  // Play a cool GSAP spin effect
-  gsap.to(spinObj, {
-    angle: finalTargetAngle,
-    duration: 3.5,
-    ease: "power4.out",
-    onUpdate: () => {
-      orbitAngle = spinObj.angle;
-    },
-    onComplete: () => {
-      isSpinningEasterEgg = false;
-      
-      // Select the project and switch view
-      activeCascadeIndex = randomIdx;
-      smoothCascadeIndex = randomIdx;
-      isCascadeFocused = true;
-      switchView('cascade', true);
+  function runSpin() {
+    isSpinningEasterEgg = true;
+    let spinObj = { angle: orbitAngle };
+    const startTickerTime = gsap.ticker.time;
+
+    const centerText = document.getElementById('orbit-center-text');
+    if (centerText) {
+      gsap.killTweensOf(centerText);
+      gsap.set(centerText, { scale: 1, opacity: 0.95 });
     }
-  });
+
+    // Play a cool GSAP spin effect
+    gsap.to(spinObj, {
+      angle: finalTargetAngle,
+      duration: 3.5,
+      ease: "power4.out",
+      onUpdate: () => {
+        orbitAngle = spinObj.angle;
+        // Cycle center text languages directly on innerText
+        const elapsed = (gsap.ticker.time - startTickerTime) * 1000;
+        const langIdx = Math.floor(elapsed / 250) % languages.length;
+        if (centerText) {
+          centerText.innerText = languages[langIdx];
+        }
+      },
+      onComplete: () => {
+        isSpinningEasterEgg = false;
+        
+        // Select the project and switch view
+        activeCascadeIndex = randomIdx;
+        smoothCascadeIndex = randomIdx;
+        isCascadeFocused = true;
+        switchView('cascade', true);
+      }
+    });
+  }
+
+  if (globeActive) {
+    deactivateGlobe(runSpin);
+  } else {
+    runSpin();
+  }
 }
 
 function triggerRandomProjectCascade() {
@@ -2380,20 +2486,20 @@ function initTheme() {
 function updateThemeToggleIcon() {
   const btn = document.getElementById('theme-toggle-btn');
   if (!btn) return;
+  btn.style.backgroundColor = 'transparent';
+  btn.style.border = 'none';
+  btn.style.boxShadow = 'none';
+  
   if (currentTheme === 'dark') {
-    btn.style.backgroundColor = '#ffffff';
-    btn.style.border = 'none';
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="#2997ff" stroke="none">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="#ffffff" stroke="none">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
     `;
   } else {
-    btn.style.backgroundColor = '#f5a623';
-    btn.style.border = 'none';
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="5" fill="#ffffff"/>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="#ffd200" stroke="#ffd200" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5" fill="#ffd200"/>
         <line x1="12" y1="1" x2="12" y2="3"/>
         <line x1="12" y1="21" x2="12" y2="23"/>
         <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
@@ -3091,6 +3197,26 @@ function initWidgetGeo() {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
         updateLocationAndWeather(lat, lon);
+        
+        // Update user location on the globe
+        globeUserLat = lat;
+        globeUserLon = lon;
+        if (globeActive) {
+          globeTargetLat = lat;
+          globeTargetLon = lon;
+        }
+
+        // Reverse geocoding for globe pin
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=pt`)
+          .then(r => r.json())
+          .then(data => {
+            globeCityName = data.address?.city
+              || data.address?.town
+              || data.address?.village
+              || data.address?.county
+              || null;
+          })
+          .catch(() => {});
       },
       (error) => {
         console.log("Geolocation error:", error);
@@ -3128,7 +3254,11 @@ function initWidgetGeo() {
     compassBtn.addEventListener('click', (e) => {
       if (isEntryAnimating) return;
       e.stopPropagation();
-      getAndUpdatePosition(true);
+      if (!globeActive) {
+        activateGlobe('user');
+      } else {
+        deactivateGlobe();
+      }
     });
   }
 }
