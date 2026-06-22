@@ -1413,10 +1413,10 @@ function updateUnifiedLoop() {
     let finalZIndex;
     if (activeHoveredCard === card && activeView !== 'cascade') {
       finalZIndex = 999;
-    } else if (p > 0.1) {
-      finalZIndex = p > 0.5 ? cZIndex : oZIndex;
     } else {
-      finalZIndex = ''; // Clear z-index to allow native 3D depth sorting
+      // Always use z-index in orbit mode — globe has z-index 155 (midpoint)
+      // so front cards (>155) go in front, back cards (<155) go behind
+      finalZIndex = p > 0.5 ? cZIndex : oZIndex;
     }
 
     // Apply Psicromia transition overlay
@@ -2498,7 +2498,7 @@ function updateThemeToggleIcon() {
     `;
   } else {
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="#ffd200" stroke="#ffd200" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24" width="27" height="27" fill="#ffd200" stroke="#ffd200" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="5" fill="#ffd200"/>
         <line x1="12" y1="1" x2="12" y2="3"/>
         <line x1="12" y1="21" x2="12" y2="23"/>

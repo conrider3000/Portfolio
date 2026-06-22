@@ -472,7 +472,7 @@ body * {
 
 .orbit-center {
   font-family: var(--font-serif);
-  font-size: clamp(1.2rem, 3.2vw, 2.2rem); /* Decreased text size */
+  font-size: clamp(1.2rem, 3.2vw, 2.2rem);
   font-weight: 700;
   color: var(--text-color);
   text-align: center;
@@ -480,6 +480,9 @@ body * {
   cursor: pointer;
   letter-spacing: -0.02em;
   opacity: 0.95;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 155; /* Midpoint of card range 110-200 */
   transform: translateY(-25px) translateZ(120px);
   transform-style: preserve-3d;
   transition: transform 0.1s ease;
@@ -497,6 +500,7 @@ body * {
   opacity: 0;
   pointer-events: none;
   cursor: grab;
+  z-index: 155; /* Midpoint of card range 110-200 */
   filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.55));
   outline: none;
   -webkit-tap-highlight-color: transparent;
