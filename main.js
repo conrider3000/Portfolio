@@ -7,6 +7,10 @@ let activeView = 'orbit'; // 'orbit', 'cascade', or 'psicromia'
 
 // Morphing Transition State Variable
 let transitionProgress = { value: 0 }; 
+let psicromiaTransitionProgress = { value: 0 };
+let isTransitioningToPsicromia = false;
+let isTransitioningFromPsicromia = false;
+let isEntryAnimating = true;
 
 // Load portfolio data from localStorage if available, otherwise use default portfolioData
 // Version flag so we can force re-sync when portfolio.js is updated
@@ -51,8 +55,8 @@ let startDragY = 0; // Added for vertical tilt drag tracking
 const orbitRadiusX = 620; // Increased to spread cards horizontally
 
 // Vertical orbit tilt states
-let targetOrbitRadiusY = 220;
-let currentOrbitRadiusY = 220;
+let targetOrbitRadiusY = 225;
+let currentOrbitRadiusY = 225;
 
 // Drag momentum (wheel of fortune) states
 let lastDragTime = 0;
@@ -92,6 +96,121 @@ let particlesArray = [];
 const numberOfParticles = 35;
 
 // ==========================================================================
+// EARTH GLOBE — state
+// ==========================================================================
+let globeActive    = false;
+let globeAnimId    = null;
+let globeLon0      = -46.0;   // current center longitude (°)
+let globeLat0      =  15.0;   // current center latitude  (°)
+let globeTargetLon =  -46.0;
+let globeTargetLat =   15.0;
+let globeUserLon   = null;
+let globeUserLat   = null;
+let globeCityName  = null;
+let globeFoundUser = false;
+let globePinPulse  = 0;
+
+// Satellite Globe Textures & Offscreen Canvas State
+let earthDayImg = new Image();
+let earthNightImg = new Image();
+let earthDayLoaded = false;
+let earthNightLoaded = false;
+let dayPixels = null;
+let nightPixels = null;
+const texWidth = 2048;
+const texHeight = 1024;
+let globeOffscreenCanvas = null;
+let globeOffscreenCtx = null;
+
+earthDayImg.crossOrigin = "anonymous";
+earthDayImg.src = "assets/earth_daymap.jpg";
+earthDayImg.onload = () => {
+  const off = document.createElement('canvas');
+  off.width = texWidth;
+  off.height = texHeight;
+  const oCtx = off.getContext('2d');
+  oCtx.drawImage(earthDayImg, 0, 0, texWidth, texHeight);
+  dayPixels = oCtx.getImageData(0, 0, texWidth, texHeight).data;
+  earthDayLoaded = true;
+};
+earthDayImg.onerror = () => {
+  console.warn("Could not load day globe texture. Falling back to vector.");
+  earthDayLoaded = false;
+};
+
+earthNightImg.crossOrigin = "anonymous";
+earthNightImg.src = "assets/earth_nightmap.jpg";
+earthNightImg.onload = () => {
+  const off = document.createElement('canvas');
+  off.width = texWidth;
+  off.height = texHeight;
+  const oCtx = off.getContext('2d');
+  oCtx.drawImage(earthNightImg, 0, 0, texWidth, texHeight);
+  nightPixels = oCtx.getImageData(0, 0, texWidth, texHeight).data;
+  earthNightLoaded = true;
+};
+earthNightImg.onerror = () => {
+  console.warn("Could not load night globe texture. Falling back to vector.");
+  earthNightLoaded = false;
+};
+
+// Simplified continent polygon data  [lon°, lat°]
+const EARTH_CONTINENTS = [
+  // ── North America
+  [[-168,72],[-148,70],[-138,60],[-134,56],[-130,54],[-126,50],[-124,48],
+   [-124,44],[-120,38],[-118,34],[-117,32],[-110,24],[-104,20],[-90,16],
+   [-84,10],[-78,8],[-76,4],[-68,12],[-62,10],[-52,4],[-52,8],[-56,20],
+   [-62,26],[-70,44],[-66,44],[-60,46],[-66,48],[-70,52],[-72,60],
+   [-74,64],[-80,70],[-86,72],[-100,72],[-120,70],[-140,70],[-160,72],[-168,72]],
+  // ── South America
+  [[-80,12],[-76,8],[-70,0],[-62,-4],[-52,-2],[-44,-2],[-36,-6],
+   [-36,-10],[-38,-16],[-42,-22],[-44,-24],[-46,-30],[-52,-34],
+   [-56,-38],[-64,-42],[-68,-50],[-70,-52],[-66,-56],[-60,-54],
+   [-58,-40],[-52,-28],[-46,-18],[-38,-8],[-34,-4],[-42,0],
+   [-50,2],[-60,4],[-62,8],[-66,4],[-72,12],[-80,12]],
+  // ── Europe
+  [[-10,36],[-8,38],[-6,40],[-8,44],[-4,44],[0,44],[4,44],[8,44],
+   [14,42],[16,40],[18,40],[22,38],[24,40],[28,42],[30,46],[28,50],
+   [26,54],[22,56],[18,58],[14,58],[10,58],[6,56],[4,52],[0,52],
+   [-4,52],[-8,48],[-10,44],[-8,36],[-10,36]],
+  // ── Africa
+  [[-18,16],[-16,12],[-16,8],[-14,4],[-10,4],[-6,4],[-2,4],[2,4],
+   [6,4],[10,4],[14,2],[16,-2],[18,-4],[20,-8],[24,-18],[26,-34],
+   [28,-34],[32,-28],[34,-22],[36,-16],[38,-10],[40,-8],[42,-12],
+   [44,-10],[44,-4],[42,0],[44,4],[44,10],[42,12],[40,14],[36,14],
+   [32,18],[28,20],[24,20],[20,16],[16,14],[12,14],[8,14],[4,14],
+   [0,14],[-4,14],[-8,14],[-12,14],[-16,14],[-18,16]],
+  // ── Asia (main)
+  [[28,72],[36,70],[46,68],[56,68],[66,66],[76,68],[86,70],[96,70],
+   [106,68],[114,70],[124,68],[130,62],[140,60],[142,48],[138,40],
+   [132,34],[126,24],[120,20],[114,18],[108,14],[104,6],[100,4],
+   [96,8],[90,10],[82,14],[76,18],[72,22],[68,24],[64,24],
+   [60,20],[54,18],[50,24],[46,28],[42,32],[38,28],[34,30],
+   [30,36],[26,36],[24,40],[24,44],[26,48],[26,54],[24,66],[28,72]],
+  // ── Indian peninsula
+  [[72,22],[80,14],[80,8],[78,8],[72,10],[68,20],[72,22]],
+  // ── Indochina
+  [[100,20],[104,14],[106,10],[104,2],[100,4],[98,10],[100,20]],
+  // ── Australia
+  [[114,-22],[118,-20],[122,-18],[126,-14],[130,-12],[136,-12],
+   [142,-10],[148,-14],[152,-22],[154,-28],[150,-34],[146,-38],
+   [140,-36],[134,-34],[126,-34],[120,-28],[116,-22],[114,-22]],
+  // ── Greenland
+  [[-56,76],[-50,70],[-44,66],[-40,64],[-22,64],[-18,68],
+   [-20,74],[-28,78],[-40,82],[-52,82],[-56,80],[-56,76]],
+  // ── Japan (Honshu rough)
+  [[130,32],[132,34],[134,36],[136,36],[138,38],[140,40],[142,42],
+   [142,44],[140,44],[138,40],[136,38],[134,34],[130,32]],
+  // ── UK / Ireland (rough)
+  [[-8,52],[-6,54],[-4,56],[-2,58],[0,58],[2,56],[2,52],[0,50],
+   [-4,50],[-6,50],[-8,52]],
+  // ── New Zealand (rough)
+  [[172,-44],[174,-46],[172,-46],[168,-44],[168,-40],[172,-38],
+   [174,-36],[176,-36],[178,-36],[176,-40],[174,-44],[172,-44]],
+];
+
+
+// ==========================================================================
 // UTILITY FUNCTIONS
 // ==========================================================================
 function mod(n, m) {
@@ -117,7 +236,7 @@ function getLocalizedValue(field, fallback = '') {
 function startLogoAlternator() {
   const logoText = document.getElementById('logo-text');
   if (!logoText) return;
-  const words = ["CONRADO", "PORTFÓLIO"];
+  const words = ["Conrado", "Portfólio"];
   const colors = ["#388E3C", "#DA291C", "#C8A415", "#1565C0"];
   let wordIdx = 0;
   let colorIdx = 0;
@@ -145,6 +264,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initLanguage();
   initParticles();
+  initSaveExitDialog();
 
   buildMorphingCards();
   buildPsicromiaGallery();
@@ -157,6 +277,8 @@ window.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
+
+    if (isEntryAnimating) return;
 
     // Rotate compass needle toward cursor
     const compass = document.getElementById('compass-icon');
@@ -185,6 +307,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Prevent context menu on card items, in Orbit view, or during right-drag to ensure premium feel and allow Easter Egg
   document.addEventListener('contextmenu', (e) => {
+    if (isEntryAnimating) {
+      e.preventDefault();
+      return;
+    }
     if (activeHoveredCard || activeView === 'orbit' || isDraggingOrbitRight) {
       e.preventDefault(); // Block default browser dropdown
     }
@@ -192,6 +318,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Prevent middle-click scroll icon globally to keep custom cursor active
   document.addEventListener('mousedown', (e) => {
+    if (isEntryAnimating) {
+      e.preventDefault();
+      return;
+    }
     if (e.button === 1) {
       e.preventDefault();
     }
@@ -264,6 +394,10 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('wheel', (e) => {
+    if (isEntryAnimating) {
+      e.preventDefault();
+      return;
+    }
     if (activeView === 'cascade') {
       if (e.deltaY > 0) {
         navigateCascade(1);
@@ -278,8 +412,12 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Arrow keys navigate gallery scroll
+  // Arrow keys navigate gallery + ESC closes all overlays in cascade order
   document.addEventListener('keydown', (e) => {
+    if (isEntryAnimating) {
+      e.preventDefault();
+      return;
+    }
     if (activeView === 'psicromia') {
       const track = document.getElementById('psicromia-track');
       if (!track) return;
@@ -291,6 +429,71 @@ window.addEventListener('DOMContentLoaded', () => {
         track.scrollBy({ left: -400, behavior: 'smooth' });
       }
     }
+
+    if (e.key === 'Escape') {
+      // 0. Earth globe (highest priority)
+      if (globeActive) {
+        deactivateGlobe();
+        return;
+      }
+
+      // Priority order: innermost overlay first → outermost last
+
+      // 1. Lightbox (image zoom)
+      const lightbox = document.getElementById('lightbox-overlay');
+      if (lightbox && lightbox.classList.contains('active')) {
+        closeLightbox();
+        return;
+      }
+
+      // 2. Admin form modal — ask to save if dirty
+      const adminForm = document.getElementById('admin-form-modal');
+      if (adminForm && adminForm.classList.contains('active')) {
+        if (formIsDirty) {
+          showSaveExitDialog('form');
+        } else {
+          closeProjectForm();
+        }
+        return;
+      }
+
+      // 3. Admin panel — ask to save if form is open and dirty
+      const adminPanel = document.getElementById('admin-panel');
+      if (adminPanel && adminPanel.classList.contains('active')) {
+        if (formIsDirty) {
+          showSaveExitDialog('panel');
+        } else {
+          adminPanel.classList.remove('active');
+        }
+        return;
+      }
+
+      // 4. Side panels (sobre / contato)
+      const panelOverlay = document.getElementById('panel-overlay');
+      if (panelOverlay && panelOverlay.classList.contains('active')) {
+        closeAllPanels();
+        return;
+      }
+
+      // 5. Project info panel (cascade focused)
+      if (activeView === 'cascade' && isCascadeFocused) {
+        isCascadeFocused = false;
+        hideProjectInfoPanel();
+        return;
+      }
+
+      // 6. Psicromia view (detail gallery) -> Cascade view
+      if (activeView === 'psicromia') {
+        exitPsicromia();
+        return;
+      }
+
+      // 7. Cascade view -> Orbit view
+      if (activeView === 'cascade') {
+        switchView('orbit');
+        return;
+      }
+    }
   });
 });
 
@@ -298,6 +501,474 @@ window.addEventListener('DOMContentLoaded', () => {
 // SITE LOADER INTRO
 // ==========================================================================
 //// (runLoader function removed and placed inline in index.html to load instantly)
+
+// ==========================================================================
+// EARTH GLOBE — functions
+// ==========================================================================
+function activateGlobe() {
+  // Toggle: clicking again closes
+  if (globeActive) { deactivateGlobe(); return; }
+  // Only in orbit view
+  if (activeView !== 'orbit') return;
+
+  globeActive    = true;
+  globeFoundUser = false;
+  globeUserLon   = null;
+  globeUserLat   = null;
+  globeCityName  = null;
+  globePinPulse  = 0;
+
+  const globeCanvas = document.getElementById('earth-globe');
+  const centerText  = document.getElementById('orbit-center-text');
+  if (!globeCanvas) return;
+
+  // Set canvas resolution (HiDPI)
+  const dpr  = window.devicePixelRatio || 1;
+  const SIZE = 300;
+  globeCanvas.style.width  = SIZE + 'px';
+  globeCanvas.style.height = SIZE + 'px';
+  globeCanvas.width  = SIZE * dpr;
+  globeCanvas.height = SIZE * dpr;
+  const gCtx = globeCanvas.getContext('2d');
+  gCtx.scale(dpr, dpr);
+
+  // Fade orbit-center text out
+  gsap.to(centerText, { scale: 0.35, opacity: 0, duration: 0.32, ease: 'power2.in' });
+
+  // Show globe canvas and animate in
+  globeCanvas.style.display = 'block';
+  globeCanvas.classList.add('globe-active');
+  gsap.fromTo(globeCanvas,
+    { opacity: 0, scale: 0.25 },
+    { opacity: 1, scale: 1, duration: 0.55, delay: 0.2, ease: 'back.out(1.7)',
+      onStart: () => startGlobeLoop(gCtx, SIZE) }
+  );
+
+  // Click globe to close
+  globeCanvas.onclick = () => deactivateGlobe();
+
+  // Geolocation request
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => onGlobeGeoSuccess(pos),
+      ()  => {}, // silent fail — globe still spins
+      { timeout: 9000 }
+    );
+  }
+}
+
+function deactivateGlobe() {
+  if (!globeActive) return;
+  globeActive = false;
+
+  const globeCanvas = document.getElementById('earth-globe');
+  const centerText  = document.getElementById('orbit-center-text');
+
+  gsap.to(globeCanvas, {
+    opacity: 0, scale: 0.25, duration: 0.28, ease: 'power2.in',
+    onComplete: () => {
+      globeCanvas.style.display = 'none';
+      globeCanvas.classList.remove('globe-active');
+      if (globeAnimId) { cancelAnimationFrame(globeAnimId); globeAnimId = null; }
+    }
+  });
+
+  if (centerText) {
+    if (activeHoveredCard) {
+      const cardIdx = parseInt(activeHoveredCard.getAttribute('data-index'));
+      const item = combinedMediaItems[cardIdx];
+      if (item) {
+        centerText.innerText = getLocalizedValue(item.title);
+      } else {
+        centerText.innerText = "CONRADO.";
+      }
+    } else {
+      centerText.innerText = "CONRADO.";
+    }
+  }
+
+  if (activeView === 'orbit') {
+    gsap.fromTo(centerText,
+      { scale: 0.35, opacity: 0 },
+      { scale: 1, opacity: 0.95, duration: 0.45, delay: 0.18, ease: 'back.out(1.5)' }
+    );
+  } else {
+    if (centerText) {
+      gsap.set(centerText, { scale: 0.5, opacity: 0 });
+    }
+  }
+}
+
+function onGlobeGeoSuccess(pos) {
+  globeUserLon   = pos.coords.longitude;
+  globeUserLat   = pos.coords.latitude;
+  globeTargetLon = pos.coords.longitude;
+  globeTargetLat = pos.coords.latitude;
+  globeFoundUser = true;
+
+  // Reverse geocode — Nominatim (free, no key)
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${globeUserLat}&lon=${globeUserLon}&format=json&accept-language=pt`)
+    .then(r => r.json())
+    .then(data => {
+      globeCityName = data.address?.city
+        || data.address?.town
+        || data.address?.village
+        || data.address?.county
+        || null;
+    })
+    .catch(() => {});
+}
+
+function startGlobeLoop(gCtx, SIZE) {
+  if (globeAnimId) cancelAnimationFrame(globeAnimId);
+  function loop() {
+    if (!globeActive) return;
+    renderGlobe(gCtx, SIZE);
+    globeAnimId = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function renderGlobe(gCtx, SIZE) {
+  const cx = SIZE / 2;
+  const cy = SIZE / 2;
+  const R  = SIZE / 2 - 3;
+
+  // — Rotation logic —
+  if (!globeFoundUser) {
+    globeLon0 += 0.22; // auto-spin
+  } else {
+    let dLon = globeTargetLon - globeLon0;
+    while (dLon >  180) dLon -= 360;
+    while (dLon < -180) dLon += 360;
+    const dLat = globeTargetLat - globeLat0;
+    globeLon0 += dLon * 0.028;
+    globeLat0 += dLat * 0.028;
+    // Gentle drift once settled
+    if (Math.abs(dLon) < 0.4 && Math.abs(dLat) < 0.4) globeLon0 += 0.04;
+  }
+
+  const lon0 = globeLon0 * Math.PI / 180;
+  const lat0 = globeLat0 * Math.PI / 180;
+
+  // Force illuminated Day Earth theme for both Day and Night modes as requested (too dark in Night Earth mode)
+  const activeGlobeTheme = 'day';
+  const pixels = dayPixels;
+  const useTexture = earthDayLoaded;
+
+  gCtx.clearRect(0, 0, SIZE, SIZE);
+
+  if (useTexture && pixels) {
+    // Render pixel-by-pixel texture mapping on an offscreen canvas
+    if (!globeOffscreenCanvas) {
+      globeOffscreenCanvas = document.createElement('canvas');
+      globeOffscreenCtx = globeOffscreenCanvas.getContext('2d');
+    }
+    if (globeOffscreenCanvas.width !== SIZE || globeOffscreenCanvas.height !== SIZE) {
+      globeOffscreenCanvas.width = SIZE;
+      globeOffscreenCanvas.height = SIZE;
+    }
+    
+    const imgData = globeOffscreenCtx.createImageData(SIZE, SIZE);
+    const data = imgData.data;
+    const R2 = R * R;
+    const cosLon = Math.cos(lon0);
+    const sinLon = Math.sin(lon0);
+    const cosLat = Math.cos(lat0);
+    const sinLat = Math.sin(lat0);
+
+    for (let y = 0; y < SIZE; y++) {
+      const dy = y - cy;
+      const dy2 = dy * dy;
+      for (let x = 0; x < SIZE; x++) {
+        const dx = x - cx;
+        const dx2 = dx * dx;
+        const dist2 = dx2 + dy2;
+        const destIndex = (y * SIZE + x) * 4;
+
+        if (dist2 <= R2) {
+          const dz = Math.sqrt(R2 - dist2);
+          
+          const X = dx / R;
+          const Y = -dy / R; // Invert canvas Y coordinate
+          const Z = dz / R;
+
+          // Rotate around X axis by lat0
+          const X1 = X;
+          const Y1 = Y * cosLat + Z * sinLat;
+          const Z1 = -Y * sinLat + Z * cosLat;
+
+          // Rotate around Y axis by lon0
+          const rx = X1 * cosLon + Z1 * sinLon;
+          const ry = Y1;
+          const rz = -X1 * sinLon + Z1 * cosLon;
+
+          const lat = Math.asin(ry);
+          const lon = Math.atan2(rx, rz);
+
+          const tx = Math.floor(((lon + Math.PI) / (2 * Math.PI)) * texWidth) % texWidth;
+          const ty = Math.floor(((Math.PI / 2 - lat) / Math.PI) * texHeight) % texHeight;
+
+          const texIndex = (ty * texWidth + tx) * 4;
+
+          data[destIndex]     = pixels[texIndex];
+          data[destIndex + 1] = pixels[texIndex + 1];
+          data[destIndex + 2] = pixels[texIndex + 2];
+          data[destIndex + 3] = 255;
+        } else {
+          data[destIndex + 3] = 0;
+        }
+      }
+    }
+    globeOffscreenCtx.putImageData(imgData, 0, 0);
+    
+    // Draw the textured globe offscreen canvas to main canvas, clipped to prevent subpixel white halo
+    gCtx.save();
+    gCtx.beginPath();
+    gCtx.arc(cx, cy, R - 1.0, 0, Math.PI * 2);
+    gCtx.clip();
+    
+    gCtx.drawImage(globeOffscreenCanvas, 0, 0);
+    
+    // Spherical vignette shadow for realistic 3D volume (clipped)
+    const shadowGrad = gCtx.createRadialGradient(
+      cx - R * 0.15, cy - R * 0.15, R * 0.1,
+      cx, cy, R
+    );
+    shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
+    shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.05)');
+    shadowGrad.addColorStop(0.85, 'rgba(0, 0, 0, 0.35)');
+    shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0.72)');
+
+    gCtx.beginPath();
+    gCtx.arc(cx, cy, R, 0, Math.PI * 2);
+    gCtx.fillStyle = shadowGrad;
+    gCtx.fill();
+    
+    gCtx.restore();
+  } else {
+    // Vector Fallback Mode (original code)
+    gCtx.save();
+    gCtx.beginPath();
+    gCtx.arc(cx, cy, R - 1.0, 0, Math.PI * 2); // Clip fallback to prevent subpixel issues
+    gCtx.clip();
+
+    gCtx.beginPath();
+    gCtx.arc(cx, cy, R, 0, Math.PI * 2);
+    const oceanGrad = gCtx.createRadialGradient(cx - R * 0.25, cy - R * 0.28, 0, cx, cy, R);
+    if (activeGlobeTheme === 'day') {
+      oceanGrad.addColorStop(0,   '#1e6db5');
+      oceanGrad.addColorStop(0.5, '#0d3a6e');
+      oceanGrad.addColorStop(1,   '#071e42');
+    } else {
+      oceanGrad.addColorStop(0,   '#080b12');
+      oceanGrad.addColorStop(0.6, '#04060a');
+      oceanGrad.addColorStop(1,   '#010204');
+    }
+    gCtx.fillStyle = oceanGrad;
+    gCtx.fill();
+    gCtx.clip();
+
+    // Graticule
+    if (activeGlobeTheme === 'day') {
+      gCtx.strokeStyle = 'rgba(255,255,255,0.065)';
+    } else {
+      gCtx.strokeStyle = 'rgba(255,255,255,0.02)';
+    }
+    gCtx.lineWidth   = 0.5;
+    globeGraticule(gCtx, cx, cy, R, lon0, lat0);
+
+    // Continents
+    for (const poly of EARTH_CONTINENTS) {
+      globeDrawContinent(gCtx, cx, cy, R, lon0, lat0, poly, activeGlobeTheme);
+    }
+
+    // Spherical vignette shadow for realistic 3D volume (inside fallback clip)
+    const shadowGrad = gCtx.createRadialGradient(
+      cx - R * 0.15, cy - R * 0.15, R * 0.1,
+      cx, cy, R
+    );
+    shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
+    shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.05)');
+    shadowGrad.addColorStop(0.85, 'rgba(0, 0, 0, 0.35)');
+    shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0.72)');
+
+    gCtx.beginPath();
+    gCtx.arc(cx, cy, R, 0, Math.PI * 2);
+    gCtx.fillStyle = shadowGrad;
+    gCtx.fill();
+
+    gCtx.restore();
+  }
+
+  // Draw Pin
+  if (globeUserLon !== null) {
+    globePinPulse += 0.045;
+    const pLon = globeUserLon * Math.PI / 180;
+    const pLat = globeUserLat * Math.PI / 180;
+    const proj = globeProject(pLon, pLat, lon0, lat0, R);
+    if (proj.visible) {
+      globeDrawPin(gCtx, cx + proj.x, cy - proj.y, globePinPulse, globeCityName);
+    }
+  }
+
+
+}
+
+/** Orthographic projection: returns {x, y, visible} */
+function globeProject(lonRad, latRad, lon0, lat0, R) {
+  const dLon   = lonRad - lon0;
+  const cosLat = Math.cos(latRad),   sinLat = Math.sin(latRad);
+  const cosL0  = Math.cos(lat0),     sinL0  = Math.sin(lat0);
+  const cosDL  = Math.cos(dLon);
+  return {
+    x: R * cosLat * Math.sin(dLon),
+    y: R * (sinLat * cosL0 - cosLat * sinL0 * cosDL),
+    visible: (sinLat * sinL0 + cosLat * cosL0 * cosDL) > 0
+  };
+}
+
+function globeGraticule(gCtx, cx, cy, R, lon0, lat0) {
+  // Longitude lines every 30°
+  for (let lon = -180; lon < 180; lon += 30) {
+    const lonR = lon * Math.PI / 180;
+    gCtx.beginPath();
+    let pen = false;
+    for (let lat = -88; lat <= 88; lat += 3) {
+      const p = globeProject(lonR, lat * Math.PI / 180, lon0, lat0, R);
+      if (p.visible) {
+        pen ? gCtx.lineTo(cx + p.x, cy - p.y) : gCtx.moveTo(cx + p.x, cy - p.y);
+        pen = true;
+      } else pen = false;
+    }
+    gCtx.stroke();
+  }
+  // Latitude lines every 30°
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const latR = lat * Math.PI / 180;
+    gCtx.beginPath();
+    let pen = false;
+    for (let lon = -180; lon <= 180; lon += 3) {
+      const p = globeProject(lon * Math.PI / 180, latR, lon0, lat0, R);
+      if (p.visible) {
+        pen ? gCtx.lineTo(cx + p.x, cy - p.y) : gCtx.moveTo(cx + p.x, cy - p.y);
+        pen = true;
+      } else pen = false;
+    }
+    gCtx.stroke();
+  }
+}
+
+function globeDrawContinent(gCtx, cx, cy, R, lon0, lat0, points, activeGlobeTheme) {
+  gCtx.beginPath();
+  let pen = false, prevVis = false;
+  for (let i = 0; i < points.length; i++) {
+    const [lon, lat] = points[i];
+    const p = globeProject(lon * Math.PI / 180, lat * Math.PI / 180, lon0, lat0, R);
+    if (p.visible) {
+      (!pen || !prevVis) ? gCtx.moveTo(cx + p.x, cy - p.y) : gCtx.lineTo(cx + p.x, cy - p.y);
+      pen = true;
+    }
+    prevVis = p.visible;
+  }
+  gCtx.closePath();
+  // Land gradient
+  const lg = gCtx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+  if (activeGlobeTheme === 'day') {
+    lg.addColorStop(0, '#3d9a62');
+    lg.addColorStop(1, '#2a6644');
+    gCtx.strokeStyle = 'rgba(255,255,255,0.13)';
+  } else {
+    lg.addColorStop(0, '#151c28');
+    lg.addColorStop(1, '#0f1520');
+    gCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+  }
+  gCtx.fillStyle = lg;
+  gCtx.fill();
+  gCtx.lineWidth   = 0.6;
+  gCtx.stroke();
+}
+
+function globeDrawPin(gCtx, x, y, pulse, city) {
+  const PR  = 7;   // pin head radius
+  const TIP = 20;  // distance from head center to tip
+  const bounce = Math.sin(pulse * 1.8) * 1.8;
+  const px = Math.round(x);
+  const py = Math.round(y) - bounce;
+  const hy = py - TIP;   // head center y
+
+  // Shadow
+  gCtx.save();
+  gCtx.shadowColor   = 'rgba(0,0,0,0.45)';
+  gCtx.shadowBlur    = 9;
+  gCtx.shadowOffsetY = 3;
+
+  // Teardrop body: semicircle top + bezier curves to tip
+  gCtx.beginPath();
+  gCtx.arc(px, hy, PR, Math.PI, 0);
+  gCtx.bezierCurveTo(px + PR, hy + PR * 1.5, px + PR * 0.4, py - 2, px, py);
+  gCtx.bezierCurveTo(px - PR * 0.4, py - 2, px - PR, hy + PR * 1.5, px - PR, hy);
+  gCtx.closePath();
+  gCtx.fillStyle = '#ffffff';
+  gCtx.fill();
+  gCtx.restore();
+
+  // Inner dot (accent)
+  gCtx.beginPath();
+  gCtx.arc(px, hy, PR * 0.42, 0, Math.PI * 2);
+  gCtx.fillStyle = '#7c6dfa';
+  gCtx.fill();
+
+  // Pulse ring
+  const pr = PR + 1.5 + (Math.sin(pulse) * 0.5 + 0.5) * 5.5;
+  const pa = 0.55 - ((pr - PR - 1.5) / 5.5) * 0.55;
+  if (pa > 0) {
+    gCtx.beginPath();
+    gCtx.arc(px, hy, pr, 0, Math.PI * 2);
+    gCtx.strokeStyle = `rgba(124,109,250,${pa.toFixed(2)})`;
+    gCtx.lineWidth   = 1.5;
+    gCtx.stroke();
+  }
+
+  // City name tooltip bubble
+  if (city) {
+    gCtx.font = 'bold 9px -apple-system, "Inter", sans-serif';
+    const tw  = gCtx.measureText(city).width;
+    const bw  = tw + 13;
+    const bh  = 16;
+    const bx  = px - bw / 2;
+    const by  = hy - PR - bh - 6;
+
+    gCtx.save();
+    gCtx.shadowColor   = 'rgba(0,0,0,0.22)';
+    gCtx.shadowBlur    = 6;
+    gCtx.shadowOffsetY = 2;
+    globeRoundRect(gCtx, bx, by, bw, bh, 4);
+    gCtx.fillStyle = 'rgba(255,255,255,0.96)';
+    gCtx.fill();
+    gCtx.restore();
+
+    gCtx.fillStyle    = '#1a1a2e';
+    gCtx.textAlign    = 'center';
+    gCtx.textBaseline = 'middle';
+    gCtx.fillText(city, px, by + bh / 2);
+  }
+}
+
+function globeRoundRect(gCtx, x, y, w, h, r) {
+  gCtx.beginPath();
+  gCtx.moveTo(x + r, y);
+  gCtx.lineTo(x + w - r, y);
+  gCtx.quadraticCurveTo(x + w, y, x + w, y + r);
+  gCtx.lineTo(x + w, y + h - r);
+  gCtx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  gCtx.lineTo(x + r, y + h);
+  gCtx.quadraticCurveTo(x, y + h, x, y + h - r);
+  gCtx.lineTo(x, y + r);
+  gCtx.quadraticCurveTo(x, y, x + r, y);
+  gCtx.closePath();
+}
+
 
 // ==========================================================================
 // CENTRAL TEXT ANIMATION HELPER
@@ -364,6 +1035,7 @@ function buildMorphingCards() {
 
     // Hover Events
     card.addEventListener('mouseenter', () => {
+      if (isEntryAnimating) return;
       // Ignore hover interactions during active spins so "ESTOU COM SORTE." text is preserved
       if (isSpinningMomentum || isSpinningEasterEgg) return;
 
@@ -377,8 +1049,10 @@ function buildMorphingCards() {
       }
 
       if (activeView === 'orbit') {
-        const title = getLocalizedValue(item.title);
-        setCenterText(title);
+        if (!globeActive) {
+          const title = getLocalizedValue(item.title);
+          setCenterText(title);
+        }
 
         gsap.to(hoverScales, {
           [index]: 1.4, // Increased pop scale
@@ -390,6 +1064,7 @@ function buildMorphingCards() {
     });
 
     card.addEventListener('mouseleave', () => {
+      if (isEntryAnimating) return;
       // Ignore mouseleave logic if the hover was ignored during a spin
       if (isSpinningMomentum || isSpinningEasterEgg) return;
 
@@ -403,7 +1078,9 @@ function buildMorphingCards() {
       }
 
       if (activeView === 'orbit') {
-        setCenterText("CONRADO.");
+        if (!globeActive) {
+          setCenterText("CONRADO.");
+        }
 
         gsap.to(hoverScales, {
           [index]: 1.0,
@@ -415,6 +1092,7 @@ function buildMorphingCards() {
     });
 
     card.addEventListener('click', (e) => {
+      if (isEntryAnimating) return;
       // Ignore right clicks or middle clicks
       if (e.button !== 0) return;
 
@@ -518,9 +1196,11 @@ function animateCursor() {
 function addCursorInteractions() {
   document.querySelectorAll('a, button, .nav__link, .vis-btn, .morph-card, .mosaic-card, .filter-btn, .filter-dropdown-item, .info-panel-more-btn, .psicromia-back-btn, .cascade-back-btn, .status-widget').forEach(el => {
     el.addEventListener('mouseenter', () => {
+      if (isEntryAnimating) return;
       if (cursorEl) cursorEl.classList.add('hovered');
     });
     el.addEventListener('mouseleave', () => {
+      if (isEntryAnimating) return;
       if (cursorEl) {
         cursorEl.classList.remove('hovered');
         cursorEl.classList.remove('project-hover');
@@ -529,6 +1209,7 @@ function addCursorInteractions() {
   });
   document.querySelectorAll('.mosaic-card, .gallery-item').forEach(el => {
     el.addEventListener('mouseenter', () => {
+      if (isEntryAnimating) return;
       if (cursorEl) {
         cursorEl.classList.add('project-hover');
         cursorEl.classList.remove('hovered');
@@ -647,13 +1328,30 @@ function updateUnifiedLoop() {
     }
 
     // LERP COORDINATES INTERPOLATION
-    const finalX = ox + (cx - ox) * p;
-    const finalY = oy + (cy - oy) * p;
-    const finalZ = (oz * 100 + 120) + (cz - (oz * 100 + 120)) * p;
-    const finalScale = (oScale + (cScale - oScale) * p) * (hoverScales[index] || 1);
-    const finalOpacity = oOpacity + (cOpacity - oOpacity) * p;
-    const finalRotateY = oRotateY + (cRotateY - oRotateY) * p;
-    const finalZIndex = (activeHoveredCard === card && activeView !== 'cascade') ? 999 : (p > 0.5 ? cZIndex : oZIndex);
+    let finalX = ox + (cx - ox) * p;
+    let finalY = oy + (cy - oy) * p;
+    let finalZ = (oz * 100 + 120) + (cz - (oz * 100 + 120)) * p;
+    let finalScale = (oScale + (cScale - oScale) * p) * (hoverScales[index] || 1);
+    let finalOpacity = oOpacity + (cOpacity - oOpacity) * p;
+    let finalRotateY = oRotateY + (cRotateY - oRotateY) * p;
+    let finalZIndex = (activeHoveredCard === card && activeView !== 'cascade') ? 999 : (p > 0.5 ? cZIndex : oZIndex);
+
+    // Apply Psicromia transition overlay
+    const tp = psicromiaTransitionProgress.value;
+    if (tp > 0) {
+      const M = projectsDb.length;
+      const wrappedActiveIndex = mod(Math.round(activeCascadeIndex), M);
+      if (index === wrappedActiveIndex) {
+        // Zoom and shift active card
+        finalX = finalX + 380 * tp;
+        finalZ = finalZ + 150 * tp;
+        finalScale = finalScale * (1 + 0.85 * tp);
+        finalOpacity = finalOpacity * (1 - tp);
+      } else {
+        // Fade other cards out twice as fast
+        finalOpacity = finalOpacity * Math.max(0, 1 - tp * 2);
+      }
+    }
 
     card.style.transform = `translate3d(${finalX}px, ${finalY}px, ${finalZ}px) rotateY(${finalRotateY}deg) scale(${finalScale})`;
     card.style.opacity = finalOpacity;
@@ -730,6 +1428,7 @@ function bindSceneDrag() {
   const psicromiaContainer = document.getElementById('psicromia-scene');
   
   const onMouseDown = (e) => {
+    if (isEntryAnimating) return;
     if (e.button === 1) {
       e.preventDefault(); // Block middle-click auto-scroll icon
       return;
@@ -796,6 +1495,7 @@ function bindSceneDrag() {
   }
 
   document.addEventListener('mousemove', (e) => {
+    if (isEntryAnimating) return;
     if (isMouseDown) {
       const dx = e.clientX - startMouseX;
       const dy = e.clientY - startMouseY;
@@ -843,6 +1543,7 @@ function bindSceneDrag() {
   });
 
   document.addEventListener('mouseup', () => {
+    if (isEntryAnimating) return;
     const wasDraggingOrbit = isDraggingOrbit;
 
     isMouseDown = false;
@@ -850,9 +1551,9 @@ function bindSceneDrag() {
     isDraggingCascade = false;
     isDraggingPsicromia = false;
 
-    // Return the orbit vertical tilt/pitch to its initial default (220) on release
+    // Return the orbit vertical tilt/pitch to its initial default (225) on release
     if (activeView === 'orbit') {
-      targetOrbitRadiusY = 220;
+      targetOrbitRadiusY = 225;
     }
 
     if (isDraggingOrbitRight && activeView === 'orbit') {
@@ -931,13 +1632,11 @@ function triggerMomentumSpin(velocity) {
 
       // Select the snapped project
       activeCascadeIndex = targetIdx;
-      
-      // Auto transition to Cascade view
-      switchView('cascade');
-      
-      // Open the card focused and show the project info panel immediately
+      smoothCascadeIndex = targetIdx;
       isCascadeFocused = true;
-      showProjectInfoPanel();
+      
+      // Auto transition to Cascade view and open the card focado
+      switchView('cascade', true);
     }
   });
 }
@@ -975,13 +1674,9 @@ function triggerEasterEggSpin() {
       
       // Select the project and switch view
       activeCascadeIndex = randomIdx;
-      switchView('cascade');
+      smoothCascadeIndex = randomIdx;
       isCascadeFocused = true;
-      
-      // Wait a tiny bit and show the typographic project panel
-      setTimeout(() => {
-        showProjectInfoPanel();
-      }, 300);
+      switchView('cascade', true);
     }
   });
 }
@@ -1025,10 +1720,21 @@ function triggerRandomProjectCascade() {
 }
 
 function animateOrbitEntry() {
-  gsap.from('.logo', { y: -20, opacity: 0, duration: 1, ease: "power2.out" });
-  gsap.from('.nav', { y: -20, opacity: 0, duration: 1, ease: "power2.out", delay: 0.2 });
-  gsap.from('.visualizer-select', { y: 20, opacity: 0, duration: 1, ease: "power2.out", delay: 0.4 });
-  gsap.from('.orbit-center', { scale: 0.8, opacity: 0, duration: 1.2, ease: "power3.out" });
+  document.body.style.pointerEvents = 'none';
+  isEntryAnimating = true;
+
+  const tl = gsap.timeline({
+    onComplete: () => {
+      document.body.style.pointerEvents = 'auto';
+      isEntryAnimating = false;
+      console.log('Entrance animation complete, pointer events enabled.');
+    }
+  });
+
+  tl.from('.logo', { y: -20, opacity: 0, duration: 1, ease: "power2.out" }, 0)
+    .from('.nav', { y: -20, opacity: 0, duration: 1, ease: "power2.out" }, 0.2)
+    .from('.visualizer-select', { y: 20, opacity: 0, duration: 1, ease: "power2.out" }, 0.4)
+    .from('.orbit-center', { scale: 0.8, opacity: 0, duration: 1.2, ease: "power3.out" }, 0);
 }
 window.animateOrbitEntry = animateOrbitEntry;
 
@@ -1038,6 +1744,7 @@ window.animateOrbitEntry = animateOrbitEntry;
 let isCircleMode = false;
 
 function toggleCircles() {
+  if (isEntryAnimating) return;
   isCircleMode = !isCircleMode;
   const btn = document.getElementById('btn-circles');
   if (isCircleMode) {
@@ -1053,6 +1760,7 @@ function toggleCircles() {
 // MORPH VIEW SWITCHER
 // ==========================================================================
 function switchView(viewName, keepFocus = false) {
+  if (isEntryAnimating) return;
   if (activeView === viewName) return;
 
   // Intercept Orbit -> Cascade transition to slide the status-widget first
@@ -1083,7 +1791,13 @@ function proceedWithSwitchView(viewName, keepFocus = false) {
     const btn = document.getElementById('btn-circles');
     if (btn) btn.classList.remove('active');
   }
+  
+  const prevActiveView = activeView;
   activeView = viewName;
+
+  if (prevActiveView === 'orbit' && viewName !== 'orbit' && globeActive) {
+    deactivateGlobe();
+  }
 
   if (viewName !== 'cascade') {
     isCascadeFocused = false;
@@ -1110,11 +1824,31 @@ function proceedWithSwitchView(viewName, keepFocus = false) {
   }
 
   if (viewName === 'psicromia') {
-    // Hide projects scene and visualizer selects
-    document.getElementById('projects-scene').classList.remove('active');
+    isTransitioningToPsicromia = true;
+    // Keep projects-scene active during transition, show psicromia-scene
+    document.getElementById('projects-scene').classList.add('active');
     document.getElementById('psicromia-scene').classList.add('active');
+    
     gsap.to('.visualizer-select', { opacity: 0, y: 20, duration: 0.5, pointerEvents: 'none' });
     gsap.to('#orbit-center-text', { opacity: 0, duration: 0.3 });
+
+    // Animate transition progress
+    gsap.killTweensOf(psicromiaTransitionProgress);
+    gsap.fromTo(psicromiaTransitionProgress, 
+      { value: 0 },
+      {
+        value: 1,
+        duration: 0.8,
+        ease: "power2.out",
+        onComplete: () => {
+          isTransitioningToPsicromia = false;
+          // Only remove active if view did not change during animation
+          if (activeView === 'psicromia') {
+            document.getElementById('projects-scene').classList.remove('active');
+          }
+        }
+      }
+    );
 
     // Capture info panel position for text morph animation
     const infoPanel = document.getElementById('project-info-panel');
@@ -1152,19 +1886,38 @@ function proceedWithSwitchView(viewName, keepFocus = false) {
 
     animatePsicromiaEntry();
   } else {
-    // Animate gallery exit before switching scenes
-    const psicCards = document.querySelectorAll('.mosaic-card');
-    const psicHeader = document.getElementById('project-detail-header');
-    if (psicCards.length > 0) {
-      gsap.to(psicCards, { x: 60, opacity: 0, duration: 0.3, stagger: 0.02, ease: "power2.in" });
-    }
-    if (psicHeader) gsap.to(psicHeader, { x: 60, opacity: 0, duration: 0.3, ease: "power2.in" });
-    gsap.delayedCall(0.4, () => {
-      document.getElementById('psicromia-scene').classList.remove('active');
+    // Exiting Psicromia (or switching to another view)
+    if (prevActiveView === 'psicromia') {
+      isTransitioningFromPsicromia = true;
       document.getElementById('projects-scene').classList.add('active');
-      if (psicCards.length > 0) gsap.set(psicCards, { x: 0, opacity: 0 });
-      if (psicHeader) gsap.set(psicHeader, { x: 0, opacity: 1, clearProps: "transform" });
-    });
+      
+      const psicCards = document.querySelectorAll('.mosaic-card');
+      const psicHeader = document.getElementById('project-detail-header');
+      if (psicCards.length > 0) {
+        gsap.to(psicCards, { x: 60, opacity: 0, duration: 0.4, stagger: 0.02, ease: "power2.in" });
+      }
+      if (psicHeader) gsap.to(psicHeader, { x: 60, opacity: 0, duration: 0.4, ease: "power2.in" });
+
+      gsap.killTweensOf(psicromiaTransitionProgress);
+      gsap.fromTo(psicromiaTransitionProgress,
+        { value: 1 },
+        {
+          value: 0,
+          duration: 0.6,
+          ease: "power2.out",
+          onComplete: () => {
+            isTransitioningFromPsicromia = false;
+            if (activeView !== 'psicromia') {
+              document.getElementById('psicromia-scene').classList.remove('active');
+            }
+            if (psicCards.length > 0) gsap.set(psicCards, { x: 0, opacity: 0 });
+            if (psicHeader) gsap.set(psicHeader, { x: 0, opacity: 1, clearProps: "transform" });
+          }
+        }
+      );
+    } else {
+      document.getElementById('psicromia-scene').classList.remove('active');
+    }
 
     gsap.to('.visualizer-select', { opacity: 1, y: 0, duration: 0.5, pointerEvents: 'auto' });
 
@@ -1180,6 +1933,8 @@ function proceedWithSwitchView(viewName, keepFocus = false) {
     if (viewName === 'cascade') {
       if (!keepFocus) {
         isCascadeFocused = false; // reset when entered via switchView
+      } else {
+        isCascadeFocused = true;
       }
       gsap.to(transitionProgress, {
         value: 1,
@@ -1536,6 +2291,8 @@ function closeAllPanels() {
   document.getElementById('panel-overlay').classList.remove('active');
   document.getElementById('panel-sobre').classList.remove('active');
   document.getElementById('panel-contato').classList.remove('active');
+  const adminPanel = document.getElementById('admin-panel');
+  if (adminPanel) adminPanel.classList.remove('active');
 }
 
 function resetToHome(event) {
@@ -1612,6 +2369,7 @@ function initTheme() {
   updateThemeToggleIcon();
   
   document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+    if (isEntryAnimating) return;
     currentTheme = currentTheme === 'light' ? 'dark' : 'light';
     document.body.setAttribute('data-theme', currentTheme);
     localStorage.setItem('theme', currentTheme);
@@ -1767,6 +2525,68 @@ function closeAdminPanel() {
   closeProjectForm();
 }
 
+// ==========================================================================
+// SAVE-BEFORE-EXIT DIALOG
+// ==========================================================================
+let formIsDirty = false;  // true when the admin form has unsaved changes
+let _saveExitTarget = null; // 'form' | 'panel'
+
+function initSaveExitDialog() {
+  const btnSave    = document.getElementById('save-exit-save');
+  const btnDiscard = document.getElementById('save-exit-discard');
+  const btnCancel  = document.getElementById('save-exit-cancel');
+  if (!btnSave) return;
+
+  btnSave.addEventListener('click', () => {
+    // Trigger form submit programmatically
+    const form = document.getElementById('admin-project-form');
+    if (form) {
+      // Create and dispatch a submit event so saveProject() runs
+      form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true }));
+    }
+    hideSaveExitDialog();
+    if (_saveExitTarget === 'panel') {
+      document.getElementById('admin-panel')?.classList.remove('active');
+    }
+  });
+
+  btnDiscard.addEventListener('click', () => {
+    hideSaveExitDialog();
+    formIsDirty = false;
+    if (_saveExitTarget === 'panel') {
+      closeProjectForm();
+      document.getElementById('admin-panel')?.classList.remove('active');
+    } else {
+      closeProjectForm();
+    }
+  });
+
+  btnCancel.addEventListener('click', () => {
+    hideSaveExitDialog();
+  });
+
+  // Close on backdrop click
+  document.getElementById('save-exit-dialog').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) hideSaveExitDialog();
+  });
+}
+
+function showSaveExitDialog(target) {
+  _saveExitTarget = target;
+  const dialog = document.getElementById('save-exit-dialog');
+  if (dialog) dialog.classList.add('visible');
+}
+
+function hideSaveExitDialog() {
+  const dialog = document.getElementById('save-exit-dialog');
+  if (dialog) dialog.classList.remove('visible');
+  _saveExitTarget = null;
+}
+
+function markFormDirty() {
+  formIsDirty = true;
+}
+
 function renderAdminProjectsList() {
   const listContainer = document.getElementById('admin-projects-list');
   if (!listContainer) return;
@@ -1855,12 +2675,30 @@ function openProjectForm(projectId = null) {
   }
 
   formModal.classList.add('active');
+  formIsDirty = false; // reset dirty flag when form opens
+
+  // Track changes to mark form as dirty (avoid duplicate listeners)
+  if (form && !form.dataset.dirtyListenersAdded) {
+    form.querySelectorAll('input, textarea, select').forEach(el => {
+      el.addEventListener('input', markFormDirty);
+      el.addEventListener('change', markFormDirty);
+    });
+    form.dataset.dirtyListenersAdded = 'true';
+  }
 }
 
 function closeProjectForm() {
   const formModal = document.getElementById('admin-form-modal');
+  const form = document.getElementById('admin-project-form');
   if (formModal) {
     formModal.classList.remove('active');
+  }
+  if (form && form.dataset.dirtyListenersAdded) {
+    form.querySelectorAll('input, textarea, select').forEach(el => {
+      el.removeEventListener('input', markFormDirty);
+      el.removeEventListener('change', markFormDirty);
+    });
+    form.dataset.dirtyListenersAdded = 'false';
   }
 }
 
@@ -2288,6 +3126,7 @@ function initWidgetGeo() {
   const compassBtn = document.querySelector('.status-widget__compass');
   if (compassBtn) {
     compassBtn.addEventListener('click', (e) => {
+      if (isEntryAnimating) return;
       e.stopPropagation();
       getAndUpdatePosition(true);
     });

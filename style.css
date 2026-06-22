@@ -66,6 +66,7 @@ body {
   font-family: var(--font-sans);
   line-height: 1.6;
   transition: background-color 0.8s var(--transition-smooth), color 0.8s var(--transition-smooth);
+  pointer-events: none; /* Block interactions during loading and entry animation */
 }
 
 a, button {
@@ -226,14 +227,13 @@ body * {
 }
 
 .geo-point {
-  transition: opacity 0.3s ease;
+  fill: #ffffff;
 }
 
 .geo-line {
   stroke: rgba(255, 255, 255, 0.3);
   stroke-width: 1.5;
   stroke-linecap: round;
-  transition: opacity 0.3s ease;
 }
 
 /* ==========================================================================
@@ -260,7 +260,6 @@ body * {
   text-decoration: none;
   color: var(--text-color);
   letter-spacing: normal;
-  text-transform: uppercase;
   pointer-events: auto;
   background-color: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -316,7 +315,6 @@ body * {
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: normal;
-  text-transform: uppercase;
   text-decoration: none;
   color: var(--text-color);
   background-color: var(--glass-bg);
@@ -484,6 +482,30 @@ body * {
   opacity: 0.95;
   transition: transform 0.1s ease;
 }
+
+/* ---- Earth Globe Canvas ---- */
+#earth-globe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 300px;
+  height: 300px;
+  display: none;
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  z-index: 12;
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.55));
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform, opacity;
+}
+
+#earth-globe.globe-active {
+  pointer-events: auto;
+}
+
 
 /* Back buttons inside views */
 .psicromia-back-btn, .cascade-back-btn {
@@ -1372,6 +1394,7 @@ body[data-theme='light'] .admin-media-row {
   box-shadow: var(--card-shadow);
   z-index: 800;
   pointer-events: auto;
+  cursor: pointer;
   transition: background-color 0.3s ease, box-shadow 0.3s ease, border 0.3s ease, bottom 0.3s ease;
 }
 
@@ -1391,7 +1414,7 @@ body[data-theme='light'] .admin-media-row {
   justify-content: center;
   width: 32px;
   height: 32px;
-  color: var(--accent-color);
+  color: #ff3b30; /* Vermelho bússola */
   cursor: pointer;
   transition: transform 0.2s ease;
 }

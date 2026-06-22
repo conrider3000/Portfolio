@@ -19,11 +19,8 @@
   <meta name="twitter:card" content="summary_large_image">
   
   <!-- Styling -->
-  <link rel="stylesheet" href="style.css?v=1.0.35">
+  <link rel="stylesheet" href="style.css?v=1.0.42">
   
-  <!-- GSAP Core for 3D animations -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script>if (typeof gsap === 'undefined') { document.write('<script src="js/gsap.min.js"><\/script>'); }</script>
 </head>
 <body>
 
@@ -42,19 +39,7 @@
   <!-- Site Intro Loader -->
   <div class="site-loader" id="loader">
     <div class="loader-container">
-      <svg class="loader-geo" id="loader-geo" viewBox="0 0 240 240">
-        <circle class="geo-point" id="geo-p0" cx="120" cy="120" r="5" />
-        <circle class="geo-point" id="geo-p1" cx="120" cy="120" r="5" />
-        <circle class="geo-point" id="geo-p2" cx="120" cy="120" r="5" />
-        <circle class="geo-point" id="geo-p3" cx="120" cy="120" r="5" />
-        <line class="geo-line" id="geo-l01" x1="120" y1="120" x2="120" y2="120" />
-        <line class="geo-line" id="geo-l02" x1="120" y1="120" x2="120" y2="120" />
-        <line class="geo-line" id="geo-l12" x1="120" y1="120" x2="120" y2="120" />
-        <line class="geo-line" id="geo-l03" x1="120" y1="120" x2="120" y2="120" />
-        <line class="geo-line" id="geo-l13" x1="120" y1="120" x2="120" y2="120" />
-        <line class="geo-line" id="geo-l23" x1="120" y1="120" x2="120" y2="120" />
-        <g id="geo-dynamic"></g>
-      </svg>
+      <canvas class="loader-geo" id="loader-canvas" width="480" height="480" style="display: block;"></canvas>
       <div class="loader-bar-container">
         <div class="loader-bar-fill" id="loader-bar-fill"></div>
       </div>
@@ -68,154 +53,560 @@
         const loader = document.getElementById('loader');
         if (!loader) return;
 
-        const pts = [
-          document.getElementById('geo-p0'),
-          document.getElementById('geo-p1'),
-          document.getElementById('geo-p2'),
-          document.getElementById('geo-p3')
-        ];
-        const lines = [
-          document.getElementById('geo-l01'),
-          document.getElementById('geo-l02'),
-          document.getElementById('geo-l12'),
-          document.getElementById('geo-l03'),
-          document.getElementById('geo-l13'),
-          document.getElementById('geo-l23')
-        ];
-        const lineConnections = [[0,1],[0,2],[1,2],[0,3],[1,3],[2,3]];
+        const canvas = document.getElementById('loader-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(2, 2); // support HiDPI with 240x240 coordinates system on 480x480 backing store
 
-        pts.forEach((p) => p && p.setAttribute('fill', '#ffffff'));
-
-        const stages = [
-          { pts: [[120,120], null, null, null],      lines: [0,0,0,0,0,0] },
-          { pts: [[30,120], [210,120], null, null],   lines: [1,0,0,0,0,0] },
-          { pts: [[120,30], [30,195], [210,195], null], lines: [1,1,1,0,0,0] }
+        // 1. Define Vertices for all Platonic Solids (Normalized to distance approx sqrt(3) ~ 1.732)
+        const tetraVertices = [
+          { x:  1, y:  1, z:  1 },
+          { x:  1, y: -1, z: -1 },
+          { x: -1, y:  1, z: -1 },
+          { x: -1, y: -1, z:  1 }
         ];
 
-        const NS = 'http://www.w3.org/2000/svg';
-        const dyn = document.getElementById('geo-dynamic');
-        let animLoop = null;
-        let tetraOpacity = 1.0;
-        let morphToCircle = 0;
+        const octaVertices = [
+          { x: 1.732, y: 0, z: 0 },
+          { x: -1.732, y: 0, z: 0 },
+          { x: 0, y: 1.732, z: 0 },
+          { x: 0, y: -1.732, z: 0 },
+          { x: 0, y: 0, z: 1.732 },
+          { x: 0, y: 0, z: -1.732 }
+        ];
 
-        function killAnim() { if (animLoop) { cancelAnimationFrame(animLoop); animLoop = null; } }
+        const cubeVertices = [
+          { x: -1, y: -1, z: -1 }, // 0
+          { x:  1, y: -1, z: -1 }, // 1
+          { x:  1, y:  1, z: -1 }, // 2
+          { x: -1, y:  1, z: -1 }, // 3
+          { x: -1, y: -1, z:  1 }, // 4
+          { x:  1, y: -1, z:  1 }, // 5
+          { x:  1, y:  1, z:  1 }, // 6
+          { x: -1, y:  1, z:  1 }  // 7
+        ];
+
+        const phi = 1.6180339887;
+        const f = 0.91055728; // scale factor to normalize icosahedron vertices to length sqrt(3)
+        const icosaVertices = [
+          { x: 0, y: f, z: f * phi },
+          { x: 0, y: f, z: -f * phi },
+          { x: 0, y: -f, z: f * phi },
+          { x: 0, y: -f, z: -f * phi },
+          { x: f, y: f * phi, z: 0 },
+          { x: f, y: -f * phi, z: 0 },
+          { x: -f, y: f * phi, z: 0 },
+          { x: -f, y: -f * phi, z: 0 },
+          { x: f * phi, y: 0, z: f },
+          { x: f * phi, y: 0, z: -f },
+          { x: -f * phi, y: 0, z: f },
+          { x: -f * phi, y: 0, z: -f }
+        ];
+
+        const dodecaVertices = [];
+        // 8 cube vertices (length sqrt(3))
+        for (let x of [-1, 1]) {
+          for (let y of [-1, 1]) {
+            for (let z of [-1, 1]) {
+              dodecaVertices.push({ x, y, z });
+            }
+          }
+        }
+        // 12 golden rectangle vertices (length sqrt(3))
+        const invPhi = phi - 1;
+        const pairs = [
+          [0, invPhi, phi],
+          [0, invPhi, -phi],
+          [0, -invPhi, phi],
+          [0, -invPhi, -phi],
+          [invPhi, phi, 0],
+          [invPhi, -phi, 0],
+          [-invPhi, phi, 0],
+          [-invPhi, -phi, 0],
+          [phi, 0, invPhi],
+          [phi, 0, -invPhi],
+          [-phi, 0, invPhi],
+          [-phi, 0, -invPhi]
+        ];
+        pairs.forEach(p => {
+          dodecaVertices.push({ x: p[0], y: p[1], z: p[2] });
+        });
+
+        // 2. Define Edges for all Solids
+        const T_conn = [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]];
+        const C_conn = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
+        const octaEdges = [
+          [0, 2], [2, 1], [1, 3], [3, 0],
+          [0, 4], [1, 4], [2, 4], [3, 4],
+          [0, 5], [1, 5], [2, 5], [3, 5]
+        ];
+
+        // Programmatic edges for Icosahedron
+        const icosaEdges = [];
+        for (let i = 0; i < 12; i++) {
+          for (let j = i + 1; j < 12; j++) {
+            const dx = icosaVertices[i].x - icosaVertices[j].x;
+            const dy = icosaVertices[i].y - icosaVertices[j].y;
+            const dz = icosaVertices[i].z - icosaVertices[j].z;
+            const d2 = dx*dx + dy*dy + dz*dz;
+            if (Math.abs(d2 - 3.3164) < 0.05) {
+              icosaEdges.push([i, j]);
+            }
+          }
+        }
+
+        // Programmatic edges for Dodecahedron
+        const dodecaEdges = [];
+        const dodecaDistSq = 8 - 4 * phi; // approx 1.52786
+        for (let i = 0; i < 20; i++) {
+          for (let j = i + 1; j < 20; j++) {
+            const dx = dodecaVertices[i].x - dodecaVertices[j].x;
+            const dy = dodecaVertices[i].y - dodecaVertices[j].y;
+            const dz = dodecaVertices[i].z - dodecaVertices[j].z;
+            const d2 = dx*dx + dy*dy + dz*dz;
+            if (Math.abs(d2 - dodecaDistSq) < 0.05) {
+              dodecaEdges.push([i, j]);
+            }
+          }
+        }
+
+        // 3. Define faces programmatically
+        const triangleFaces = [[0, 1, 2]];
+        const tetraFaces = [[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 0, 3]];
+        const octaFaces = [
+          [0, 2, 4], [2, 1, 4], [1, 3, 4], [3, 0, 4],
+          [0, 2, 5], [2, 1, 5], [1, 3, 5], [3, 0, 5]
+        ];
+        const cubeFaces = [
+          [0, 1, 2, 3], [4, 5, 6, 7],
+          [0, 1, 5, 4], [2, 3, 7, 6],
+          [0, 3, 7, 4], [1, 2, 6, 5]
+        ];
+
+        // Icosahedron: 20 triangular faces
+        const icosaFaces = [];
+        const icosaEdgeSet = new Set();
+        icosaEdges.forEach(e => {
+          icosaEdgeSet.add(`${e[0]}-${e[1]}`);
+          icosaEdgeSet.add(`${e[1]}-${e[0]}`);
+        });
+        for (let i = 0; i < 12; i++) {
+          for (let j = i + 1; j < 12; j++) {
+            if (icosaEdgeSet.has(`${i}-${j}`)) {
+              for (let k = j + 1; k < 12; k++) {
+                if (icosaEdgeSet.has(`${j}-${k}`) && icosaEdgeSet.has(`${k}-${i}`)) {
+                  icosaFaces.push([i, j, k]);
+                }
+              }
+            }
+          }
+        }
+
+        // Dodecahedron: 12 pentagonal faces
+        const dodecaFaces = [];
+        const dodecaAdj = Array.from({length: 20}, () => []);
+        dodecaEdges.forEach(e => {
+          dodecaAdj[e[0]].push(e[1]);
+          dodecaAdj[e[1]].push(e[0]);
+        });
+        const dodecaCycles = [];
+        function findDodecaCycles(v, start, path) {
+          if (path.length === 5) {
+            if (dodecaAdj[v].includes(start)) {
+              const sorted = [...path].sort((a,b)=>a-b).join(',');
+              if (!dodecaCycles.includes(sorted)) {
+                dodecaCycles.push(sorted);
+                dodecaFaces.push([...path]);
+              }
+            }
+            return;
+          }
+          for (let next of dodecaAdj[v]) {
+            if (!path.includes(next)) {
+              path.push(next);
+              findDodecaCycles(next, start, path);
+              path.pop();
+            }
+          }
+        }
+        for (let i = 0; i < 20; i++) {
+          findDodecaCycles(i, i, [i]);
+        }
+
+        // 4. Define Shapes Sequence
+        const shapes = [
+          { vertices: [{ x: 0, y: 0, z: 0 }], edges: [], faces: [], scale: 0 },
+          { vertices: [{ x: -1, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }], edges: [[0, 1]], faces: [], scale: 90 },
+          {
+            vertices: [
+              { x: 0, y: -1, z: 0 },
+              { x: -0.866, y: 0.5, z: 0 },
+              { x: 0.866, y: 0.5, z: 0 }
+            ],
+            edges: [[0, 1], [1, 2], [2, 0]],
+            faces: triangleFaces,
+            scale: 95
+          },
+          { vertices: tetraVertices, edges: T_conn, faces: tetraFaces, scale: 68 },
+          { vertices: octaVertices, edges: octaEdges, faces: octaFaces, scale: 68 },
+          { vertices: cubeVertices, edges: C_conn, faces: cubeFaces, scale: 55 },
+          { vertices: icosaVertices, edges: icosaEdges, faces: icosaFaces, scale: 45 },
+          { vertices: dodecaVertices, edges: dodecaEdges, faces: dodecaFaces, scale: 36 }
+        ];
+
         function easeOut(t) { return 1 - Math.pow(1 - t, 2); }
+        function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
 
-        function tweenAttr(el, target, dur, cb) {
-          if (!el) return;
-          const start = {};
-          for (const k in target) start[k] = parseFloat(el.getAttribute(k) || el.style[k] || 0);
-          const t0 = performance.now();
-          function tick(now) {
-            const p = Math.min((now - t0) / dur, 1);
-            const e = easeOut(p);
-            for (const k in target) el.setAttribute(k, start[k] + (target[k] - start[k]) * e);
-            if (p < 1) requestAnimationFrame(tick);
-            else if (cb) cb();
-          }
-          requestAnimationFrame(tick);
-        }
-
-        function tweenOpacity(el, to, dur, cb) {
-          if (!el) return;
-          const from = parseFloat(el.getAttribute('opacity') || 1);
-          const t0 = performance.now();
-          function tick(now) {
-            const p = Math.min((now - t0) / dur, 1);
-            el.setAttribute('opacity', from + (to - from) * easeOut(p));
-            if (p < 1) requestAnimationFrame(tick);
-            else if (cb) cb();
-          }
-          requestAnimationFrame(tick);
-        }
-
-        function animToStage(idx) {
-          killAnim();
-          if (dyn) dyn.innerHTML = '';
-          const s = stages[idx];
-          s.pts.forEach((pos, i) => {
-            if (pos) tweenAttr(pts[i], { cx: pos[0], cy: pos[1], opacity: 1 }, 400);
-            else tweenOpacity(pts[i], 0, 250);
+        function getClosestVertex(v, shape) {
+          let minDist = Infinity;
+          let closestIdx = 0;
+          shape.vertices.forEach((va, idx) => {
+            const dx = v.x - va.x;
+            const dy = v.y - va.y;
+            const dz = v.z - va.z;
+            const d = dx*dx + dy*dy + dz*dz;
+            if (d < minDist) {
+              minDist = d;
+              closestIdx = idx;
+            }
           });
-          lineConnections.forEach((c, i) => {
-            const pa = s.pts[c[0]], pb = s.pts[c[1]];
-            if (pa && pb && s.lines[i]) tweenAttr(lines[i], { x1: pa[0], y1: pa[1], x2: pb[0], y2: pb[1], opacity: 0.5 }, 400);
-            else tweenOpacity(lines[i], 0, 250);
-          });
+          return closestIdx;
         }
 
-        function startTetrahedron() {
-          killAnim();
-          if (dyn) dyn.innerHTML = '';
-          for (let i = 0; i < 6; i++) tweenOpacity(lines[i], 1, 200);
+        // Precalculate LERP mappings between consecutive shapes for 60fps performance
+        const transitionMaps = [];
+        for (let s = 0; s < shapes.length - 1; s++) {
+          const sA = shapes[s];
+          const sB = shapes[s + 1];
+          const numV_A = sA.vertices.length;
+          const numV_B = sB.vertices.length;
 
-          const scale = 68;
-          const raw = [
-            { x:  1, y:  1, z:  1 },
-            { x:  1, y: -1, z: -1 },
-            { x: -1, y:  1, z: -1 },
-            { x: -1, y: -1, z:  1 }
-          ];
+          // Vertex map
+          const vertexMap = [];
+          for (let i = 0; i < 20; i++) {
+            let v_A, v_B, op_A, op_B;
+            if (i < numV_A && i < numV_B) {
+              v_A = sA.vertices[i];
+              v_B = sB.vertices[i];
+              op_A = 1; op_B = 1;
+            } else if (i < numV_B) {
+              v_B = sB.vertices[i];
+              const c = getClosestVertex(v_B, sA);
+              v_A = sA.vertices[c];
+              op_A = 0; op_B = 1;
+            } else if (i < numV_A) {
+              v_A = sA.vertices[i];
+              const c = getClosestVertex(v_A, sB);
+              v_B = sB.vertices[c];
+              op_A = 1; op_B = 0;
+            } else {
+              v_A = { x: 0, y: 0, z: 0 };
+              v_B = { x: 0, y: 0, z: 0 };
+              op_A = 0; op_B = 0;
+            }
+            vertexMap.push({ v_A, v_B, op_A, op_B });
+          }
 
-          const tiltX = 0.42;
+          // Edge map
+          const numE_A = sA.edges.length;
+          const numE_B = sB.edges.length;
+          const edgeMap = [];
+          for (let k = 0; k < 30; k++) {
+            let connA, connB, op_A, op_B;
+            if (k < numE_A && k < numE_B) {
+              connA = sA.edges[k];
+              connB = sB.edges[k];
+              op_A = 1; op_B = 1;
+            } else if (k < numE_A) {
+              connA = sA.edges[k];
+              const v0 = sA.vertices[connA[0]];
+              const v1 = sA.vertices[connA[1]];
+              connB = [getClosestVertex(v0, sB), getClosestVertex(v1, sB)];
+              op_A = 1; op_B = 0;
+            } else if (k < numE_B) {
+              connB = sB.edges[k];
+              const v0 = sB.vertices[connB[0]];
+              const v1 = sB.vertices[connB[1]];
+              connA = [getClosestVertex(v0, sA), getClosestVertex(v1, sA)];
+              op_A = 0; op_B = 1;
+            } else {
+              connA = [0, 0];
+              connB = [0, 0];
+              op_A = 0; op_B = 0;
+            }
+            edgeMap.push({ connA, connB, op_A, op_B });
+          }
+
+          transitionMaps.push({ vertexMap, edgeMap });
+        }
+
+        function project3D(v, angle, tiltX, scale) {
+          const cosA = Math.cos(angle), sinA = Math.sin(angle);
+          const rx = v.x * cosA + v.z * sinA;
+          const rz = -v.x * sinA + v.z * cosA;
+          const ry = v.y;
+
           const cosX = Math.cos(tiltX), sinX = Math.sin(tiltX);
+          const ry2 = ry * cosX - rz * sinX;
+          const rz2 = ry * sinX + rz * cosX;
 
-          let angle = 0;
-          function frame() {
-            angle += 0.018;
-            const cosA = Math.cos(angle), sinA = Math.sin(angle);
+          const x = 120 + rx * scale;
+          const y = 120 + ry2 * scale;
 
-            const projected = raw.map(v => {
-              const rx = v.x * cosA + v.z * sinA;
-              const rz = -v.x * sinA + v.z * cosA;
-              const ry = v.y;
-              const ry2 = ry * cosX - rz * sinX;
-              const rz2 = ry * sinX + rz * cosX;
-              
-              const base3dX = 120 + rx * scale;
-              const base3dY = 120 + ry2 * scale;
-              
-              const angleOnScreen = Math.atan2(ry2, rx);
-              const R = 110;
-              const target2dX = 120 + Math.cos(angleOnScreen) * R;
-              const target2dY = 120 + Math.sin(angleOnScreen) * R;
-              
-              const x = base3dX + (target2dX - base3dX) * morphToCircle;
-              const y = base3dY + (target2dY - base3dY) * morphToCircle;
-              
-              const depth = ((rz2 + 2) / 4) * (1 - morphToCircle) + 0.5 * morphToCircle;
-              return { x, y, depth };
-            });
-
-            projected.forEach((p, i) => {
-              if (pts[i]) {
-                pts[i].setAttribute('cx', p.x);
-                pts[i].setAttribute('cy', p.y);
-                pts[i].setAttribute('r', '' + (2 + p.depth * 3));
-                pts[i].setAttribute('opacity', '' + (0.4 + p.depth * 0.6) * tetraOpacity);
-              }
-            });
-
-            lineConnections.forEach((c, i) => {
-              if (lines[i]) {
-                const pa = projected[c[0]], pb = projected[c[1]];
-                const depth = (pa.depth + pb.depth) / 2;
-                lines[i].setAttribute('x1', pa.x);
-                lines[i].setAttribute('y1', pa.y);
-                lines[i].setAttribute('x2', pb.x);
-                lines[i].setAttribute('y2', pb.y);
-                lines[i].setAttribute('opacity', '' + (0.15 + depth * 0.55) * tetraOpacity);
-              }
-            });
-
-            animLoop = requestAnimationFrame(frame);
-          }
-          frame();
+          const maxZ = 1.732;
+          const depth = (rz2 + maxZ) / (2 * maxZ);
+          return { x, y, depth };
         }
+
+        let angle = 0;
+        let lastTime = performance.now();
+        const startTime = performance.now();
+        let animLoop = null;
 
         let siteReady = false;
         let circlePhaseStarted = false;
         let minCircleTimePassed = false;
+
+        function killAnim() { if (animLoop) { cancelAnimationFrame(animLoop); animLoop = null; } }
+
+        function tick(now) {
+          const t = now - startTime;
+          const dt = now - lastTime;
+          lastTime = now;
+
+          // Increment rotation angle
+          let speed = 0.0015;
+          if (t >= 5300) {
+            const circleMorph = Math.min((t - 5300) / 1200, 1);
+            speed = 0.0015 + 0.002 * easeInOut(circleMorph);
+          }
+          angle += speed * dt;
+
+          let mapIdx, p;
+          let is3D = false;
+
+          // Stages timeline
+          if (t < 600) {
+            mapIdx = 0; p = 0;
+          } else if (t < 1200) {
+            mapIdx = 0; p = (t - 600) / 600;
+          } else if (t < 1800) {
+            mapIdx = 1; p = (t - 1200) / 600;
+          } else if (t < 2500) {
+            mapIdx = 2; p = (t - 1800) / 700;
+            is3D = true;
+          } else if (t < 3200) {
+            mapIdx = 3; p = (t - 2500) / 700;
+            is3D = true;
+          } else if (t < 3900) {
+            mapIdx = 4; p = (t - 3200) / 700;
+            is3D = true;
+          } else if (t < 4600) {
+            mapIdx = 5; p = (t - 3900) / 700;
+            is3D = true;
+          } else if (t < 5300) {
+            mapIdx = 6; p = (t - 4600) / 700;
+            is3D = true;
+          } else {
+            mapIdx = 6; p = 1;
+            is3D = true;
+          }
+
+          const ep = (t < 1800) ? easeOut(p) : easeInOut(p);
+
+          const shapeA = mapIdx;
+          const shapeB = mapIdx + 1;
+          const sA = shapes[shapeA];
+          const sB = shapes[shapeB];
+
+          const scaleA = sA.scale;
+          const scaleB = sB.scale;
+          const scale = scaleA * (1 - ep) + scaleB * ep;
+
+          let tiltX = 0.42;
+          let circleMorph = 0;
+          if (t >= 5300) {
+            circleMorph = Math.min((t - 5300) / 1200, 1);
+            const e5 = easeInOut(circleMorph);
+            tiltX = 0.42 * (1 - e5);
+          }
+
+          const map = transitionMaps[mapIdx];
+
+          // Calculate current coordinates for all 20 points
+          const curPoints = [];
+          for (let i = 0; i < 20; i++) {
+            const m = map.vertexMap[i];
+            const x3D = m.v_A.x * (1 - ep) + m.v_B.x * ep;
+            const y3D = m.v_A.y * (1 - ep) + m.v_B.y * ep;
+            const z3D = m.v_A.z * (1 - ep) + m.v_B.z * ep;
+
+            let pt;
+            if (is3D) {
+              pt = project3D({ x: x3D, y: y3D, z: z3D }, angle, tiltX, scale);
+            } else {
+              pt = { x: 120 + x3D * scale, y: 120 + y3D * scale, depth: 0.5 };
+            }
+
+            // Circle morphing
+            if (t >= 5300) {
+              const e5 = easeInOut(circleMorph);
+              const angleTarget = angle + i * Math.PI / 10;
+              const tx = 120 + 110 * Math.cos(angleTarget);
+              const ty = 120 + 110 * Math.sin(angleTarget);
+              pt.x = pt.x * (1 - e5) + tx * e5;
+              pt.y = pt.y * (1 - e5) + ty * e5;
+              pt.depth = pt.depth * (1 - e5) + 0.5 * e5;
+            }
+
+            let opacity = m.op_A * (1 - ep) + m.op_B * ep;
+            if (t >= 5300) {
+              const e5 = easeInOut(circleMorph);
+              opacity = opacity * (1 - e5) + 0.9 * e5;
+            }
+            pt.opacity = opacity;
+            curPoints.push(pt);
+          }
+
+          // Clear Canvas
+          ctx.clearRect(0, 0, 240, 240);
+
+          // 1. Gather & Sort Translucent Faces (Painter's Algorithm)
+          // Opacity is very subtle (e.g. 0.04) as requested.
+          const facesToDraw = [];
+          
+          // Draw faces of sA
+          if (sA.faces && sA.faces.length > 0 && (1 - ep) > 0.001) {
+            sA.faces.forEach(face => {
+              let sumDepth = 0;
+              face.forEach(idx => { sumDepth += curPoints[idx].depth; });
+              const avgDepth = sumDepth / face.length;
+              facesToDraw.push({
+                indices: face,
+                opacity: 0.045 * (1 - ep),
+                avgDepth: avgDepth
+              });
+            });
+          }
+          // Draw faces of sB
+          if (sB.faces && sB.faces.length > 0 && ep > 0.001) {
+            sB.faces.forEach(face => {
+              let sumDepth = 0;
+              face.forEach(idx => { sumDepth += curPoints[idx].depth; });
+              const avgDepth = sumDepth / face.length;
+              facesToDraw.push({
+                indices: face,
+                opacity: 0.045 * ep,
+                avgDepth: avgDepth
+              });
+            });
+          }
+
+          // Sort back-to-front
+          facesToDraw.sort((a, b) => a.avgDepth - b.avgDepth);
+
+          // Draw faces
+          facesToDraw.forEach(face => {
+            ctx.fillStyle = `rgba(255, 255, 255, ${face.opacity})`;
+            ctx.beginPath();
+            ctx.moveTo(curPoints[face.indices[0]].x, curPoints[face.indices[0]].y);
+            for (let idx = 1; idx < face.indices.length; idx++) {
+              ctx.lineTo(curPoints[face.indices[idx]].x, curPoints[face.indices[idx]].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+          });
+
+          // 2. Draw 30 Edges (Lines)
+          for (let k = 0; k < 30; k++) {
+            const m = map.edgeMap[k];
+            let opacity = m.op_A * (1 - ep) + m.op_B * ep;
+            if (opacity <= 0.001) continue;
+
+            const idxA_0 = m.connA[0];
+            const idxA_1 = m.connA[1];
+            const idxB_0 = m.connB[0];
+            const idxB_1 = m.connB[1];
+
+            const x1 = curPoints[idxA_0].x * (1 - ep) + curPoints[idxB_0].x * ep;
+            const y1 = curPoints[idxA_0].y * (1 - ep) + curPoints[idxB_0].y * ep;
+            const x2 = curPoints[idxA_1].x * (1 - ep) + curPoints[idxB_1].x * ep;
+            const y2 = curPoints[idxA_1].y * (1 - ep) + curPoints[idxB_1].y * ep;
+
+            const depth = (curPoints[idxA_0].depth * (1 - ep) + curPoints[idxB_0].depth * ep +
+                           curPoints[idxA_1].depth * (1 - ep) + curPoints[idxB_1].depth * ep) / 2;
+
+            if (t >= 5300) {
+              opacity = opacity * (1 - circleMorph);
+            }
+
+            const finalOpacity = opacity * (is3D ? (0.15 + depth * 0.55) : 0.5);
+
+            ctx.strokeStyle = `rgba(255, 255, 255, ${finalOpacity})`;
+            ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+          }
+
+          // 3. Draw 20 Ring Edge Lines (for circle phase)
+          if (t >= 5300) {
+            const e5 = easeInOut(circleMorph);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${e5 * 0.9})`;
+            ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round';
+            for (let i = 0; i < 20; i++) {
+              const pA = curPoints[i];
+              const pB = curPoints[(i + 1) % 20];
+              ctx.beginPath();
+              ctx.moveTo(pA.x, pA.y);
+              ctx.lineTo(pB.x, pB.y);
+              ctx.stroke();
+            }
+          }
+
+          // 4. Draw 20 Vertices (Circles)
+          for (let i = 0; i < 20; i++) {
+            const pt = curPoints[i];
+            if (pt.opacity <= 0.001) continue;
+
+            let r = is3D ? (2 + pt.depth * 3) : 5;
+            if (t >= 5300) {
+              const e5 = easeInOut(circleMorph);
+              r = r * (1 - e5) + 3.5 * e5;
+            }
+
+            const finalOpacity = pt.opacity * (is3D ? (0.4 + pt.depth * 0.6) : 1);
+            ctx.fillStyle = `rgba(255, 255, 255, ${finalOpacity})`;
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          if (t >= 5300 && !circlePhaseStarted) {
+            circlePhaseStarted = true;
+          }
+          if (t >= 6100 && !minCircleTimePassed) {
+            minCircleTimePassed = true;
+            tryFadeOut();
+          }
+
+          animLoop = requestAnimationFrame(tick);
+        }
+
+        // Initialize progress bar
+        const barFill = document.getElementById('loader-bar-fill');
+        if (barFill) {
+          barFill.style.transition = 'width 6.2s linear';
+          barFill.style.width = '0%';
+          barFill.offsetHeight; // Force reflow
+          barFill.style.width = '100%';
+        }
+
+        // Start tick loop
+        animLoop = requestAnimationFrame(tick);
 
         if (document.readyState === 'complete') {
           siteReady = true;
@@ -227,81 +618,20 @@
         }
 
         function tryFadeOut() {
-          if (circlePhaseStarted && siteReady && minCircleTimePassed) {
-            fadeOutLoader();
-          }
-        }
-
-        function fadeOutLoader() {
-          killAnim();
-          let op = 1;
-          function fade() {
-            op -= 0.025;
-            if (op <= 0) {
-              loader.style.opacity = 0;
+          if (siteReady && minCircleTimePassed) {
+            loader.style.transition = 'opacity 0.6s ease';
+            loader.style.opacity = '0';
+            setTimeout(() => {
               loader.style.display = 'none';
+              killAnim();
               if (window.animateOrbitEntry) {
                 window.animateOrbitEntry();
               } else {
                 window.loaderFinished = true;
               }
-              return;
-            }
-            loader.style.opacity = op;
-            requestAnimationFrame(fade);
+            }, 600);
           }
-          requestAnimationFrame(fade);
         }
-
-        function startCircle() {
-          if (dyn) dyn.innerHTML = '';
-          const R = 110;
-          const outline = document.createElementNS(NS, 'circle');
-          outline.setAttribute('cx', '120');
-          outline.setAttribute('cy', '120');
-          outline.setAttribute('r', '' + R);
-          outline.setAttribute('fill', 'none');
-          outline.setAttribute('stroke', '#ffffff');
-          outline.setAttribute('stroke-opacity', '0.9');
-          outline.setAttribute('stroke-width', '1.5');
-          
-          const circ = Math.PI * 2 * R;
-          outline.setAttribute('stroke-dasharray', '' + circ);
-          outline.setAttribute('stroke-dashoffset', '' + circ);
-          if (dyn) dyn.appendChild(outline);
-          
-          tweenAttr(outline, { 'stroke-dashoffset': 0 }, 800, () => {
-            killAnim();
-            pts.forEach(p => p && p.setAttribute('opacity', '0'));
-            lines.forEach(l => l && l.setAttribute('opacity', '0'));
-          });
-
-          circlePhaseStarted = true;
-
-          setTimeout(() => {
-            minCircleTimePassed = true;
-            tryFadeOut();
-          }, 800);
-        }
-
-        pts[1].setAttribute('opacity', '0');
-        pts[2].setAttribute('opacity', '0');
-        pts[3].setAttribute('opacity', '0');
-        for (let i = 0; i < 6; i++) lines[i].setAttribute('opacity', '0');
-
-        const barFill = document.getElementById('loader-bar-fill');
-        if (barFill) {
-          barFill.style.transition = 'width 5.3s linear';
-          barFill.style.width = '0%';
-          barFill.offsetHeight; // Force reflow
-          barFill.style.width = '100%';
-        }
-
-        animToStage(0);
-        setTimeout(() => animToStage(1), 1000);
-        setTimeout(() => animToStage(2), 2000);
-        setTimeout(() => { startTetrahedron(); }, 3000);
-        setTimeout(() => { startCircle(); }, 4500);
       }
 
       runLoader();
@@ -311,7 +641,7 @@
   <!-- Header navigation -->
   <header class="header">
     <div class="header-left">
-      <a href="#" class="logo" id="logo-text" onclick="resetToHome(event)">CONRADO</a>
+      <a href="#" class="logo" id="logo-text" onclick="resetToHome(event)">Conrado</a>
       <ul class="nav__list">
         <li><a href="#" class="nav__link" onclick="openPanel('sobre', event)" data-i18n="nav.about">Sobre</a></li>
         <li><a href="#" class="nav__link" onclick="openPanel('contato', event)" data-i18n="nav.contact">Contato</a></li>
@@ -340,7 +670,10 @@
       <div class="orbit-space">
         <!-- Central Planet Text -->
         <div class="orbit-center" id="orbit-center-text">CONRADO.</div>
-        
+
+        <!-- Earth Globe Canvas (activated by clicking status widget) -->
+        <canvas id="earth-globe" aria-label="Globo terrestre interativo"></canvas>
+
         <!-- Staggered Card deck container -->
         <div class="orbit-ring" id="projects-container">
           <!-- Rendered dynamically by main.js -->
@@ -614,7 +947,7 @@
   </button>
 
   <!-- Dynamic Left Corner Widget -->
-  <div class="status-widget" id="status-widget">
+  <div class="status-widget" id="status-widget" onclick="activateGlobe()" title="Clique para ver sua localização no globo 🌍">
     <div class="status-widget__compass">
       <svg viewBox="0 0 24 24" class="compass-icon" id="compass-icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/>
@@ -641,9 +974,72 @@
     </div>
   </div>
 
+  <!-- SAVE BEFORE EXIT DIALOG -->
+  <div id="save-exit-dialog" style="
+    display: none;
+    position: fixed; inset: 0; z-index: 99999;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  ">
+    <div style="
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 2rem 2.25rem;
+      max-width: 380px;
+      width: calc(100% - 2.5rem);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+      text-align: center;
+      animation: scaleInDialog 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    ">
+      <div style="font-size: 2rem; margin-bottom: 0.75rem;">💾</div>
+      <h3 style="font-family: var(--font-serif); font-size: 1.3rem; margin: 0 0 0.5rem; color: var(--text-color);">Salvar antes de sair?</h3>
+      <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0 0 1.75rem; line-height: 1.5;">Você tem alterações não salvas. Deseja salvar o projeto antes de fechar?</p>
+      <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+        <button id="save-exit-save" style="
+          padding: 0.7rem 1.25rem;
+          background: var(--accent-color);
+          color: #fff; border: none;
+          border-radius: 10px;
+          font-family: var(--font-sans);
+          font-size: 0.9rem; font-weight: 600;
+          cursor: pointer; transition: opacity 0.15s;
+        " onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Salvar e Fechar</button>
+        <button id="save-exit-discard" style="
+          padding: 0.7rem 1.25rem;
+          background: transparent;
+          color: var(--text-muted);
+          border: 1px solid var(--glass-border);
+          border-radius: 10px;
+          font-family: var(--font-sans);
+          font-size: 0.9rem; cursor: pointer;
+          transition: color 0.15s, border-color 0.15s;
+        " onmouseover="this.style.color='var(--text-color)';this.style.borderColor='var(--text-color)'"
+           onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--glass-border)'">Descartar e Fechar</button>
+        <button id="save-exit-cancel" style="
+          padding: 0.55rem 1rem;
+          background: transparent; color: var(--text-muted);
+          border: none; font-family: var(--font-sans);
+          font-size: 0.8rem; cursor: pointer;
+          text-decoration: underline; text-underline-offset: 2px;
+        ">Cancelar (continuar editando)</button>
+      </div>
+    </div>
+  </div>
+  <style>
+    @keyframes scaleInDialog {
+      from { transform: scale(0.88); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+    #save-exit-dialog.visible { display: flex !important; }
+  </style>
+
   <!-- Javascript Imports -->
-  <script src="data/portfolio.js?v=1.0.35"></script>
-  <script src="translations.js?v=1.0.35"></script>
-  <script src="main.js?v=1.0.35"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer onerror="this.onerror=null; this.src='js/gsap.min.js';"></script>
+<script src="data/portfolio.js?v=1.0.42" defer></script>
+<script src="translations.js?v=1.0.42" defer></script>
+<script src="main.js?v=1.0.42" defer></script>
 </body>
 </html>
