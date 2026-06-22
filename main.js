@@ -280,7 +280,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const centerTextEl = document.getElementById('orbit-center-text');
   if (centerTextEl) {
     centerTextEl.addEventListener('click', (e) => {
-      if (isEntryAnimating) return;
+      if (isEntryAnimating || isSpinningMomentum || isSpinningEasterEgg) return;
       e.stopPropagation();
       activateGlobe('curitiba');
     });
@@ -1719,33 +1719,41 @@ function triggerMomentumSpin(velocity) {
     finalTargetAngle -= 2 * Math.PI;
   }
 
-  // Change center text while the wheel of fortune is spinning
-  const lucky = translations[currentLanguage]?.["misc.lucky"] || "ESTOU COM SORTE.";
-  setCenterText(lucky);
+  function runMomentumSpin() {
+    // Change center text while the wheel of fortune is spinning
+    const lucky = translations[currentLanguage]?.["misc.lucky"] || "ESTOU COM SORTE.";
+    setCenterText(lucky);
 
-  isSpinningMomentum = true;
-  let spinObj = { angle: orbitAngle };
+    isSpinningMomentum = true;
+    let spinObj = { angle: orbitAngle };
 
-  gsap.to(spinObj, {
-    angle: finalTargetAngle,
-    duration: duration,
-    ease: "power4.out",
-    onUpdate: () => {
-      orbitAngle = spinObj.angle;
-    },
-    onComplete: () => {
-      isSpinningMomentum = false;
-      dragVelocity = 0;
+    gsap.to(spinObj, {
+      angle: finalTargetAngle,
+      duration: duration,
+      ease: "power4.out",
+      onUpdate: () => {
+        orbitAngle = spinObj.angle;
+      },
+      onComplete: () => {
+        isSpinningMomentum = false;
+        dragVelocity = 0;
 
-      // Select the snapped project
-      activeCascadeIndex = targetIdx;
-      smoothCascadeIndex = targetIdx;
-      isCascadeFocused = true;
-      
-      // Auto transition to Cascade view and open the card focado
-      switchView('cascade', true);
-    }
-  });
+        // Select the snapped project
+        activeCascadeIndex = targetIdx;
+        smoothCascadeIndex = targetIdx;
+        isCascadeFocused = true;
+        
+        // Auto transition to Cascade view and open the card focado
+        switchView('cascade', true);
+      }
+    });
+  }
+
+  if (globeActive) {
+    deactivateGlobe(runMomentumSpin);
+  } else {
+    runMomentumSpin();
+  }
 }
 
 function triggerEasterEggSpin() {
@@ -3282,7 +3290,7 @@ function initWidgetGeo() {
   const compassBtn = document.querySelector('.status-widget__compass');
   if (compassBtn) {
     compassBtn.addEventListener('click', (e) => {
-      if (isEntryAnimating) return;
+      if (isEntryAnimating || isSpinningMomentum || isSpinningEasterEgg) return;
       e.stopPropagation();
       activateGlobe('user');
     });
