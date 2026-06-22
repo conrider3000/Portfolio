@@ -523,11 +523,10 @@ window.addEventListener('DOMContentLoaded', () => {
 // EARTH GLOBE — functions
 // ==========================================================================
 function activateGlobe(focusOn = 'curitiba') {
-  // Toggle: clicking again closes
-  if (globeActive) { deactivateGlobe(); return; }
   // Only in orbit view
   if (activeView !== 'orbit') return;
 
+  const firstActivation = !globeActive;
   globeActive    = true;
   globeFoundUser = true; // immediately LERP to focus coordinates
   globePinPulse  = 0;
@@ -536,51 +535,59 @@ function activateGlobe(focusOn = 'curitiba') {
     // Focus Curitiba (permanent pin)
     globeTargetLat = -25.4284;
     globeTargetLon = -49.2733;
-    // Start slightly rotated to create a smooth centering spin animation
-    globeLon0 = -49.2733 - 55;
-    globeLat0 = -25.4284 - 15;
+    if (firstActivation) {
+      // Start slightly rotated to create a smooth centering spin animation
+      globeLon0 = -49.2733 - 55;
+      globeLat0 = -25.4284 - 15;
+    }
   } else {
     // Focus User Location (requires geolocation query)
     if (globeUserLat !== null && globeUserLon !== null) {
       globeTargetLat = globeUserLat;
       globeTargetLon = globeUserLon;
-      globeLon0 = globeUserLon - 55;
-      globeLat0 = globeUserLat - 15;
+      if (firstActivation) {
+        globeLon0 = globeUserLon - 55;
+        globeLat0 = globeUserLat - 15;
+      }
     } else {
       // Default to Curitiba rotation initially while querying
       globeTargetLat = -25.4284;
       globeTargetLon = -49.2733;
-      globeLon0 = -49.2733 - 55;
-      globeLat0 = -25.4284 - 15;
-      getAndUpdatePosition(false);
+      if (firstActivation) {
+        globeLon0 = -49.2733 - 55;
+        globeLat0 = -25.4284 - 15;
+      }
+      getAndUpdatePosition(true);
     }
   }
 
-  const globeCanvas = document.getElementById('earth-globe');
-  const centerText  = document.getElementById('orbit-center-text');
-  if (!globeCanvas) return;
+  if (firstActivation) {
+    const globeCanvas = document.getElementById('earth-globe');
+    const centerText  = document.getElementById('orbit-center-text');
+    if (!globeCanvas) return;
 
-  // Set canvas resolution (HiDPI)
-  const dpr  = window.devicePixelRatio || 1;
-  const SIZE = 300;
-  globeCanvas.style.width  = SIZE + 'px';
-  globeCanvas.style.height = SIZE + 'px';
-  globeCanvas.width  = SIZE * dpr;
-  globeCanvas.height = SIZE * dpr;
-  const gCtx = globeCanvas.getContext('2d');
-  gCtx.scale(dpr, dpr);
+    // Set canvas resolution (HiDPI)
+    const dpr  = window.devicePixelRatio || 1;
+    const SIZE = 285; // Decreased by 5% from 300
+    globeCanvas.style.width  = SIZE + 'px';
+    globeCanvas.style.height = SIZE + 'px';
+    globeCanvas.width  = SIZE * dpr;
+    globeCanvas.height = SIZE * dpr;
+    const gCtx = globeCanvas.getContext('2d');
+    gCtx.scale(dpr, dpr);
 
-  // Fade orbit-center text out
-  gsap.to(centerText, { scale: 0.35, opacity: 0, duration: 0.32, ease: 'power2.in' });
+    // Fade orbit-center text out
+    gsap.to(centerText, { scale: 0.35, opacity: 0, duration: 0.32, ease: 'power2.in' });
 
-  // Show globe canvas and animate in
-  globeCanvas.style.display = 'block';
-  globeCanvas.classList.add('globe-active');
-  gsap.fromTo(globeCanvas,
-    { opacity: 0, scale: 0.25, xPercent: -50, yPercent: -50, z: 120, y: -25 },
-    { opacity: 1, scale: 1, xPercent: -50, yPercent: -50, z: 120, y: -25, duration: 0.55, delay: 0.2, ease: 'back.out(1.7)',
-      onStart: () => startGlobeLoop(gCtx, SIZE) }
-  );
+    // Show globe canvas and animate in
+    globeCanvas.style.display = 'block';
+    globeCanvas.classList.add('globe-active');
+    gsap.fromTo(globeCanvas,
+      { opacity: 0, scale: 0.25, xPercent: -50, yPercent: -50, z: 120, y: -25 },
+      { opacity: 1, scale: 1, xPercent: -50, yPercent: -50, z: 120, y: -25, duration: 0.55, delay: 0.2, ease: 'back.out(1.7)',
+        onStart: () => startGlobeLoop(gCtx, SIZE) }
+    );
+  }
 
   // Implement interactive click-and-drag rotation
   let isDraggingGlobe = false;
@@ -883,7 +890,7 @@ function renderGlobe(gCtx, SIZE) {
   const cLat = -25.4284 * Math.PI / 180;
   const cProj = globeProject(cLon, cLat, lon0, lat0, R);
   if (cProj.visible) {
-    globeDrawPin(gCtx, cx + cProj.x, cy - cProj.y, globePinPulse, "Curitiba");
+    globeDrawPin(gCtx, cx + cProj.x, cy - cProj.y, globePinPulse, "Conrado");
   }
 
   // 2. Optional User Location Pin
@@ -1283,7 +1290,7 @@ function animateCursor() {
 }
 
 function addCursorInteractions() {
-  document.querySelectorAll('a, button, .nav__link, .vis-btn, .morph-card, .mosaic-card, .filter-btn, .filter-dropdown-item, .info-panel-more-btn, .psicromia-back-btn, .cascade-back-btn, .status-widget').forEach(el => {
+  document.querySelectorAll('a, button, .nav__link, .vis-btn, .morph-card, .mosaic-card, .filter-btn, .filter-dropdown-item, .info-panel-more-btn, .psicromia-back-btn, .cascade-back-btn, .status-widget, #earth-globe, #orbit-center-text').forEach(el => {
     el.addEventListener('mouseenter', () => {
       if (isEntryAnimating) return;
       if (cursorEl) cursorEl.classList.add('hovered');
@@ -3241,9 +3248,15 @@ function initWidgetGeo() {
           compassIcon.classList.remove('is-spinning');
         }
         if (showError) {
-          alert(currentLanguage === 'pt' 
-            ? "Não foi possível obter sua localização. Por favor, conceda permissão de acesso à localização." 
-            : "Could not obtain your location. Please grant location access permission.");
+          if (error.code === error.PERMISSION_DENIED) {
+            alert(currentLanguage === 'pt' 
+              ? "Acesso à localização negado. Por favor, redefina a permissão de localização nas configurações do navegador (geralmente no ícone de cadeado na barra de endereços) para podermos localizar você no globo." 
+              : "Location access denied. Please reset location permissions in your browser settings (usually by clicking the padlock icon in the address bar) to locate yourself on the globe.");
+          } else {
+            alert(currentLanguage === 'pt' 
+              ? "Não foi possível obter sua localização. Por favor, tente novamente." 
+              : "Could not obtain your location. Please try again.");
+          }
         }
       },
       {
@@ -3271,11 +3284,7 @@ function initWidgetGeo() {
     compassBtn.addEventListener('click', (e) => {
       if (isEntryAnimating) return;
       e.stopPropagation();
-      if (!globeActive) {
-        activateGlobe('user');
-      } else {
-        deactivateGlobe();
-      }
+      activateGlobe('user');
     });
   }
 }
