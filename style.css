@@ -268,7 +268,7 @@ body * {
 .logo {
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-decoration: none;
   color: var(--text-color);
   letter-spacing: normal;
@@ -324,7 +324,7 @@ body * {
 
 .nav__link {
   font-family: var(--font-sans);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: normal;
   text-decoration: none;
@@ -1056,6 +1056,11 @@ body.circle-mode .morph-card:hover {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-color);
+}
+
+#panel-sobre .panel-close {
+  left: 3rem;
+  right: auto;
 }
 
 /* Modal Contact panel */
