@@ -156,6 +156,43 @@ earthNightImg.onerror = () => {
   earthNightLoaded = false;
 };
 
+let earthCloudsImg = new Image();
+let earthCloudsLoaded = false;
+let cloudsPixels = null;
+
+earthCloudsImg.crossOrigin = "anonymous";
+earthCloudsImg.src = "https://clouds.matteason.co.uk/images/2048x1024/clouds-alpha.png";
+earthCloudsImg.onload = () => {
+  const off = document.createElement('canvas');
+  off.width = texWidth;
+  off.height = texHeight;
+  const oCtx = off.getContext('2d');
+  oCtx.drawImage(earthCloudsImg, 0, 0, texWidth, texHeight);
+  cloudsPixels = oCtx.getImageData(0, 0, texWidth, texHeight).data;
+  earthCloudsLoaded = true;
+  console.log("Live satellite cloud map loaded successfully.");
+};
+earthCloudsImg.onerror = () => {
+  console.warn("Could not load live cloud map. Loading fallback static clouds.");
+  earthCloudsImg = new Image();
+  earthCloudsImg.crossOrigin = "anonymous";
+  earthCloudsImg.src = "assets/earth_clouds.jpg";
+  earthCloudsImg.onload = () => {
+    const off = document.createElement('canvas');
+    off.width = texWidth;
+    off.height = texHeight;
+    const oCtx = off.getContext('2d');
+    oCtx.drawImage(earthCloudsImg, 0, 0, texWidth, texHeight);
+    cloudsPixels = oCtx.getImageData(0, 0, texWidth, texHeight).data;
+    earthCloudsLoaded = true;
+    console.log("Fallback static clouds loaded successfully.");
+  };
+  earthCloudsImg.onerror = () => {
+    console.warn("Could not load fallback clouds.");
+    earthCloudsLoaded = false;
+  };
+};
+
 // Simplified continent polygon data  [lon°, lat°]
 const EARTH_CONTINENTS = [
   // ── North America
@@ -840,6 +877,23 @@ function renderGlobe(gCtx, SIZE) {
               g += spec;
               b += spec;
             }
+          }
+
+          // 4. Blend Clouds on top!
+          if (earthCloudsLoaded && cloudsPixels) {
+            let cloudIntensity = 0;
+            if (cloudsPixels[texIndex + 3] < 255) {
+              cloudIntensity = cloudsPixels[texIndex + 3] / 255;
+            } else {
+              cloudIntensity = cloudsPixels[texIndex] / 255;
+            }
+
+            // Shade clouds slightly with depth Z to give a 3D feel
+            const cloudBrightness = 232 + Z * 23; // 232 to 255
+            
+            r = r * (1 - cloudIntensity) + cloudBrightness * cloudIntensity;
+            g = g * (1 - cloudIntensity) + cloudBrightness * cloudIntensity;
+            b = b * (1 - cloudIntensity) + cloudBrightness * cloudIntensity;
           }
 
           data[destIndex]     = Math.min(255, Math.max(0, r));
