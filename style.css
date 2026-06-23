@@ -650,7 +650,7 @@ body * {
 /* Back buttons inside views */
 .psicromia-back-btn, .cascade-back-btn {
   position: fixed;
-  top: 2rem;
+  top: 7rem;
   left: 2rem;
   background-color: var(--glass-bg);
   border: 1px solid var(--glass-border);
