@@ -527,6 +527,125 @@ body * {
   pointer-events: auto;
 }
 
+/* ---- Earth Globe Info Button & Popover ---- */
+.globe-info-container {
+  position: absolute;
+  top: calc(50% - 25px + 90px);
+  left: calc(50% - 90px);
+  transform: translate(-50%, -50%) translateZ(130px);
+  z-index: 1008;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.globe-info-container.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.globe-info-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-color);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s, border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+  padding: 0;
+  line-height: 1;
+  outline: none;
+}
+
+.globe-info-btn:hover {
+  background: var(--text-color);
+  color: var(--bg-color);
+  border-color: var(--text-color);
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.globe-info-btn:active {
+  transform: scale(0.95);
+}
+
+.globe-info-popover {
+  position: absolute;
+  bottom: 32px;
+  left: -10px;
+  width: 260px;
+  padding: 1.2rem;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(25px) saturate(140%);
+  -webkit-backdrop-filter: blur(25px) saturate(140%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px) scale(0.92);
+  transform-origin: bottom left;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1010;
+}
+
+.globe-info-popover.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.globe-info-popover-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  opacity: 0.5;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: opacity 0.2s, transform 0.2s;
+  outline: none;
+}
+
+.globe-info-popover-close:hover {
+  opacity: 0.9;
+  transform: scale(1.1);
+}
+
+.globe-info-popover h4 {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-color);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.globe-info-popover p {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 0;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
 
 /* Back buttons inside views */
 .psicromia-back-btn, .cascade-back-btn {

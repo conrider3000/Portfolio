@@ -774,6 +774,15 @@
         <div class="orbit-ring" id="projects-container">
           <!-- Earth Globe Canvas: inside orbit-ring so it shares the same stacking context as cards -->
           <canvas id="earth-globe" aria-label="Globo terrestre interativo"></canvas>
+          <!-- Info Globe Button and Popover -->
+          <div class="globe-info-container" id="globe-info-container">
+            <button class="globe-info-btn" id="globe-info-btn" aria-label="Informações do Globo">i</button>
+            <div class="globe-info-popover" id="globe-info-popover">
+              <button class="globe-info-popover-close" id="globe-info-popover-close">&times;</button>
+              <h4 data-i18n="globeInfo.title">Sobre o Globo</h4>
+              <p data-i18n="globeInfo.desc">Combina textura terrestre de alta resolução (NASA Blue Marble/Solar System Scope) com nuvens de satélite em tempo real (via satélites geoestacionários GOES/Himawari/Meteosat compilados a cada 3h).</p>
+            </div>
+          </div>
           <!-- Cards rendered dynamically by main.js -->
         </div>
       </div>

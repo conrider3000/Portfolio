@@ -76,7 +76,9 @@ const translations = {
     "misc.all": "Todos",
     "misc.back": "Voltar",
     "misc.close": "Fechar",
-    "misc.lucky": "ESTOU COM SORTE."
+    "misc.lucky": "ESTOU COM SORTE.",
+    "globeInfo.title": "Sobre o Globo",
+    "globeInfo.desc": "Combina textura terrestre de alta resolução (NASA Blue Marble/Solar System Scope) com nuvens de satélite em tempo real (via satélites geoestacionários GOES/Himawari/Meteosat compilados a cada 3h)."
   },
   en: {
     // Nav
@@ -155,7 +157,9 @@ const translations = {
     "misc.all": "All",
     "misc.back": "Back",
     "misc.close": "Close",
-    "misc.lucky": "I'M FEELING LUCKY"
+    "misc.lucky": "I'M FEELING LUCKY",
+    "globeInfo.title": "About the Globe",
+    "globeInfo.desc": "Combines a high-res land texture (NASA Blue Marble/Solar System Scope) with real-time satellite clouds (via geostationary weather satellites GOES/Himawari/Meteosat compiled every 3h)."
   },
   es: {
     // Nav
@@ -234,7 +238,9 @@ const translations = {
     "misc.all": "Todos",
     "misc.back": "Volver",
     "misc.close": "Cerrar",
-    "misc.lucky": "ESTOY CON SUERTE"
+    "misc.lucky": "ESTOY CON SUERTE",
+    "globeInfo.title": "Sobre el Globo",
+    "globeInfo.desc": "Combina textura terrestre de alta resolución (NASA Blue Marble/Solar System Scope) con nubes satelitales en tiempo real (vía satélites geoestacionarios GOES/Himawari/Meteosat compilados cada 3h)."
   },
   fr: {
     // Nav
@@ -313,7 +319,9 @@ const translations = {
     "misc.all": "Tous",
     "misc.back": "Retour",
     "misc.close": "Fermer",
-    "misc.lucky": "J'AI DE LA CHANCE"
+    "misc.lucky": "J'AI DE LA CHANCE",
+    "globeInfo.title": "À propos du Globe",
+    "globeInfo.desc": "Combine une texture terrestre haute résolution (NASA Blue Marble/Solar System Scope) avec des nuages satellites en temps réel (via les satellites géostationnaires GOES/Himawari/Meteosat compilés toutes les 3h)."
   }
 };
 

@@ -311,6 +311,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initLanguage();
   initParticles();
   initSaveExitDialog();
+  initGlobeInfo();
 
   buildMorphingCards();
   buildPsicromiaGallery();
@@ -628,6 +629,12 @@ function activateGlobe(focusOn = 'curitiba') {
       { opacity: 1, scale: 1, xPercent: -50, yPercent: -50, z: 120, y: -25, duration: 0.55, delay: 0.2, ease: 'back.out(1.7)',
         onStart: () => startGlobeLoop(gCtx, SIZE) }
     );
+
+    // Show globe info button container
+    const infoContainer = document.getElementById('globe-info-container');
+    if (infoContainer) {
+      infoContainer.classList.add('active');
+    }
   }
 
   // Implement interactive click-and-drag rotation
@@ -686,6 +693,12 @@ function deactivateGlobe(onCompleteCallback = null) {
     return;
   }
   globeActive = false;
+
+  // Hide info button container and popover
+  const infoContainer = document.getElementById('globe-info-container');
+  const popover = document.getElementById('globe-info-popover');
+  if (infoContainer) infoContainer.classList.remove('active');
+  if (popover) popover.classList.remove('open');
 
   const globeCanvas = document.getElementById('earth-globe');
   const centerText  = document.getElementById('orbit-center-text');
@@ -1277,11 +1290,13 @@ function setCenterText(newText) {
 // ==========================================================================
 function buildMorphingCards() {
   const container = document.getElementById('projects-container');
-  // Preserve the globe canvas before wiping the container
+  // Preserve the globe canvas and info container before wiping the container
   const globeCanvas = document.getElementById('earth-globe');
+  const globeInfoContainer = document.getElementById('globe-info-container');
   container.innerHTML = '';
-  // Reinsert globe canvas as first child so it stays inside orbit-ring
+  // Reinsert elements
   if (globeCanvas) container.appendChild(globeCanvas);
+  if (globeInfoContainer) container.appendChild(globeInfoContainer);
   morphCards = [];
   combinedMediaItems = [...projectsDb]; // Re-initialize in case data was updated in the admin panel
   hoverScales = Array(combinedMediaItems.length).fill(1);
@@ -2883,6 +2898,40 @@ function closeAdminPanel() {
     panel.classList.remove('active');
   }
   closeProjectForm();
+}
+
+// ==========================================================================
+// GLOBE INFO POPOVER
+// ==========================================================================
+function initGlobeInfo() {
+  const btn = document.getElementById('globe-info-btn');
+  const popover = document.getElementById('globe-info-popover');
+  const closeBtn = document.getElementById('globe-info-popover-close');
+  
+  if (!btn || !popover || !closeBtn) return;
+  
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popover.classList.toggle('open');
+  });
+  
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popover.classList.remove('open');
+  });
+  
+  document.addEventListener('click', (e) => {
+    const container = document.getElementById('globe-info-container');
+    if (container && !container.contains(e.target)) {
+      popover.classList.remove('open');
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      popover.classList.remove('open');
+    }
+  });
 }
 
 // ==========================================================================
