@@ -800,9 +800,25 @@ function renderGlobe(gCtx, SIZE) {
 
           const texIndex = (ty * texWidth + tx) * 4;
 
-          data[destIndex]     = pixels[texIndex];
-          data[destIndex + 1] = pixels[texIndex + 1];
-          data[destIndex + 2] = pixels[texIndex + 2];
+          let r = pixels[texIndex];
+          let g = pixels[texIndex + 1];
+          let b = pixels[texIndex + 2];
+
+          // 1. Slightly increase brightness
+          r *= 1.14;
+          g *= 1.14;
+          b *= 1.14;
+
+          // 2. More slightly increase saturation
+          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          const satFactor = 1.08;
+          r = gray + (r - gray) * satFactor;
+          g = gray + (g - gray) * satFactor;
+          b = gray + (b - gray) * satFactor;
+
+          data[destIndex]     = Math.min(255, Math.max(0, r));
+          data[destIndex + 1] = Math.min(255, Math.max(0, g));
+          data[destIndex + 2] = Math.min(255, Math.max(0, b));
           data[destIndex + 3] = 255;
         } else {
           data[destIndex + 3] = 0;
@@ -819,15 +835,15 @@ function renderGlobe(gCtx, SIZE) {
     
     gCtx.drawImage(globeOffscreenCanvas, 0, 0);
     
-    // Spherical vignette shadow for realistic 3D volume (clipped)
+    // Spherical vignette shadow for realistic 3D volume (clipped) - lightened to prevent darkening too much
     const shadowGrad = gCtx.createRadialGradient(
       cx - R * 0.15, cy - R * 0.15, R * 0.1,
       cx, cy, R
     );
     shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
-    shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.05)');
-    shadowGrad.addColorStop(0.85, 'rgba(0, 0, 0, 0.35)');
-    shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0.72)');
+    shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.02)');
+    shadowGrad.addColorStop(0.85, 'rgba(0, 0, 0, 0.22)');
+    shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0.52)');
 
     gCtx.beginPath();
     gCtx.arc(cx, cy, R, 0, Math.PI * 2);
@@ -872,15 +888,15 @@ function renderGlobe(gCtx, SIZE) {
       globeDrawContinent(gCtx, cx, cy, R, lon0, lat0, poly, activeGlobeTheme);
     }
 
-    // Spherical vignette shadow for realistic 3D volume (inside fallback clip)
+    // Spherical vignette shadow for realistic 3D volume (inside fallback clip) - lightened
     const shadowGrad = gCtx.createRadialGradient(
       cx - R * 0.15, cy - R * 0.15, R * 0.1,
       cx, cy, R
     );
     shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
-    shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.05)');
-    shadowGrad.addColorStop(0.85, 'rgba(0, 0, 0, 0.35)');
-    shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0.72)');
+    shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.02)');
+    shadowGrad.addColorStop(0.85, 'rgba(0, 0, 0, 0.22)');
+    shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0.52)');
 
     gCtx.beginPath();
     gCtx.arc(cx, cy, R, 0, Math.PI * 2);
