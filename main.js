@@ -642,6 +642,7 @@ function activateGlobe(focusOn = 'curitiba') {
   let startPointerY = 0;
   let startLon0 = 0;
   let startLat0 = 0;
+  let startOrbitAngle = 0;
   let dragDistance = 0;
 
   globeCanvas.onpointerdown = (e) => {
@@ -653,6 +654,7 @@ function activateGlobe(focusOn = 'curitiba') {
     startPointerY = e.clientY;
     startLon0 = globeLon0;
     startLat0 = globeLat0;
+    startOrbitAngle = orbitAngle;
     dragDistance = 0;
   };
 
@@ -672,6 +674,9 @@ function activateGlobe(focusOn = 'curitiba') {
     
     globeTargetLon = globeLon0;
     globeTargetLat = globeLat0;
+
+    // Rotate orbit in the INVERSE direction of the planet rotation
+    orbitAngle = startOrbitAngle - dx * 0.005;
   };
 
   globeCanvas.onpointerup = (e) => {
