@@ -572,7 +572,7 @@ function activateGlobe(focusOn = 'curitiba') {
 
     // Set canvas resolution (HiDPI)
     const dpr  = window.devicePixelRatio || 1;
-    const SIZE = 285; // Decreased by 5% from 300
+    const SIZE = 270; // Decreased by an additional 5% (total 10% from original 300px)
     globeCanvas.style.width  = SIZE + 'px';
     globeCanvas.style.height = SIZE + 'px';
     globeCanvas.width  = SIZE * dpr;
