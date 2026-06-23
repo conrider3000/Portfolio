@@ -3422,6 +3422,19 @@ function initWidgetGeo() {
       activateGlobe('user');
     });
   }
+
+  // Bind status widget toggle listener
+  const statusWidget = document.getElementById('status-widget');
+  if (statusWidget) {
+    statusWidget.addEventListener('click', (e) => {
+      if (isEntryAnimating || isSpinningMomentum || isSpinningEasterEgg) return;
+      if (globeActive) {
+        deactivateGlobe();
+      } else {
+        activateGlobe('curitiba');
+      }
+    });
+  }
 }
 
 function startWidgetClock() {
