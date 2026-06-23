@@ -620,8 +620,8 @@ function activateGlobe(focusOn = 'curitiba') {
     dragDistance = Math.sqrt(dx * dx + dy * dy);
     
     // Rotate the globe (adjust signs for natural dragging with South pole on top)
-    globeLon0 = startLon0 - dx * 0.45;
-    globeLat0 = startLat0 + dy * 0.45;
+    globeLon0 = startLon0 + dx * 0.45;
+    globeLat0 = startLat0 - dy * 0.45;
     
     if (globeLat0 > 85) globeLat0 = 85;
     if (globeLat0 < -85) globeLat0 = -85;
