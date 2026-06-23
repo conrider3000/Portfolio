@@ -892,24 +892,23 @@
   </div>
 
   <!-- Contato Panel -->
-  <div class="panel-contato" id="panel-contato">
+  <div class="panel-contato" id="panel-contato" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
     <button class="panel-close" onclick="closeAllPanels()" data-i18n="misc.close">Fechar</button>
     
     <h2 style="font-family: var(--font-serif); font-size: 2.2rem; margin-bottom: 1rem;" data-i18n="contact.title">Vamos Conversar?</h2>
-    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem;" data-i18n="contact.desc">Sinta-se livre para entrar em contato...</p>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; max-width: 380px; line-height: 1.5;" data-i18n="contact.desc">Sinta-se livre para entrar em contato...</p>
     
-    <form onsubmit="handleFormSubmit(event)">
-      <input type="text" placeholder="Nome" data-i18n-placeholder="contact.name" class="input-field" required>
-      <input type="email" placeholder="E-mail" data-i18n-placeholder="contact.email" class="input-field" required>
-      <textarea rows="4" placeholder="Mensagem" data-i18n-placeholder="contact.message" class="input-field" required style="resize:none;"></textarea>
-      <button type="submit" class="btn-submit" data-i18n="contact.send">Enviar Mensagem</button>
-    </form>
-
-    <div style="margin-top: 2rem; display: flex; gap: 1.5rem; justify-content: center; font-size: 0.9rem; font-weight: 500;">
-      <a href="mailto:falaconrado@gmail.com" class="nav__link">E-mail</a>
-      <a href="https://wa.me/5541999007671" target="_blank" class="nav__link">WhatsApp</a>
-      <a href="https://github.com/conrider3000" target="_blank" class="nav__link">GitHub</a>
-      <a href="https://pragmatas.org" target="_blank" class="nav__link">Pragmatas</a>
+    <div style="width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 1.5rem; align-items: center;">
+      <a href="https://wa.me/5541999007671" target="_blank" class="btn-whats">
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;">
+          <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.907h.003c4.37 0 7.927-3.558 7.93-7.93a7.9 7.9 0 0 0-2.326-5.607zm-5.607 11.836h-.008a6.5 6.5 0 0 1-3.32-.907l-.238-.14-2.476.649.66-2.417-.154-.246A6.49 6.49 0 0 1 1.625 7.93c0-3.578 2.9-6.48 6.485-6.48a6.49 6.49 0 0 1 4.582 1.905 6.49 6.49 0 0 1 1.903 4.587c-.002 3.579-2.9 6.481-6.482 6.481zM11.55 9.77c-.19-.094-1.127-.556-1.302-.62-.176-.064-.304-.094-.43.094-.127.19-.491.62-.602.748-.11.127-.22.141-.41.047-.19-.094-.8-.294-1.524-.94-.564-.503-.944-1.124-1.055-1.314-.11-.19-.012-.292.083-.386.085-.085.19-.22.285-.33.095-.11.127-.19.19-.32.063-.13.032-.24-.015-.335-.048-.095-.43-1.033-.59-1.418-.156-.379-.313-.328-.43-.328-.11 0-.236-.008-.363-.008-.127 0-.334.047-.51.24c-.177.19-.675.66-0.675 1.608s.688 1.862.784 1.99c.096.128 1.353 2.066 3.278 2.897.458.198.814.316 1.094.405.46.147.88.126 1.21.077.37-.055 1.127-.461 1.286-.906.16-.445.16-.826.112-.906-.048-.08-.176-.127-.367-.22z"/>
+        </svg>
+        <span data-i18n="contact.whats">Entrar em contato</span>
+      </a>
+      
+      <div style="margin-top: 0.5rem; display: flex; justify-content: center; font-size: 0.95rem; font-weight: 500;">
+        <a href="mailto:falaconrado@gmail.com" class="nav__link">E-mail</a>
+      </div>
     </div>
   </div>
 

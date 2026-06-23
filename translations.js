@@ -68,6 +68,7 @@ const translations = {
     "contact.email": "Seu E-mail",
     "contact.message": "Sua Mensagem",
     "contact.success": "Mensagem enviada com sucesso!",
+    "contact.whats": "Entrar em contato",
     
     // Miscellaneous
     "misc.viewProject": "Saber mais",
@@ -145,6 +146,7 @@ const translations = {
     "contact.email": "Your Email",
     "contact.message": "Your Message",
     "contact.success": "Message sent successfully!",
+    "contact.whats": "Get in touch",
     
     // Miscellaneous
     "misc.viewProject": "Learn more",
@@ -222,6 +224,7 @@ const translations = {
     "contact.email": "Tu Correo",
     "contact.message": "Tu Mensaje",
     "contact.success": "¡Mensaje enviado con éxito!",
+    "contact.whats": "Ponerse en contacto",
     
     // Miscellaneous
     "misc.viewProject": "Saber más",
@@ -299,6 +302,7 @@ const translations = {
     "contact.email": "Votre Email",
     "contact.message": "Votre Message",
     "contact.success": "Message envoyé avec succès !",
+    "contact.whats": "Entrer en contact",
     
     // Miscellaneous
     "misc.viewProject": "En savoir plus",

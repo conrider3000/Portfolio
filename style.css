@@ -1119,6 +1119,35 @@ body.circle-mode .morph-card:hover {
   background: var(--accent-dark);
 }
 
+.btn-whats {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0.95rem;
+  background: #34C759; /* Apple systemGreen */
+  color: #ffffff;
+  border: none;
+  border-radius: 12px; /* iOS standard corner radius */
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.05rem;
+  text-decoration: none;
+  transition: background-color 0.25s ease, transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.22);
+}
+
+.btn-whats:hover {
+  background: #28a745;
+  color: #ffffff;
+  transform: translateY(-1.5px);
+}
+
+.btn-whats:active {
+  transform: translateY(0.5px);
+}
+
 /* ==========================================================================
    CV STYLING INSIDE THE PANEL
    ========================================================================== */
