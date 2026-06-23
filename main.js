@@ -1808,40 +1808,59 @@ function triggerMomentumSpin(velocity) {
     finalTargetAngle -= 2 * Math.PI;
   }
 
-  function runMomentumSpin() {
-    // Change center text while the wheel of fortune is spinning
-    const lucky = translations[currentLanguage]?.["misc.lucky"] || "ESTOU COM SORTE.";
-    setCenterText(lucky);
+  const wasGlobeActive = globeActive;
+  isSpinningMomentum = true;
 
-    isSpinningMomentum = true;
-    let spinObj = { angle: orbitAngle };
+  // Spin animation of the orbit starts immediately
+  let spinObj = { angle: orbitAngle };
+  gsap.to(spinObj, {
+    angle: finalTargetAngle,
+    duration: duration,
+    ease: "power4.out",
+    onUpdate: () => {
+      orbitAngle = spinObj.angle;
+    },
+    onComplete: () => {
+      isSpinningMomentum = false;
+      dragVelocity = 0;
 
-    gsap.to(spinObj, {
-      angle: finalTargetAngle,
-      duration: duration,
-      ease: "power4.out",
-      onUpdate: () => {
-        orbitAngle = spinObj.angle;
-      },
-      onComplete: () => {
-        isSpinningMomentum = false;
-        dragVelocity = 0;
+      // Select the snapped project
+      activeCascadeIndex = targetIdx;
+      smoothCascadeIndex = targetIdx;
+      isCascadeFocused = true;
+      
+      // Auto transition to Cascade view and open the card focado
+      switchView('cascade', true);
+    }
+  });
 
-        // Select the snapped project
-        activeCascadeIndex = targetIdx;
-        smoothCascadeIndex = targetIdx;
-        isCascadeFocused = true;
-        
-        // Auto transition to Cascade view and open the card focado
-        switchView('cascade', true);
+  if (wasGlobeActive) {
+    // Globe close animation runs in parallel.
+    // The lucky phrase will only be displayed and faded in once the globe has completed closing.
+    deactivateGlobe(() => {
+      const lucky = translations[currentLanguage]?.["misc.lucky"] || "ESTOU COM SORTE.";
+      setCenterText(lucky);
+      const centerText = document.getElementById('orbit-center-text');
+      if (centerText) {
+        gsap.killTweensOf(centerText);
+        gsap.fromTo(centerText, 
+          { scale: 0.35, opacity: 0 },
+          { scale: 1, opacity: 0.95, duration: 0.4, ease: 'power2.out' }
+        );
       }
     });
-  }
-
-  if (globeActive) {
-    deactivateGlobe(runMomentumSpin);
   } else {
-    runMomentumSpin();
+    // If globe was not active, display and fade in the lucky phrase immediately
+    const lucky = translations[currentLanguage]?.["misc.lucky"] || "ESTOU COM SORTE.";
+    setCenterText(lucky);
+    const centerText = document.getElementById('orbit-center-text');
+    if (centerText) {
+      gsap.killTweensOf(centerText);
+      gsap.fromTo(centerText, 
+        { scale: 0.35, opacity: 0 },
+        { scale: 1, opacity: 0.95, duration: 0.3, ease: 'power2.out' }
+      );
+    }
   }
 }
 
@@ -1863,48 +1882,66 @@ function triggerEasterEggSpin() {
   const finalTargetAngle = orbitAngle + spinDir * (4 * 2 * Math.PI) + diff;
 
   const languages = ["ESTOU COM SORTE.", "I'M FEELING LUCKY.", "ESTOY CON SUERTE.", "J'AI DE LA CHANCE."];
+  const wasGlobeActive = globeActive;
+  isSpinningEasterEgg = true;
 
-  function runSpin() {
-    isSpinningEasterEgg = true;
-    let spinObj = { angle: orbitAngle };
-    const startTickerTime = gsap.ticker.time;
+  let spinObj = { angle: orbitAngle };
+  const startTickerTime = gsap.ticker.time;
+  const centerText = document.getElementById('orbit-center-text');
 
-    const centerText = document.getElementById('orbit-center-text');
-    if (centerText) {
-      gsap.killTweensOf(centerText);
+  if (centerText) {
+    gsap.killTweensOf(centerText);
+    if (wasGlobeActive) {
+      gsap.set(centerText, { scale: 0.35, opacity: 0 });
+    } else {
       gsap.set(centerText, { scale: 1, opacity: 0.95 });
     }
-
-    // Play a cool GSAP spin effect
-    gsap.to(spinObj, {
-      angle: finalTargetAngle,
-      duration: 3.5,
-      ease: "power4.out",
-      onUpdate: () => {
-        orbitAngle = spinObj.angle;
-        // Cycle center text languages directly on innerText
-        const elapsed = (gsap.ticker.time - startTickerTime) * 1000;
-        const langIdx = Math.floor(elapsed / 250) % languages.length;
-        if (centerText) {
-          centerText.innerText = languages[langIdx];
-        }
-      },
-      onComplete: () => {
-        isSpinningEasterEgg = false;
-        
-        // Select the project and switch view
-        activeCascadeIndex = randomIdx;
-        smoothCascadeIndex = randomIdx;
-        isCascadeFocused = true;
-        switchView('cascade', true);
-      }
-    });
   }
 
-  if (globeActive) {
-    deactivateGlobe(runSpin);
-  } else {
-    runSpin();
+  let showPhrase = !wasGlobeActive;
+
+  // Orbit spin starts immediately
+  gsap.to(spinObj, {
+    angle: finalTargetAngle,
+    duration: 3.5,
+    ease: "power4.out",
+    onUpdate: () => {
+      orbitAngle = spinObj.angle;
+      // Cycle center text languages directly on innerText
+      const elapsed = (gsap.ticker.time - startTickerTime) * 1000;
+      const langIdx = Math.floor(elapsed / 250) % languages.length;
+      if (centerText) {
+        centerText.innerText = languages[langIdx];
+        if (showPhrase) {
+          centerText.style.opacity = 0.95;
+        } else {
+          centerText.style.opacity = 0;
+        }
+      }
+    },
+    onComplete: () => {
+      isSpinningEasterEgg = false;
+      
+      // Select the project and switch view
+      activeCascadeIndex = randomIdx;
+      smoothCascadeIndex = randomIdx;
+      isCascadeFocused = true;
+      switchView('cascade', true);
+    }
+  });
+
+  if (wasGlobeActive) {
+    // Globe close animation runs in parallel.
+    deactivateGlobe(() => {
+      showPhrase = true;
+      if (centerText) {
+        gsap.killTweensOf(centerText);
+        gsap.fromTo(centerText,
+          { scale: 0.35, opacity: 0 },
+          { scale: 1, opacity: 0.95, duration: 0.4, ease: 'power2.out' }
+        );
+      }
+    });
   }
 }
 
