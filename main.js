@@ -3402,3 +3402,29 @@ function startWidgetClock() {
   updateTime();
   setInterval(updateTime, 1000);
 }
+
+function copyContactEmail(btn) {
+  const email = "falaconrado@gmail.com";
+  navigator.clipboard.writeText(email).then(() => {
+    const textEl = document.getElementById('btn-email-text');
+    if (!textEl) return;
+    
+    // Determine translation for "Copiado!" based on current language
+    let feedback = "Copiado!";
+    if (currentLanguage === 'en') feedback = "Copied!";
+    else if (currentLanguage === 'es') feedback = "¡Copiado!";
+    else if (currentLanguage === 'fr') feedback = "Copié !";
+    
+    textEl.innerText = feedback;
+    btn.classList.add('copied');
+    
+    setTimeout(() => {
+      // Restore original translation text
+      const key = "contact.copyEmail";
+      textEl.innerText = translations[currentLanguage]?.[key] || "Copiar E-mail";
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(err => {
+    console.error("Failed to copy email:", err);
+  });
+}
