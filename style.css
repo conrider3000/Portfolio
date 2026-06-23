@@ -530,8 +530,8 @@ body * {
 /* ---- Earth Globe Info Button & Popover ---- */
 .globe-info-container {
   position: absolute;
-  top: calc(50% - 25px + 90px);
-  left: calc(50% - 90px);
+  top: calc(50% - 25px + 80px);
+  left: calc(50% + 120px);
   transform: translate(-50%, -50%) translateZ(130px);
   z-index: 1008;
   opacity: 0;
@@ -582,8 +582,8 @@ body * {
 
 .globe-info-popover {
   position: absolute;
-  bottom: 32px;
-  left: -10px;
+  top: 50%;
+  left: 32px;
   width: 260px;
   padding: 1.2rem;
   border-radius: 16px;
@@ -594,8 +594,8 @@ body * {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(10px) scale(0.92);
-  transform-origin: bottom left;
+  transform: translateY(-50%) translateX(10px) scale(0.92);
+  transform-origin: left center;
   transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1010;
 }
@@ -603,7 +603,7 @@ body * {
 .globe-info-popover.open {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0) scale(1);
+  transform: translateY(-50%) translateX(0) scale(1);
 }
 
 .globe-info-popover-close {
