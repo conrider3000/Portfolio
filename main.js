@@ -2773,8 +2773,8 @@ function updateThemeToggleIcon() {
     `;
   } else {
     btn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="27" height="27" fill="#ffd200" stroke="#ffd200" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="5" fill="#ffd200"/>
+      <svg viewBox="0 0 24 24" width="27" height="27" fill="#ffab00" stroke="#ffab00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5" fill="#ffab00"/>
         <line x1="12" y1="1" x2="12" y2="3"/>
         <line x1="12" y1="21" x2="12" y2="23"/>
         <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>

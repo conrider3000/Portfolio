@@ -268,7 +268,7 @@ body * {
 .logo {
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   text-decoration: none;
   color: var(--text-color);
   letter-spacing: normal;
@@ -284,7 +284,7 @@ body * {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 125px;
+  width: 112px;
   box-sizing: border-box;
 }
 
@@ -324,7 +324,7 @@ body * {
 
 .nav__link {
   font-family: var(--font-sans);
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 700;
   letter-spacing: normal;
   text-decoration: none;
@@ -1148,6 +1148,12 @@ body.circle-mode .morph-card:hover {
   flex-direction: column;
   overflow-y: auto;
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  --text-muted: #48484a; /* High-contrast charcoal for light mode */
+}
+
+[data-theme="dark"] .panel-sobre {
+  --text-color: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.75); /* Off-white for supreme readability */
 }
 
 .panel-sobre.active {
@@ -1183,7 +1189,7 @@ body.circle-mode .morph-card:hover {
 }
 
 #panel-contato .panel-close {
-  left: 3.5rem;
+  left: 2rem;
   right: auto;
 }
 
