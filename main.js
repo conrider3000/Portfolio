@@ -1839,9 +1839,9 @@ function triggerMomentumSpin(velocity) {
     // The lucky phrase will only be displayed and faded in once the globe has completed closing.
     deactivateGlobe(() => {
       const lucky = translations[currentLanguage]?.["misc.lucky"] || "ESTOU COM SORTE.";
-      setCenterText(lucky);
       const centerText = document.getElementById('orbit-center-text');
       if (centerText) {
+        centerText.innerText = lucky;
         gsap.killTweensOf(centerText);
         gsap.fromTo(centerText, 
           { scale: 0.35, opacity: 0 },
@@ -1852,9 +1852,9 @@ function triggerMomentumSpin(velocity) {
   } else {
     // If globe was not active, display and fade in the lucky phrase immediately
     const lucky = translations[currentLanguage]?.["misc.lucky"] || "ESTOU COM SORTE.";
-    setCenterText(lucky);
     const centerText = document.getElementById('orbit-center-text');
     if (centerText) {
+      centerText.innerText = lucky;
       gsap.killTweensOf(centerText);
       gsap.fromTo(centerText, 
         { scale: 0.35, opacity: 0 },
