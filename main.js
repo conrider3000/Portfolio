@@ -286,6 +286,7 @@ function startLogoAlternator() {
   logoText.style.borderColor = bgColors[0];
 
   setInterval(() => {
+    if (activeView !== 'orbit') return;
     gsap.to(logoText, {
       opacity: 0,
       y: -5,
@@ -2165,6 +2166,17 @@ function switchView(viewName, keepFocus = false) {
 
 function proceedWithSwitchView(viewName, keepFocus = false) {
   if (activeView === viewName) return;
+
+  // Toggle logo visibility contextually based on the view
+  const logo = document.querySelector('.logo');
+  if (logo) {
+    if (viewName === 'orbit') {
+      gsap.to(logo, { opacity: 1, pointerEvents: 'auto', duration: 0.4 });
+    } else {
+      gsap.to(logo, { opacity: 0, pointerEvents: 'none', duration: 0.4 });
+    }
+  }
+
   if (viewName !== 'orbit' && isCircleMode) {
     isCircleMode = false;
     document.body.classList.remove('circle-mode');
