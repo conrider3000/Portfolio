@@ -816,6 +816,32 @@ function renderGlobe(gCtx, SIZE) {
           g = gray + (g - gray) * satFactor;
           b = gray + (b - gray) * satFactor;
 
+          // 3. Dynamic Ocean Shading & Glossy Specular Highlight (Sun Reflection)
+          const isOcean = (b > r * 1.12) && (b > g * 0.98);
+          if (isOcean) {
+            // Blend with a rich, deep blue-cyan gradient based on depth Z (Z goes 0 at edges to 1 at center)
+            const oceanBlend = 0.45; // 45% custom color blend
+            const targetR = 10 * (1 - Z) + 15 * Z;
+            const targetG = 45 * (1 - Z) + 75 * Z;
+            const targetB = 100 * (1 - Z) + 160 * Z;
+
+            r = r * (1 - oceanBlend) + targetR * oceanBlend;
+            g = g * (1 - oceanBlend) + targetG * oceanBlend;
+            b = b * (1 - oceanBlend) + targetB * oceanBlend;
+
+            // Specular Phong highlight (glossy sun reflection off the water)
+            const Hx = -0.25;
+            const Hy = -0.25;
+            const Hz = 0.93;
+            const dot = X * Hx + Y * Hy + Z * Hz;
+            if (dot > 0) {
+              const spec = Math.pow(dot, 22) * 110;
+              r += spec;
+              g += spec;
+              b += spec;
+            }
+          }
+
           data[destIndex]     = Math.min(255, Math.max(0, r));
           data[destIndex + 1] = Math.min(255, Math.max(0, g));
           data[destIndex + 2] = Math.min(255, Math.max(0, b));
