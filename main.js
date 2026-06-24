@@ -3769,7 +3769,12 @@ function initWidgetGeo() {
     compassBtn.addEventListener('click', (e) => {
       if (isEntryAnimating || isSpinningMomentum || isSpinningEasterEgg) return;
       e.stopPropagation();
-      activateGlobe('user');
+      if (activeView === 'cascade') {
+        switchView('orbit');
+        activateGlobe('user');
+      } else {
+        activateGlobe('user');
+      }
     });
   }
 
@@ -3778,10 +3783,15 @@ function initWidgetGeo() {
   if (statusWidget) {
     statusWidget.addEventListener('click', (e) => {
       if (isEntryAnimating || isSpinningMomentum || isSpinningEasterEgg) return;
-      if (globeActive) {
-        deactivateGlobe();
-      } else {
+      if (activeView === 'cascade') {
+        switchView('orbit');
         activateGlobe('curitiba');
+      } else {
+        if (globeActive) {
+          deactivateGlobe();
+        } else {
+          activateGlobe('curitiba');
+        }
       }
     });
   }
