@@ -396,8 +396,8 @@
         }
 
         let angle = 0;
-        let lastTime = performance.now();
-        const startTime = performance.now();
+        let lastTime = 0;
+        let startTime = 0;
         let animLoop = null;
 
         let siteReady = false;
@@ -657,17 +657,21 @@
           animLoop = requestAnimationFrame(tick);
         }
 
-        // Initialize progress bar
-        const barFill = document.getElementById('loader-bar-fill');
-        if (barFill) {
-          barFill.style.transition = 'width 7.0s linear';
-          barFill.style.width = '0%';
-          barFill.offsetHeight; // Force reflow
-          barFill.style.width = '100%';
-        }
+        // Initialize progress bar and start animation after 1 second delay (prevents initial frame stuttering)
+        setTimeout(() => {
+          startTime = performance.now();
+          lastTime = performance.now();
 
-        // Start tick loop
-        animLoop = requestAnimationFrame(tick);
+          const barFill = document.getElementById('loader-bar-fill');
+          if (barFill) {
+            barFill.style.transition = 'width 7.0s linear';
+            barFill.style.width = '0%';
+            barFill.offsetHeight; // Force reflow
+            barFill.style.width = '100%';
+          }
+
+          animLoop = requestAnimationFrame(tick);
+        }, 1000);
 
         if (document.readyState !== 'loading') {
           siteReady = true;

@@ -607,6 +607,10 @@ function activateGlobe(focusOn = 'curitiba') {
 
   if (firstActivation) {
     const centerText  = document.getElementById('orbit-center-text');
+    if (centerText) {
+      gsap.killTweensOf(centerText);
+      gsap.killTweensOf('#orbit-center-text');
+    }
 
     // Set canvas resolution (HiDPI)
     const dpr  = window.devicePixelRatio || 1;
