@@ -662,17 +662,19 @@
             const idxB_0 = mapObj.connB[0];
             const idxB_1 = mapObj.connB[1];
 
-            const x1 = curPoints[idxA_0].x;
-            const y1 = curPoints[idxA_0].y;
-            const x2 = curPoints[idxA_1].x;
-            const y2 = curPoints[idxA_1].y;
+            // Interpolate connectivity between shape A (connA) and shape B (connB)
+            const x1 = curPoints[idxA_0].x * (1 - ep) + curPoints[idxB_0].x * ep;
+            const y1 = curPoints[idxA_0].y * (1 - ep) + curPoints[idxB_0].y * ep;
+            const x2 = curPoints[idxA_1].x * (1 - ep) + curPoints[idxB_1].x * ep;
+            const y2 = curPoints[idxA_1].y * (1 - ep) + curPoints[idxB_1].y * ep;
 
             if (t >= 5300) {
               opacity = opacity * (1 - circleMorph);
             }
 
-            const depth = (curPoints[idxA_0].depth + curPoints[idxB_0].depth +
-                           curPoints[idxA_1].depth + curPoints[idxB_1].depth) / 4;
+            const depthA = (curPoints[idxA_0].depth + curPoints[idxA_1].depth) / 2;
+            const depthB = (curPoints[idxB_0].depth + curPoints[idxB_1].depth) / 2;
+            const depth = depthA * (1 - ep) + depthB * ep;
 
             let finalOpacity = opacity * (is3D ? (0.15 + depth * 0.55) : 0.5);
             if (isCompressing) {
