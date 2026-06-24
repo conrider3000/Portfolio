@@ -86,7 +86,9 @@ const translations = {
     "misc.close": "Fechar",
     "misc.lucky": "ESTOU COM SORTE.",
     "globeInfo.title": "Sobre o Globo",
-    "globeInfo.desc": "Combina textura terrestre de alta resolução (NASA Blue Marble/Solar System Scope) com nuvens de satélite em tempo real (via satélites geoestacionários GOES/Himawari/Meteosat compilados a cada 3h)."
+    "globeInfo.desc": "Combina textura terrestre de alta resolução (NASA Blue Marble/Solar System Scope) com nuvens de satélite em tempo real (via satélites geoestacionários GOES/Himawari/Meteosat compilados a cada 3h).",
+    "mobile.title": "Em Desenvolvimento",
+    "mobile.desc": "Estamos construindo uma nova experiência interativa para dispositivos móveis.<br>Para visualizar o portfólio completo em 3D, por favor acesse através de um computador."
   },
   en: {
     // Nav
@@ -175,7 +177,9 @@ const translations = {
     "misc.close": "Close",
     "misc.lucky": "I'M FEELING LUCKY",
     "globeInfo.title": "About the Globe",
-    "globeInfo.desc": "Combines a high-res land texture (NASA Blue Marble/Solar System Scope) with real-time satellite clouds (via geostationary weather satellites GOES/Himawari/Meteosat compiled every 3h)."
+    "globeInfo.desc": "Combines a high-res land texture (NASA Blue Marble/Solar System Scope) with real-time satellite clouds (via geostationary weather satellites GOES/Himawari/Meteosat compiled every 3h).",
+    "mobile.title": "Under Development",
+    "mobile.desc": "We are building a new interactive experience for mobile devices.<br>To view the full 3D portfolio, please access it via a computer."
   },
   es: {
     // Nav
@@ -264,7 +268,9 @@ const translations = {
     "misc.close": "Cerrar",
     "misc.lucky": "ESTOY CON SUERTE",
     "globeInfo.title": "Sobre el Globo",
-    "globeInfo.desc": "Combina textura terrestre de alta resolución (NASA Blue Marble/Solar System Scope) con nubes satelitales en tiempo real (vía satélites geoestacionarios GOES/Himawari/Meteosat compilados cada 3h)."
+    "globeInfo.desc": "Combina textura terrestre de alta resolución (NASA Blue Marble/Solar System Scope) con nubes satelitales en tiempo real (vía satélites geoestacionarios GOES/Himawari/Meteosat compilados cada 3h).",
+    "mobile.title": "En Desarrollo",
+    "mobile.desc": "Estamos construyendo una nueva experiencia interactiva para dispositivos móviles.<br>Para ver el portafolio completo en 3D, por favor acceda desde una computadora."
   },
   fr: {
     // Nav
@@ -353,7 +359,9 @@ const translations = {
     "misc.close": "Fermer",
     "misc.lucky": "J'AI DE LA CHANCE",
     "globeInfo.title": "À propos du Globe",
-    "globeInfo.desc": "Combine une texture terrestre haute résolution (NASA Blue Marble/Solar System Scope) avec des nuages satellites en temps réel (via les satellites géostationnaires GOES/Himawari/Meteosat compilés toutes les 3h)."
+    "globeInfo.desc": "Combine une texture terrestre haute résolution (NASA Blue Marble/Solar System Scope) avec des nuages satellites en temps réel (via les satellites géostationnaires GOES/Himawari/Meteosat compilés toutes les 3h).",
+    "mobile.title": "En Cours de Développement",
+    "mobile.desc": "Nous construisons une nouvelle expérience interactive pour les appareils mobiles.<br>Pour visualiser le portfolio complet en 3D, veuillez y accéder depuis un ordinateur."
   }
 };
 

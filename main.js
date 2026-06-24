@@ -14,7 +14,7 @@ let isEntryAnimating = true;
 
 // Load portfolio data from localStorage if available, otherwise use default portfolioData
 // Version flag so we can force re-sync when portfolio.js is updated
-const DATA_VERSION = '3';
+const DATA_VERSION = '9';
 let projectsDb = [];
 try {
   const cachedVersion = localStorage.getItem('portfolio_data_version');
@@ -2455,20 +2455,46 @@ function buildPsicromiaGallery() {
     card.className = 'mosaic-card';
 
     if (item.type === 'video') {
-      const video = document.createElement('video');
-      video.className = 'mosaic-media';
-      video.autoplay = true;
-      video.loop = true;
-      video.muted = true;
-      video.playsInline = true;
-      video.onerror = function() {
-        const placeholder = document.createElement('div');
-        placeholder.style.cssText = 'height:100%;min-width:200px;display:flex;align-items:center;justify-content:center;background:hsl(0,0%,85%);border-radius:10px;font-family:sans-serif;font-size:0.85rem;color:#666;padding:20px;box-sizing:border-box;';
-        placeholder.textContent = 'Vídeo indisponível';
-        this.parentElement.replaceChild(placeholder, this);
-      };
-      video.src = item.url;
-      card.appendChild(video);
+      const isEmbed = item.url.includes('adobe.io') || item.url.includes('adobe.com') || item.url.includes('youtube.com') || item.url.includes('vimeo.com');
+      if (isEmbed) {
+        card.style.aspectRatio = '16/9';
+        
+        // Add a loading spinner
+        const loader = document.createElement('div');
+        loader.className = 'mosaic-video-loader';
+        card.appendChild(loader);
+
+        const iframe = document.createElement('iframe');
+        iframe.className = 'mosaic-media';
+        iframe.src = item.url;
+        iframe.style.border = 'none';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.aspectRatio = '16/9';
+        iframe.style.pointerEvents = 'none'; // prevents iframe click interception so the card click opens the lightbox
+        iframe.setAttribute('allowfullscreen', 'true');
+        
+        iframe.onload = () => {
+          loader.remove();
+        };
+
+        card.appendChild(iframe);
+      } else {
+        const video = document.createElement('video');
+        video.className = 'mosaic-media';
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = true;
+        video.playsInline = true;
+        video.onerror = function() {
+          const placeholder = document.createElement('div');
+          placeholder.style.cssText = 'height:100%;min-width:200px;display:flex;align-items:center;justify-content:center;background:hsl(0,0%,85%);border-radius:10px;font-family:sans-serif;font-size:0.85rem;color:#666;padding:20px;box-sizing:border-box;';
+          placeholder.textContent = 'Vídeo indisponível';
+          this.parentElement.replaceChild(placeholder, this);
+        };
+        video.src = item.url;
+        card.appendChild(video);
+      }
     } else {
       const img = document.createElement('img');
       img.className = 'mosaic-media';
@@ -2574,12 +2600,31 @@ function openLightbox(item, index = -1, items = []) {
   content.innerHTML = '';
   
   if (item.type === 'video') {
-    const video = document.createElement('video');
-    video.src = item.url;
-    video.controls = true;
-    video.autoplay = true;
-    video.playsInline = true;
-    content.appendChild(video);
+    const isEmbed = item.url.includes('adobe.io') || item.url.includes('adobe.com') || item.url.includes('youtube.com') || item.url.includes('vimeo.com');
+    if (isEmbed) {
+      // Add a loading spinner
+      const loader = document.createElement('div');
+      loader.className = 'mosaic-video-loader';
+      content.appendChild(loader);
+
+      const iframe = document.createElement('iframe');
+      iframe.src = item.url;
+      iframe.style.border = 'none';
+      iframe.setAttribute('allowfullscreen', 'true');
+      
+      iframe.onload = () => {
+        loader.remove();
+      };
+
+      content.appendChild(iframe);
+    } else {
+      const video = document.createElement('video');
+      video.src = item.url;
+      video.controls = true;
+      video.autoplay = true;
+      video.playsInline = true;
+      content.appendChild(video);
+    }
   } else {
     const img = document.createElement('img');
     img.src = item.url;
@@ -2625,12 +2670,31 @@ function navigateLightbox(direction) {
     onComplete: () => {
       content.innerHTML = '';
       if (item.type === 'video') {
-        const video = document.createElement('video');
-        video.src = item.url;
-        video.controls = true;
-        video.autoplay = true;
-        video.playsInline = true;
-        content.appendChild(video);
+        const isEmbed = item.url.includes('adobe.io') || item.url.includes('adobe.com') || item.url.includes('youtube.com') || item.url.includes('vimeo.com');
+        if (isEmbed) {
+          // Add a loading spinner
+          const loader = document.createElement('div');
+          loader.className = 'mosaic-video-loader';
+          content.appendChild(loader);
+
+          const iframe = document.createElement('iframe');
+          iframe.src = item.url;
+          iframe.style.border = 'none';
+          iframe.setAttribute('allowfullscreen', 'true');
+          
+          iframe.onload = () => {
+            loader.remove();
+          };
+
+          content.appendChild(iframe);
+        } else {
+          const video = document.createElement('video');
+          video.src = item.url;
+          video.controls = true;
+          video.autoplay = true;
+          video.playsInline = true;
+          content.appendChild(video);
+        }
       } else {
         const img = document.createElement('img');
         img.src = item.url;
@@ -3117,6 +3181,28 @@ function closeProjectForm() {
   }
 }
 
+let draggedRow = null;
+
+function moveMediaRowUp(btn) {
+  const row = btn.closest('.admin-media-row');
+  if (!row) return;
+  const previous = row.previousElementSibling;
+  if (previous && previous.classList.contains('admin-media-row')) {
+    row.parentNode.insertBefore(row, previous);
+    markFormDirty();
+  }
+}
+
+function moveMediaRowDown(btn) {
+  const row = btn.closest('.admin-media-row');
+  if (!row) return;
+  const next = row.nextElementSibling;
+  if (next && next.classList.contains('admin-media-row')) {
+    row.parentNode.insertBefore(next, row);
+    markFormDirty();
+  }
+}
+
 function addGalleryMediaRow(url = '', type = 'image', banner = false) {
   const container = document.getElementById('admin-form-media-rows');
   if (!container) return;
@@ -3126,29 +3212,136 @@ function addGalleryMediaRow(url = '', type = 'image', banner = false) {
   row.className = 'admin-media-row';
   row.id = rowId;
   row.style = 'display: flex; gap: 8px; align-items: center;';
-  
+  row.draggable = true;
+
   row.innerHTML = `
-    <select class="admin-input form-media-type" style="width: 90px; padding: 4px;">
+    <!-- Reordenação -->
+    <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0;">
+      <div class="admin-media-drag-handle" title="Arraste para reordenar">⋮⋮</div>
+      <div style="display: flex; flex-direction: column; gap: 1px;">
+        <button type="button" class="admin-reorder-btn btn-up" title="Mover para cima" onclick="moveMediaRowUp(this)">▲</button>
+        <button type="button" class="admin-reorder-btn btn-down" title="Mover para baixo" onclick="moveMediaRowDown(this)">▼</button>
+      </div>
+    </div>
+
+    <!-- Preview Box -->
+    <div class="form-media-preview" style="width: 38px; height: 38px; border-radius: 6px; overflow: hidden; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative;">
+      <span style="font-size: 10px; opacity: 0.5;">...</span>
+    </div>
+
+    <select class="admin-input form-media-type" style="width: 90px; padding: 4px; flex-shrink: 0;">
       <option value="image" ${type === 'image' ? 'selected' : ''}>Imagem</option>
       <option value="video" ${type === 'video' ? 'selected' : ''}>Vídeo</option>
     </select>
     <input type="text" class="admin-input form-media-url" placeholder="URL ou Base64" value="${url}" style="flex: 1; min-width: 0; padding: 6px;" required>
-    <label style="font-size: 11px; display: flex; align-items: center; gap: 2px; white-space: nowrap;">
+    <label style="font-size: 11px; display: flex; align-items: center; gap: 2px; white-space: nowrap; flex-shrink: 0; cursor: pointer; user-select: none;">
       <input type="checkbox" class="form-media-banner" ${banner ? 'checked' : ''}> Banner
     </label>
-    <label class="admin-upload-btn" title="Upload Local">
+    <label class="admin-upload-btn" title="Upload Local" style="flex-shrink: 0;">
       📁
       <input type="file" class="form-media-file" accept="image/*,video/*" style="display: none;">
     </label>
-    <button type="button" class="admin-btn admin-btn--delete" onclick="this.parentElement.remove()" style="padding: 0 10px; font-size: 16px;">×</button>
+    <button type="button" class="admin-btn admin-btn--delete" onclick="this.parentElement.remove(); markFormDirty();" style="padding: 0 10px; font-size: 16px; flex-shrink: 0;">×</button>
   `;
   container.appendChild(row);
 
-  // Setup upload change listener
+  // Setup elements
   const fileInput = row.querySelector('.form-media-file');
   const urlInput = row.querySelector('.form-media-url');
   const typeSelect = row.querySelector('.form-media-type');
+  const previewDiv = row.querySelector('.form-media-preview');
 
+  // Preview updater
+  const updatePreview = () => {
+    const urlVal = urlInput.value.trim();
+    const typeVal = typeSelect.value;
+    previewDiv.innerHTML = '';
+
+    if (!urlVal || urlVal === 'Carregando...') {
+      previewDiv.innerHTML = `<span style="font-size: 10px; opacity: 0.5;">...</span>`;
+      return;
+    }
+
+    if (typeVal === 'image') {
+      const img = document.createElement('img');
+      img.src = urlVal;
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.objectFit = 'cover';
+      img.onerror = () => {
+        previewDiv.innerHTML = `<span style="font-size: 10px; color: #ff4a4a;">Erro</span>`;
+      };
+      previewDiv.appendChild(img);
+    } else if (typeVal === 'video') {
+      const vid = document.createElement('video');
+      vid.src = urlVal;
+      vid.muted = true;
+      vid.style.width = '100%';
+      vid.style.height = '100%';
+      vid.style.objectFit = 'cover';
+      vid.onerror = () => {
+        previewDiv.innerHTML = `<span style="font-size: 14px; opacity: 0.7;">📹</span>`;
+      };
+      previewDiv.appendChild(vid);
+    }
+  };
+
+  urlInput.addEventListener('input', updatePreview);
+  urlInput.addEventListener('change', updatePreview);
+  typeSelect.addEventListener('change', updatePreview);
+  updatePreview();
+
+  // Setup drag-and-drop
+  row.addEventListener('dragstart', (e) => {
+    const isInteractive = e.target.closest('input, select, button, label');
+    if (isInteractive) {
+      e.preventDefault();
+      return;
+    }
+    draggedRow = row;
+    row.style.opacity = '0.5';
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  row.addEventListener('dragend', () => {
+    row.style.opacity = '1';
+    draggedRow = null;
+    const allRows = container.querySelectorAll('.admin-media-row');
+    allRows.forEach(r => r.classList.remove('drag-over'));
+  });
+
+  row.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  });
+
+  row.addEventListener('dragenter', (e) => {
+    if (row !== draggedRow) {
+      row.classList.add('drag-over');
+    }
+  });
+
+  row.addEventListener('dragleave', () => {
+    row.classList.remove('drag-over');
+  });
+
+  row.addEventListener('drop', (e) => {
+    e.preventDefault();
+    row.classList.remove('drag-over');
+    if (row !== draggedRow && draggedRow) {
+      const children = Array.from(container.children);
+      const draggedIndex = children.indexOf(draggedRow);
+      const targetIndex = children.indexOf(row);
+      if (draggedIndex < targetIndex) {
+        container.insertBefore(draggedRow, row.nextSibling);
+      } else {
+        container.insertBefore(draggedRow, row);
+      }
+      markFormDirty();
+    }
+  });
+
+  // Setup upload change listener
   if (fileInput && urlInput) {
     fileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
@@ -3158,6 +3351,7 @@ function addGalleryMediaRow(url = '', type = 'image', banner = false) {
         
         urlInput.value = "Carregando...";
         urlInput.disabled = true;
+        updatePreview();
 
         try {
           if (isVideo) {
@@ -3166,17 +3360,22 @@ function addGalleryMediaRow(url = '', type = 'image', banner = false) {
             reader.onload = () => {
               urlInput.value = reader.result;
               urlInput.disabled = false;
+              updatePreview();
+              markFormDirty();
             };
           } else {
             const compressed = await compressImage(file, 1600, 0.75);
             urlInput.value = compressed;
             urlInput.disabled = false;
+            updatePreview();
+            markFormDirty();
           }
         } catch (err) {
           console.error("Erro ao carregar mídia local:", err);
           alert("Erro ao ler arquivo local.");
           urlInput.value = "";
           urlInput.disabled = false;
+          updatePreview();
         }
       }
     });

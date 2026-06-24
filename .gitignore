@@ -6,3 +6,8 @@ Thumbs.db
 *.local
 scratch/
 data/*.json
+
+.vercel
+
+# Pastas de capas originais e exportações temporárias
+Capas/

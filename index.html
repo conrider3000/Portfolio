@@ -19,7 +19,7 @@
   <meta name="twitter:card" content="summary_large_image">
   
   <!-- Styling -->
-  <link rel="stylesheet" href="style.css?v=1.0.42">
+  <link rel="stylesheet" href="style.css?v=1.0.46">
   
 </head>
 <body>
@@ -42,6 +42,28 @@
       <canvas class="loader-geo" id="loader-canvas" width="720" height="720" style="display: block;"></canvas>
       <div class="loader-bar-container">
         <div class="loader-bar-fill" id="loader-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Under Development Screen -->
+  <div class="mobile-dev-overlay" id="mobile-dev-overlay" style="display: none; opacity: 0; transition: opacity 0.5s ease;">
+    <div class="mobile-dev-container">
+      <div class="mobile-dev-logo">Conrado</div>
+      <div class="mobile-dev-icon">
+        <svg viewBox="0 0 100 100" class="pulsing-geo">
+          <circle cx="50" cy="50" r="40" stroke="#ffffff" stroke-width="2" fill="none" stroke-dasharray="10 5" />
+          <circle cx="50" cy="50" r="25" stroke="#86868b" stroke-width="1.5" fill="none" />
+          <circle cx="50" cy="50" r="8" fill="#ffffff" />
+        </svg>
+      </div>
+      <h1 class="mobile-dev-title" data-i18n="mobile.title">Em Desenvolvimento</h1>
+      <p class="mobile-dev-text" data-i18n="mobile.desc">
+        Estamos construindo uma nova experiência interativa para dispositivos móveis.<br>
+        Para visualizar o portfólio completo em 3D, por favor acesse através de um computador.
+      </p>
+      <div class="mobile-dev-footer">
+        <a href="mailto:conrado@pragmatas.org" class="mobile-dev-link">conrado@pragmatas.org</a>
       </div>
     </div>
   </div>
@@ -395,10 +417,28 @@
               loader.style.opacity = '0';
               setTimeout(() => {
                 loader.style.display = 'none';
-                if (window.animateOrbitEntry) {
-                  window.animateOrbitEntry();
+                if (window.innerWidth <= 768) {
+                  // Show mobile under construction overlay
+                  const devOverlay = document.getElementById('mobile-dev-overlay');
+                  if (devOverlay) {
+                    devOverlay.style.display = 'flex';
+                    setTimeout(() => {
+                      devOverlay.style.opacity = '1';
+                    }, 50);
+                  }
+                  // Hide main portfolio interface elements
+                  const header = document.querySelector('.header');
+                  if (header) header.style.display = 'none';
+                  const mainViewport = document.querySelector('.main-viewport');
+                  if (mainViewport) mainViewport.style.display = 'none';
+                  const canvas = document.getElementById('particles-canvas');
+                  if (canvas) canvas.style.display = 'none';
                 } else {
-                  window.loaderFinished = true;
+                  if (window.animateOrbitEntry) {
+                    window.animateOrbitEntry();
+                  } else {
+                    window.loaderFinished = true;
+                  }
                 }
               }, 280);
               return;
@@ -1071,7 +1111,7 @@
             <h3 style="font-family: var(--font-serif); font-size: 1.15rem; margin: 0;">Mídias da Galeria</h3>
             <button type="button" class="admin-upload-btn" onclick="addGalleryMediaRow()" style="padding: 4px 12px; font-size: 11px; height: auto;">+ Mídia</button>
           </div>
-          <div id="admin-form-media-rows" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 180px; overflow-y: auto; padding-right: 5px;">
+          <div id="admin-form-media-rows" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 260px; overflow-y: auto; padding-right: 5px;">
             <!-- Injected dynamic rows -->
           </div>
         </div>
@@ -1184,8 +1224,8 @@
 
   <!-- Javascript Imports -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer onerror="this.onerror=null; this.src='js/gsap.min.js';"></script>
-<script src="data/portfolio.js?v=1.0.42" defer></script>
-<script src="translations.js?v=1.0.42" defer></script>
-<script src="main.js?v=1.0.42" defer></script>
+<script src="data/portfolio.js?v=1.0.46" defer></script>
+<script src="translations.js?v=1.0.46" defer></script>
+<script src="main.js?v=1.0.46" defer></script>
 </body>
 </html>
