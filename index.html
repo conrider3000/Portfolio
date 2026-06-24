@@ -270,9 +270,8 @@
             scale: 74
           },
           { vertices: tetraVertices, edges: T_conn, faces: tetraFaces, scale: 45 },
-          { vertices: octaVertices, edges: octaEdges, faces: octaFaces, scale: 52 },
           { vertices: cubeVertices, edges: C_conn, faces: cubeFaces, scale: 64 },
-          { vertices: icosaVertices, edges: icosaEdges, faces: icosaFaces, scale: 94 },
+          { vertices: octaVertices, edges: octaEdges, faces: octaFaces, scale: 80 },
           { vertices: dodecaVertices, edges: dodecaEdges, faces: dodecaFaces, scale: 103 },
           { vertices: icosaVertices, edges: icosaEdges, faces: icosaFaces, scale: 94 },
           { vertices: [{ x: 0, y: 0, z: 0 }], edges: [], faces: [], scale: 0 }
@@ -487,11 +486,8 @@
           } else if (t < 6300) {
             mapIdx = 6; p = 1;
             is3D = true;
-          } else if (t < 7000) {
-            mapIdx = 7; p = (t - 6300) / 700;
-            is3D = true;
           } else {
-            mapIdx = 8; p = Math.min((t - 7000) / 700, 1);
+            mapIdx = 7; p = Math.min((t - 6300) / 700, 1);
             is3D = true;
           }
 
@@ -641,7 +637,7 @@
             const pt = curPoints[i];
             if (pt.opacity <= 0.001) continue;
 
-            const r = is3D ? (2 + pt.depth * 3) : 5;
+            const r = 3;
 
             const finalOpacity = pt.opacity * (is3D ? (0.4 + pt.depth * 0.6) : 1);
             ctx.fillStyle = `rgba(255, 255, 255, ${finalOpacity})`;
@@ -650,10 +646,10 @@
             ctx.fill();
           }
 
-          if (t >= 5300 && !dodecaPhaseStarted) {
+          if (t >= 4600 && !dodecaPhaseStarted) {
             dodecaPhaseStarted = true;
           }
-          if (t >= 7700 && !minIntroTimePassed) {
+          if (t >= 7000 && !minIntroTimePassed) {
             minIntroTimePassed = true;
             tryFadeOut();
           }
@@ -664,7 +660,7 @@
         // Initialize progress bar
         const barFill = document.getElementById('loader-bar-fill');
         if (barFill) {
-          barFill.style.transition = 'width 7.7s linear';
+          barFill.style.transition = 'width 7.0s linear';
           barFill.style.width = '0%';
           barFill.offsetHeight; // Force reflow
           barFill.style.width = '100%';
