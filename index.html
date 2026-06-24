@@ -400,8 +400,8 @@
         let animLoop = null;
 
         let siteReady = false;
-        let circlePhaseStarted = false;
-        let minCircleTimePassed = false;
+        let dodecaPhaseStarted = false;
+        let minIntroTimePassed = false;
         let isCompressing = false;
         let compressStartTime = 0;
         const compressDuration = 550; // 550ms compression duration
@@ -499,18 +499,6 @@
           const scale = scaleA * (1 - ep) + scaleB * ep;
 
           let tiltX = 0.42;
-          let circleMorph = 0;
-          let sphereMorph = 0;
-          if (t >= 5300) {
-            circleMorph = Math.min((t - 5300) / 1200, 1);
-            const e5 = easeInOut(circleMorph);
-            tiltX = 0.42 * (1 - e5);
-          }
-          if (t >= 6500) {
-            sphereMorph = Math.min((t - 6500) / 1200, 1);
-            const eSphere = easeInOut(sphereMorph);
-            tiltX = 0.42 * eSphere;
-          }
 
           const map = transitionMaps[mapIdx];
 
@@ -529,31 +517,7 @@
               pt = { x: 180 + x3D * scale, y: 180 + y3D * scale, depth: 0.5 };
             }
 
-            // Circle morphing
-            if (t >= 5300) {
-              const e5 = easeInOut(circleMorph);
-              const angleTarget = angle + i * Math.PI / 10;
-              const tx = 180 + 165 * Math.cos(angleTarget);
-              const ty = 180 + 165 * Math.sin(angleTarget);
-              pt.x = pt.x * (1 - e5) + tx * e5;
-              pt.y = pt.y * (1 - e5) + ty * e5;
-              pt.depth = pt.depth * (1 - e5) + 0.5 * e5;
-            }
-
-            // Sphere morphing
-            if (t >= 6500) {
-              const eSphere = easeInOut(sphereMorph);
-              const ptSphere = project3D(sphereVertices[i], angle, tiltX, 165);
-              pt.x = pt.x * (1 - eSphere) + ptSphere.x * eSphere;
-              pt.y = pt.y * (1 - eSphere) + ptSphere.y * eSphere;
-              pt.depth = pt.depth * (1 - eSphere) + ptSphere.depth * eSphere;
-            }
-
             let opacity = m.op_A * (1 - ep) + m.op_B * ep;
-            if (t >= 5300) {
-              const e5 = easeInOut(circleMorph);
-              opacity = opacity * (1 - e5) + 0.9 * e5;
-            }
             pt.opacity = opacity;
             curPoints.push(pt);
           }
@@ -573,31 +537,6 @@
 
           // Clear Canvas (360x360 coordinates)
           ctx.clearRect(0, 0, 360, 360);
-
-          // Draw volumetric shading inside circle/sphere boundary when t >= 5300
-          if (t >= 5300) {
-            const circleOpacity = Math.min((t - 5300) / 1200, 1) * 0.16;
-            let radius = 165;
-            let opacity = circleOpacity;
-            
-            if (isCompressing) {
-              const elapsed = now - compressStartTime;
-              const cp = Math.min(elapsed / compressDuration, 1);
-              const ec = easeIn(cp);
-              radius = 165 * (1 - ec);
-              opacity = circleOpacity * (1 - ec);
-            }
-            
-            if (radius > 0.1) {
-              const radGrad = ctx.createRadialGradient(180 - 30 * (radius / 165), 180 - 30 * (radius / 165), 0, 180, 180, radius);
-              radGrad.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
-              radGrad.addColorStop(1, `rgba(0, 0, 0, ${opacity * 1.6})`);
-              ctx.fillStyle = radGrad;
-              ctx.beginPath();
-              ctx.arc(180, 180, radius, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          }
 
           // 1. Gather & Sort Translucent Faces (Painter's Algorithm)
           const facesToDraw = [];
@@ -668,10 +607,6 @@
             const x2 = curPoints[idxA_1].x * (1 - ep) + curPoints[idxB_1].x * ep;
             const y2 = curPoints[idxA_1].y * (1 - ep) + curPoints[idxB_1].y * ep;
 
-            if (t >= 5300) {
-              opacity = opacity * (1 - circleMorph);
-            }
-
             const depthA = (curPoints[idxA_0].depth + curPoints[idxA_1].depth) / 2;
             const depthB = (curPoints[idxB_0].depth + curPoints[idxB_1].depth) / 2;
             const depth = depthA * (1 - ep) + depthB * ep;
@@ -693,39 +628,12 @@
             ctx.stroke();
           }
 
-          // 3. Draw 20 Ring Edge Lines (for circle phase)
-          if (t >= 5300) {
-            const e5 = easeInOut(circleMorph);
-            let edgeOpacity = e5 * 0.9;
-            if (isCompressing) {
-              const elapsed = now - compressStartTime;
-              const cp = Math.min(elapsed / compressDuration, 1);
-              const ec = easeIn(cp);
-              edgeOpacity = edgeOpacity * (1 - ec);
-            }
-            ctx.strokeStyle = `rgba(255, 255, 255, ${edgeOpacity})`;
-            ctx.lineWidth = 1.5;
-            ctx.lineCap = 'round';
-            for (let i = 0; i < 20; i++) {
-              const pA = curPoints[i];
-              const pB = curPoints[(i + 1) % 20];
-              ctx.beginPath();
-              ctx.moveTo(pA.x, pA.y);
-              ctx.lineTo(pB.x, pB.y);
-              ctx.stroke();
-            }
-          }
-
-          // 4. Draw 20 Vertices (Circles)
+          // 3. Draw 20 Vertices (Circles)
           for (let i = 0; i < 20; i++) {
             const pt = curPoints[i];
             if (pt.opacity <= 0.001) continue;
 
-            let r = is3D ? (2 + pt.depth * 3) : 5;
-            if (t >= 5300) {
-              const e5 = easeInOut(circleMorph);
-              r = r * (1 - e5) + 3.5 * e5;
-            }
+            const r = is3D ? (2 + pt.depth * 3) : 5;
 
             const finalOpacity = pt.opacity * (is3D ? (0.4 + pt.depth * 0.6) : 1);
             ctx.fillStyle = `rgba(255, 255, 255, ${finalOpacity})`;
@@ -734,11 +642,11 @@
             ctx.fill();
           }
 
-          if (t >= 5300 && !circlePhaseStarted) {
-            circlePhaseStarted = true;
+          if (t >= 5300 && !dodecaPhaseStarted) {
+            dodecaPhaseStarted = true;
           }
-          if (t >= 7700 && !minCircleTimePassed) {
-            minCircleTimePassed = true;
+          if (t >= 7700 && !minIntroTimePassed) {
+            minIntroTimePassed = true;
             tryFadeOut();
           }
 
@@ -768,7 +676,7 @@
         }
 
         function tryFadeOut() {
-          if (siteReady && minCircleTimePassed && !isCompressing) {
+          if (siteReady && minIntroTimePassed && !isCompressing) {
             isCompressing = true;
             compressStartTime = performance.now();
           }
