@@ -273,7 +273,9 @@
           { vertices: octaVertices, edges: octaEdges, faces: octaFaces, scale: 52 },
           { vertices: cubeVertices, edges: C_conn, faces: cubeFaces, scale: 64 },
           { vertices: icosaVertices, edges: icosaEdges, faces: icosaFaces, scale: 70 },
-          { vertices: dodecaVertices, edges: dodecaEdges, faces: dodecaFaces, scale: 103 }
+          { vertices: dodecaVertices, edges: dodecaEdges, faces: dodecaFaces, scale: 103 },
+          { vertices: icosaVertices, edges: icosaEdges, faces: icosaFaces, scale: 70 },
+          { vertices: [{ x: 0, y: 0, z: 0 }], edges: [], faces: [], scale: 0 }
         ];
 
         function easeIn(t) { return t * t; }
@@ -452,8 +454,8 @@
           // Increment rotation angle
           let speed = 0.0015;
           if (t >= 5300) {
-            const circleMorph = Math.min((t - 5300) / 1200, 1);
-            speed = 0.0015 + 0.002 * easeInOut(circleMorph);
+            const accel = Math.min((t - 5300) / 1200, 1);
+            speed = 0.0015 + 0.002 * easeInOut(accel);
           }
           angle += speed * dt;
 
@@ -482,8 +484,14 @@
           } else if (t < 5300) {
             mapIdx = 6; p = (t - 4600) / 700;
             is3D = true;
-          } else {
+          } else if (t < 6300) {
             mapIdx = 6; p = 1;
+            is3D = true;
+          } else if (t < 7000) {
+            mapIdx = 7; p = (t - 6300) / 700;
+            is3D = true;
+          } else {
+            mapIdx = 8; p = Math.min((t - 7000) / 700, 1);
             is3D = true;
           }
 
