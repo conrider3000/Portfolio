@@ -952,6 +952,19 @@ function renderGlobe(gCtx, SIZE) {
     gCtx.fillStyle = shadowGrad;
     gCtx.fill();
     
+    // 2. Franja Atmosférica Interna (Haze azul na borda iluminada do planeta)
+    const atmosphereInnerGrad = gCtx.createRadialGradient(
+      cx - R * 0.1, cy - R * 0.1, R * 0.85,
+      cx - R * 0.1, cy - R * 0.1, R
+    );
+    atmosphereInnerGrad.addColorStop(0, 'rgba(100, 185, 255, 0.0)');
+    atmosphereInnerGrad.addColorStop(0.7, 'rgba(100, 185, 255, 0.05)');
+    atmosphereInnerGrad.addColorStop(0.95, 'rgba(100, 185, 255, 0.22)');
+    atmosphereInnerGrad.addColorStop(1, 'rgba(100, 185, 255, 0.35)');
+
+    gCtx.fillStyle = atmosphereInnerGrad;
+    gCtx.fill();
+    
     gCtx.restore();
   } else {
     // Vector Fallback Mode (original code)
@@ -1003,6 +1016,19 @@ function renderGlobe(gCtx, SIZE) {
     gCtx.beginPath();
     gCtx.arc(cx, cy, R, 0, Math.PI * 2);
     gCtx.fillStyle = shadowGrad;
+    gCtx.fill();
+
+    // 2. Franja Atmosférica Interna (Haze azul na borda iluminada do planeta)
+    const atmosphereInnerGrad = gCtx.createRadialGradient(
+      cx - R * 0.1, cy - R * 0.1, R * 0.85,
+      cx - R * 0.1, cy - R * 0.1, R
+    );
+    atmosphereInnerGrad.addColorStop(0, 'rgba(100, 185, 255, 0.0)');
+    atmosphereInnerGrad.addColorStop(0.7, 'rgba(100, 185, 255, 0.05)');
+    atmosphereInnerGrad.addColorStop(0.95, 'rgba(100, 185, 255, 0.22)');
+    atmosphereInnerGrad.addColorStop(1, 'rgba(100, 185, 255, 0.35)');
+
+    gCtx.fillStyle = atmosphereInnerGrad;
     gCtx.fill();
 
     gCtx.restore();
